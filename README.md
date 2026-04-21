@@ -1,3 +1,3 @@
 # lazy-cms-rebuild
 
-Rebuilding it.
+This repository is currently being rebuilt from scratch.
