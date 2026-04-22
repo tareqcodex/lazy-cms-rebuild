@@ -36,8 +36,8 @@
                     <td class="py-4 px-2">
                         <select name="parent_id" class="wp-input w-full max-w-[400px]">
                             <option value="">None</option>
-                            @foreach($categories as $cat)
-                                <option value="{{ $cat->id }}" {{ $cat->id == old('parent_id', $category->parent_id) ? 'selected' : '' }}>{{ $cat->name }}</option>
+                            @foreach($fullTree as $cat)
+                                <option value="{{ $cat->id }}" {{ $cat->id == old('parent_id', $category->parent_id) ? 'selected' : '' }}>{{ str_repeat('— ', $cat->level ?? 0) }}{{ $cat->name }}</option>
                             @endforeach
                         </select>
                         <p class="text-[12px] text-[#646970] mt-1">Categories, unlike tags, can have a hierarchy. You might have a Jazz category, and under that have children categories for Bebop and Big Band. Totally optional.</p>

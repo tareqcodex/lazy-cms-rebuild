@@ -48,7 +48,7 @@ class TagController extends Controller
 
         Tag::create($validated);
 
-        return redirect()->route('admin.tags.index')->with('success', 'Tag added.');
+        return redirect()->route('admin.tags.index', ['type' => 'post'])->with('success', 'Tag added.');
     }
 
     public function edit(Tag $tag)
@@ -69,13 +69,13 @@ class TagController extends Controller
 
         $tag->update($validated);
 
-        return redirect()->route('admin.tags.index')->with('success', 'Tag updated.');
+        return redirect()->route('admin.tags.index', ['type' => 'post'])->with('success', 'Tag updated.');
     }
 
     public function destroy(Tag $tag)
     {
         $tag->delete();
-        return redirect()->route('admin.tags.index')->with('success', 'Tag deleted.');
+        return redirect()->route('admin.tags.index', ['type' => 'post'])->with('success', 'Tag deleted.');
     }
     public function ajax(Request $request)
     {

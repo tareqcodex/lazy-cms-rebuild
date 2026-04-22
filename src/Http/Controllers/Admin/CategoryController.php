@@ -20,17 +20,36 @@ class CategoryController extends Controller
         } else {
             $allCategories = $query->get();
             $tree = collect();
-            $buildTree = function($parentId, $level) use (&$buildTree, $allCategories, &$tree) {
+            $visitedIds = [];
+
+            $buildTree = function($parentId, $level) use (&$buildTree, $allCategories, &$tree, &$visitedIds) {
                 foreach ($allCategories->where('parent_id', $parentId) as $cat) {
+                    if (in_array($cat->id, $visitedIds)) continue; // Prevent infinite loops
+                    $visitedIds[] = $cat->id;
                     $cat->level = $level;
                     $tree->push($cat);
                     $buildTree($cat->id, $level + 1);
                 }
             };
+            
+            // Build tree starting from root categories
             $buildTree(null, 0);
+
+            // If there are still categories not in the tree (orphans or circular loops)
+            if ($tree->count() < $allCategories->count()) {
+                $orphans = $allCategories->whereNotIn('id', $visitedIds);
+                foreach ($orphans as $orphan) {
+                    if (in_array($orphan->id, $visitedIds)) continue;
+                    $orphan->level = 0; // Show orphans at root level
+                    $tree->push($orphan);
+                    $visitedIds[] = $orphan->id;
+                    $buildTree($orphan->id, 1);
+                }
+            }
 
             $page = \Illuminate\Pagination\Paginator::resolveCurrentPage() ?: 1;
             $perPage = 10;
+            $fullTree = $tree;
             $categories = new \Illuminate\Pagination\LengthAwarePaginator(
                 $tree->forPage($page, $perPage),
                 $tree->count(),
@@ -40,7 +59,7 @@ class CategoryController extends Controller
             );
         }
 
-        return view('cms-dashboard::admin.categories.index', compact('categories'));
+        return view('cms-dashboard::admin.categories.index', compact('categories', 'fullTree'));
     }
 
     public function bulk(Request $request)
@@ -70,13 +89,27 @@ class CategoryController extends Controller
 
         Category::create($validated);
 
-        return redirect()->route('admin.categories.index')->with('success', 'Category added.');
+        return redirect()->route('admin.categories.index', ['type' => 'post'])->with('success', 'Category added.');
     }
 
     public function edit(Category $category)
     {
-        $categories = Category::where('id', '!=', $category->id)->orderBy('name')->get();
-        return view('cms-dashboard::admin.categories.edit', compact('category', 'categories'));
+        $allCategories = Category::where('id', '!=', $category->id)->orderBy('name')->get();
+        $fullTree = collect();
+        $visitedIds = [];
+
+        $buildTree = function($parentId, $level) use (&$buildTree, $allCategories, &$fullTree, &$visitedIds) {
+            foreach ($allCategories->where('parent_id', $parentId) as $cat) {
+                if (in_array($cat->id, $visitedIds)) continue;
+                $visitedIds[] = $cat->id;
+                $cat->level = $level;
+                $fullTree->push($cat);
+                $buildTree($cat->id, $level + 1);
+            }
+        };
+        $buildTree(null, 0);
+
+        return view('cms-dashboard::admin.categories.edit', compact('category', 'fullTree'));
     }
 
     public function update(Request $request, Category $category)
@@ -87,19 +120,38 @@ class CategoryController extends Controller
         $validated = $request->validate([
             'name' => 'required|string|max:255',
             'slug' => 'required|string|max:255',
-            'parent_id' => 'nullable|exists:categories,id',
+            'parent_id' => [
+                'nullable',
+                'exists:categories,id',
+                function ($attribute, $value, $fail) use ($category) {
+                    if ($value == $category->id) {
+                        $fail('A category cannot be its own parent.');
+                        return;
+                    }
+                    if ($value) {
+                        $parent = \Acme\CmsDashboard\Models\Category::find($value);
+                        while ($parent) {
+                            if ($parent->id == $category->id) {
+                                $fail('Circular reference detected: The selected parent is already a sub-category of this category.');
+                                break;
+                            }
+                            $parent = $parent->parent;
+                        }
+                    }
+                },
+            ],
             'description' => 'nullable|string',
         ]);
 
         $category->update($validated);
 
-        return redirect()->route('admin.categories.index')->with('success', 'Category updated.');
+        return redirect()->route('admin.categories.index', ['type' => 'post'])->with('success', 'Category updated.');
     }
 
     public function destroy(Category $category)
     {
         $category->delete();
-        return redirect()->route('admin.categories.index')->with('success', 'Category deleted.');
+        return redirect()->route('admin.categories.index', ['type' => 'post'])->with('success', 'Category deleted.');
     }
     public function ajax(Request $request)
     {

@@ -58,7 +58,7 @@
                 <!-- Membership -->
                 <tr>
                     <th scope="row" class="w-[200px] text-left align-top pt-2">
-                        <label class="text-[14px] font-semibold text-[#1d2327]">Membership</label>
+                        <label class="text-[14px] font-semibold text-[#1d2327]">Who can Sign Up</label>
                     </th>
                     <td>
                         <label class="inline-flex items-center cursor-pointer">
@@ -99,13 +99,13 @@
                     <td>
                         <select name="login_theme" id="login_theme" class="wp-input w-[200px] h-8 py-0">
                             <option value="funny"
-                                {{ ($settings['login_theme'] ?? 'funny') == 'funny' ? 'selected' : '' }}>Funny Theme
+                                {{ ($settings['login_theme'] ?? 'breeze') == 'funny' ? 'selected' : '' }}>Funny Theme
                             </option>
                             <option value="breeze"
-                                {{ ($settings['login_theme'] ?? 'funny') == 'breeze' ? 'selected' : '' }}>Breeze Style
+                                {{ ($settings['login_theme'] ?? 'breeze') == 'breeze' ? 'selected' : '' }}>Breeze Style
                             </option>
                             <option value="wp"
-                                {{ ($settings['login_theme'] ?? 'funny') == 'wp' ? 'selected' : '' }}>WP Classic
+                                {{ ($settings['login_theme'] ?? 'breeze') == 'wp' ? 'selected' : '' }}>WP Classic
                             </option>
                         </select>
                     </td>

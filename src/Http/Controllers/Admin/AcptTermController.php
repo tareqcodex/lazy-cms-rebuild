@@ -25,15 +25,33 @@ class AcptTermController extends Controller
         } else {
             $allTerms = $query->withCount('posts')->orderBy('name')->get();
             $tree = collect();
-            $buildTree = function($parentId, $level) use (&$buildTree, $allTerms, &$tree) {
+            $visitedIds = [];
+
+            $buildTree = function($parentId, $level) use (&$buildTree, $allTerms, &$tree, &$visitedIds) {
                 foreach ($allTerms->where('parent_id', $parentId) as $term) {
+                    if (in_array($term->id, $visitedIds)) continue;
+                    $visitedIds[] = $term->id;
                     $term->level = $level;
                     $tree->push($term);
                     $buildTree($term->id, $level + 1);
                 }
             };
+            
             $buildTree(null, 0);
 
+            // Handle orphans/loops
+            if ($tree->count() < $allTerms->count()) {
+                $orphans = $allTerms->whereNotIn('id', $visitedIds);
+                foreach ($orphans as $orphan) {
+                    if (in_array($orphan->id, $visitedIds)) continue;
+                    $orphan->level = 0;
+                    $tree->push($orphan);
+                    $visitedIds[] = $orphan->id;
+                    $buildTree($orphan->id, 1);
+                }
+            }
+
+            $fullTree = $tree;
             $page = \Illuminate\Pagination\Paginator::resolveCurrentPage() ?: 1;
             $perPage = 10;
             $terms = new \Illuminate\Pagination\LengthAwarePaginator(
@@ -45,25 +63,37 @@ class AcptTermController extends Controller
             );
         }
         
-        return view('cms-dashboard::admin.acpt.taxonomies.terms.index', compact('taxonomy', 'terms'));
+        return view('cms-dashboard::admin.acpt.taxonomies.terms.index', compact('taxonomy', 'terms', 'fullTree'));
     }
 
     public function store(Request $request, $taxonomySlug)
     {
+        $taxonomy = CustomTaxonomy::where('slug', $taxonomySlug)->firstOrFail();
+        
         $request->validate([
             'name' => 'required|string|max:255',
             'slug' => 'nullable|string|max:255',
+            'cpt_slug' => 'nullable|string', // We'll try to fallback if null
         ]);
 
-        $slug = $request->slug ? TaxonomyTerm::generateUniqueSlug($request->slug, 0, $request->cpt_slug) : TaxonomyTerm::generateUniqueSlug($request->name, 0, $request->cpt_slug);
+        $cptSlug = $request->cpt_slug;
+        if (empty($cptSlug) && !empty($taxonomy->post_types)) {
+            $cptSlug = $taxonomy->post_types[0];
+        }
+
+        if (empty($cptSlug)) {
+            return redirect()->back()->with('error', 'Post type (CPT) is required to manage taxonomy terms.');
+        }
+
+        $slug = $request->slug ? TaxonomyTerm::generateUniqueSlug($request->slug, 0, $cptSlug) : TaxonomyTerm::generateUniqueSlug($request->name, 0, $cptSlug);
 
         TaxonomyTerm::create([
             'name' => $request->name,
             'slug' => $slug,
             'taxonomy_slug' => $taxonomySlug,
-            'cpt_slug' => $request->cpt_slug,
+            'cpt_slug' => $cptSlug,
             'description' => $request->description,
-            'parent_id' => $request->parent_id,
+            'parent_id' => $request->parent_id ?: null,
         ]);
 
         return redirect()->back()->with('success', 'Term added successfully!');
@@ -107,7 +137,20 @@ class AcptTermController extends Controller
             ->orderBy('name')
             ->get();
             
-        return view('cms-dashboard::admin.acpt.taxonomies.terms.edit', compact('taxonomy', 'term', 'allTerms'));
+        $fullTree = collect();
+        $visitedIds = [];
+        $buildTree = function($parentId, $level) use (&$buildTree, $allTerms, &$fullTree, &$visitedIds) {
+            foreach ($allTerms->where('parent_id', $parentId) as $t) {
+                if (in_array($t->id, $visitedIds)) continue;
+                $visitedIds[] = $t->id;
+                $t->level = $level;
+                $fullTree->push($t);
+                $buildTree($t->id, $level + 1);
+            }
+        };
+        $buildTree(null, 0);
+
+        return view('cms-dashboard::admin.acpt.taxonomies.terms.edit', compact('taxonomy', 'term', 'fullTree'));
     }
 
     public function update(Request $request, $taxonomySlug, $id)
@@ -117,6 +160,26 @@ class AcptTermController extends Controller
         $request->validate([
             'name' => 'required|string|max:255',
             'slug' => 'nullable|string|max:255',
+            'parent_id' => [
+                'nullable',
+                'exists:taxonomy_terms,id',
+                function ($attribute, $value, $fail) use ($term) {
+                    if ($value == $term->id) {
+                        $fail('A term cannot be its own parent.');
+                        return;
+                    }
+                    if ($value) {
+                        $parent = TaxonomyTerm::find($value);
+                        while ($parent) {
+                            if ($parent->id == $term->id) {
+                                $fail('Circular reference detected: The selected parent is already a sub-term of this term.');
+                                break;
+                            }
+                            $parent = $parent->parent;
+                        }
+                    }
+                },
+            ],
         ]);
 
         $slug = $request->slug ? TaxonomyTerm::generateUniqueSlug($request->slug, $id, $term->cpt_slug) : TaxonomyTerm::generateUniqueSlug($request->name, $id, $term->cpt_slug);
@@ -125,7 +188,7 @@ class AcptTermController extends Controller
             'name' => $request->name,
             'slug' => $slug,
             'description' => $request->description,
-            'parent_id' => $request->parent_id,
+            'parent_id' => $request->parent_id ?: null,
         ]);
 
         return redirect()->route('admin.acpt.terms.index', $taxonomySlug)->with('success', 'Term updated successfully!');

@@ -263,14 +263,14 @@
                 @if(!empty($assignedTaxonomies))
                     @foreach($assignedTaxonomies as $taxonomy)
                     @php 
-                        $isTag = str_contains(strtolower($taxonomy->slug), 'tag') || str_contains(strtolower($taxonomy->name), 'tag');
+                        $isHierarchical = (bool) $taxonomy->hierarchical;
                     @endphp
                     <div class="wp-metabox mb-6" style="margin-bottom: 24px !important; margin-top: 10px !important;">
                         <div class="wp-metabox-header flex justify-between items-center cursor-pointer">
                             <span>{{ $taxonomy->name }}</span> <svg class="w-4 h-4 text-[#646970]" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 15l7-7 7 7"/></svg>
                         </div>
                         <div class="wp-metabox-content" style="padding: 10px;">
-                            @if($isTag)
+                            @if(!$isHierarchical)
                                 <!-- Tag Style UI for CPT Edit -->
                                 <div class="p-1">
                                     <div class="flex gap-2">

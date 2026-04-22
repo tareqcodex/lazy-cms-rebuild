@@ -3,6 +3,16 @@
         <h1 class="text-[23px] font-normal text-[#1d2327]">Edit {{ $taxonomy->singular_name ?? $taxonomy->name }}</h1>
     </div>
 
+    @if($errors->any())
+        <div class="bg-white border-l-4 border-[#d63638] shadow-sm p-3 mb-4 text-[13px]">
+            <ul class="list-disc pl-5">
+                @foreach($errors->all() as $error)
+                    <li>{{ $error }}</li>
+                @endforeach
+            </ul>
+        </div>
+    @endif
+
     <div class="max-w-4xl bg-white border border-[#c3c4c7] p-6">
         <form action="{{ route('admin.acpt.terms.update', [$taxonomy->slug, $term->id]) }}" method="POST">
             @csrf
@@ -25,8 +35,8 @@
                     <label class="block text-[14px] text-[#1d2327] mb-1">Parent {{ $taxonomy->singular_name ?? $taxonomy->name }}</label>
                     <select name="parent_id" class="wp-input w-full md:w-1/2 h-8 py-0">
                         <option value="">None</option>
-                        @foreach($allTerms as $t)
-                            <option value="{{ $t->id }}" {{ old('parent_id', $term->parent_id) == $t->id ? 'selected' : '' }}>{{ $t->name }}</option>
+                        @foreach($fullTree ?? [] as $t)
+                            <option value="{{ $t->id }}" {{ old('parent_id', $term->parent_id) == $t->id ? 'selected' : '' }}>{{ str_repeat('— ', $t->level ?? 0) }}{{ $t->name }}</option>
                         @endforeach
                     </select>
                     <p class="text-[12px] text-[#646970] mt-1">Assign a parent term to create a hierarchy. The term Jazz, for example, would be the child of Genre.</p>

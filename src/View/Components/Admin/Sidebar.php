@@ -9,11 +9,11 @@ use Illuminate\Support\Facades\Route;
 class Sidebar extends Component
 {
     public $menuGroups;
-    public $activeMenu; // e.g. 'posts', 'pages', 'movies', 'dashboard'
+    public $activeMenu;
 
     public function __construct(?string $activeMenu = null)
     {
-        $this->activeMenu = $activeMenu ?? $this->detectActiveMenu();
+        $this->activeMenu = $activeMenu;
 
         try {
             $this->menuGroups = Menu::with('children')
@@ -26,33 +26,113 @@ class Sidebar extends Component
         }
     }
 
-    protected function detectActiveMenu(): string
+    public static function isUrlActive($url)
     {
-        $segments = request()->segments();
-        $type = request()->query('type');
+        if (!$url || $url === '#') return false;
 
-        // Dashboard: Exactly /admin
-        if (count($segments) === 1 && $segments[0] === 'admin') return 'dashboard';
+        $targetUrl = parse_url($url);
+        $targetPath = trim($targetUrl['path'] ?? '', '/');
+        $currentPath = trim(request()->getPathInfo(), '/');
 
-        $module = $segments[1] ?? '';
-
-        // Pages module (admin/pages/*)
-        if ($module === 'pages') return 'pages';
-
-        // Posts/Content module (admin/posts/*)
-        if ($module === 'posts') {
-            if (!$type || $type === 'post') return 'posts';
-            if ($type === 'page') return 'pages'; // Normalize page type to pages menu
-            return $type; // e.g. 'movies', etc.
+        // 1. Dashboard: Must be exact match 'admin'
+        if ($targetPath === 'admin') {
+            return $currentPath === 'admin';
         }
 
-        return $module;
+        // 2. Base path check: Current path must start with target path
+        if (!str_starts_with($currentPath, $targetPath)) {
+            return false;
+        }
+
+        // 3. Query Parameter Strict Check (Crucial for CPTs and Taxonomies)
+        parse_str($targetUrl['query'] ?? '', $targetQuery);
+        
+        $currentType = request()->query('type');
+        $currentCpt = request()->query('cpt_slug') ?? request()->query('cpt');
+
+        // Fallback: Detect type from route if on edit/create page
+        if (!$currentType) {
+            $route = request()->route();
+            if ($route) {
+                $post = $route->parameter('post');
+                if ($post instanceof \Acme\CmsDashboard\Models\Post) {
+                    $currentType = $post->type;
+                } elseif (is_numeric($post)) {
+                    $currentType = \Acme\CmsDashboard\Models\Post::where('id', $post)->value('type');
+                } else {
+                    $currentType = $route->parameter('type');
+                }
+            }
+        }
+
+        $targetType = $targetQuery['type'] ?? $targetQuery['cpt_slug'] ?? $targetQuery['cpt'] ?? null;
+
+        // If target has a type/cpt_slug, current request MUST match it
+        if ($targetType) {
+            return ($currentType === $targetType || $currentCpt === $targetType);
+        }
+
+        // If target has NO type, current request should also have NO type (for standard Posts/Pages)
+        // Except if we are on a standard sub-page like admin/categories
+        if (!$targetType && ($currentType || $currentCpt)) {
+            // If the current type is 'post' or 'page', it's still considered a "standard" type 
+            // if the targetPath matches admin/posts or admin/pages
+            if (($targetPath === 'admin/posts' && $currentType === 'post') || 
+                ($targetPath === 'admin/pages' && $currentType === 'page')) {
+                return true;
+            }
+
+            if ($targetPath === 'admin/posts' || $targetPath === 'admin/pages') {
+                return false;
+            }
+        }
+
+        return true;
+    }
+
+    public static function canAccess($url)
+    {
+        if (!$url || $url === '#') return true;
+        if (!auth()->check()) return false;
+        $user = auth()->user();
+
+        $targetUrl = parse_url($url);
+        $targetPath = trim($targetUrl['path'] ?? '', '/');
+        parse_str($targetUrl['query'] ?? '', $targetQuery);
+
+        $type = $targetQuery['type'] ?? $targetQuery['cpt_slug'] ?? null;
+
+        // Dashboard
+        if ($targetPath === 'admin') return true;
+
+        // Content / Posts / Pages
+        if (str_contains($targetPath, 'admin/posts') || str_contains($targetPath, 'admin/pages')) {
+            $pType = $type ?: (str_contains($targetPath, 'admin/pages') ? 'page' : 'post');
+            $permission = ($pType === 'page') ? 'manage_pages' : (($pType === 'post') ? 'manage_posts' : 'manage_' . $pType);
+            return $user->hasPermission($permission);
+        }
+
+        // Users
+        if (str_contains($targetPath, 'admin/users')) return $user->hasPermission('manage_users');
+        
+        // Roles
+        if (str_contains($targetPath, 'admin/roles')) return $user->hasPermission('manage_roles');
+
+        // Settings
+        if (str_contains($targetPath, 'admin/settings') || $targetPath === 'admin/dashboard/settings') return $user->hasPermission('manage_settings');
+
+        // Media
+        if (str_contains($targetPath, 'admin/media')) return $user->hasPermission('manage_media');
+
+        // ACPT
+        if (str_contains($targetPath, 'admin/acpt')) return $user->hasPermission('manage_settings');
+
+        return true;
     }
 
     public function resolveRoute($routeStr, $title = '')
     {
         if (!$routeStr || $routeStr === '#') {
-            // Fallback for core Post items if seeder wasn't run
             if ($title === 'Categories') return route('admin.categories.index');
             if ($title === 'Tags') return route('admin.tags.index');
             if ($title === 'All Posts') return route('admin.posts.index');
@@ -60,7 +140,6 @@ class Sidebar extends Component
             if ($title === 'All Pages') return route('admin.pages.index');
             if ($title === 'Add New' || $title === 'Add Page') return route('admin.pages.create');
 
-            // Fallback for dynamic CPTs if they have no route set yet
             try {
                 $postType = \Acme\CmsDashboard\Models\PostType::where('name', $title)->first();
                 if ($postType) {
@@ -70,6 +149,7 @@ class Sidebar extends Component
 
             return '#';
         }
+
         if (str_starts_with($routeStr, '/') || str_starts_with($routeStr, 'http')) return url($routeStr);
         return Route::has($routeStr) ? route($routeStr) : $routeStr;
     }

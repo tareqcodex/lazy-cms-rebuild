@@ -35,8 +35,8 @@
                     <label class="block text-[13px] text-[#1d2327] mb-1">Parent Category</label>
                     <select name="parent_id" class="wp-input w-full">
                         <option value="">None</option>
-                        @foreach($categories as $cat)
-                            <option value="{{ $cat->id }}">{{ $cat->name }}</option>
+                        @foreach($fullTree as $cat)
+                            <option value="{{ $cat->id }}">{{ str_repeat('— ', $cat->level ?? 0) }}{{ $cat->name }}</option>
                         @endforeach
                     </select>
                     <p class="text-[12px] text-[#646970] mt-1">Categories, unlike tags, can have a hierarchy. You might have a Jazz category, and under that have children categories for Bebop and Big Band. Totally optional.</p>
@@ -90,10 +90,10 @@
                             <td class="wp-table-cell text-center"><input type="checkbox" name="ids[]" value="{{ $cat->id }}" class="cb-select-item rounded-sm border-[#8c8f94] text-[#2271b1]"></td>
                             <td class="wp-table-cell align-top">
                                 <strong>
-                                    <a href="{{ route('admin.categories.edit', $cat) }}" class="text-[#2271b1] hover:text-[#135e96]">{{ str_repeat('— ', $cat->level ?? 0) }}{{ $cat->name }}</a>
+                                    <a href="{{ route('admin.categories.edit', [$cat, 'type' => 'post']) }}" class="text-[#2271b1] hover:text-[#135e96]">{{ str_repeat('— ', $cat->level ?? 0) }}{{ $cat->name }}</a>
                                 </strong>
                                 <div class="invisible group-hover:visible mt-1 text-[13px] space-x-1">
-                                    <a href="{{ route('admin.categories.edit', $cat) }}" class="text-[#2271b1]">Edit</a> <span class="text-[#c3c4c7]">|</span>
+                                    <a href="{{ route('admin.categories.edit', [$cat, 'type' => 'post']) }}" class="text-[#2271b1]">Edit</a> <span class="text-[#c3c4c7]">|</span>
                                     <button form="delete-form-{{ $cat->id }}" type="submit" class="text-[#b32d2e] hover:text-[#8a2424]" onclick="return confirm('Delete this category?');">Delete</button>
                                      <span class="text-[#c3c4c7]">|</span>
                                     <a href="{{ url('category/' . $cat->path) }}" target="_blank" class="text-[#2271b1]">View</a>

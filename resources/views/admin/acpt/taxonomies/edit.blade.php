@@ -84,7 +84,17 @@
                     </div>
                 </div>
 
-                <input type="hidden" name="hierarchical" value="1">
+                <!-- Style Mode -->
+                <div class="grid grid-cols-[200px_1fr] items-start">
+                    <label class="text-[13px] font-semibold text-[#2c3338] pt-1">Style Mode</label>
+                    <div class="w-full max-w-[400px]">
+                        <select name="hierarchical" class="w-full border-[#8c8f94] focus:border-[#2271b1] border py-1.5 px-3 rounded-[3px] shadow-[inset_0_1px_2px_rgba(0,0,0,0.07)] text-[14px]">
+                            <option value="1" @selected($taxonomy->hierarchical)>Hierarchical Taxonomy (Category/Tree structure)</option>
+                            <option value="0" @selected(!$taxonomy->hierarchical)>Non-Hierarchical Taxonomy (Tag structure)</option>
+                        </select>
+                        <p class="text-[12px] text-[#646970] mt-1">Hierarchical taxonomies can have parents/children (like Categories). Non-hierarchical ones are flat (like Tags).</p>
+                    </div>
+                </div>
 
             </div>
 

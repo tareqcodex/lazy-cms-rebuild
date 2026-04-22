@@ -74,7 +74,10 @@
     </div>
 
     <div class="login-links">
-        <a href="{{ route('admin.register') }}">Register</a> | <a href="#">Lost your password?</a>
+        @if(get_cms_option('users_can_register', '0') == '1')
+            <a href="{{ route('admin.register') }}">Register</a> | 
+        @endif
+        <a href="#">Lost your password?</a>
         <br><br>
         <a href="/">&larr; Go to Site</a>
     </div>

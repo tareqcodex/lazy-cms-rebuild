@@ -8,46 +8,36 @@
                     @php 
                         $hasChildren = $menu->children->isNotEmpty(); 
                         $href = $resolveRoute($menu->route, $menu->title);
-
-                        parse_str(parse_url($href, PHP_URL_QUERY), $targetQueryParams);
-                        $targetTypeVal = $targetQueryParams['type'] ?? null;
-                        $targetPath = trim(parse_url($href, PHP_URL_PATH), '/');
-
-                        // Clean, simple matching using $activeMenu
-                        // $activeMenu is set by Sidebar::detectActiveMenu() automatically
-                        $isActive = false;
-
-                        if ($activeMenu === 'dashboard' && $targetPath === 'admin') {
-                            $isActive = true;
-                        } elseif ($activeMenu === 'posts' && $targetPath === 'admin/posts' && !$targetTypeVal) {
-                            $isActive = true;
-                        } elseif ($activeMenu === 'pages' && $targetPath === 'admin/pages') {
-                            $isActive = true;
-                        } elseif ($activeMenu === 'pages' && $targetTypeVal === 'page') {
-                            $isActive = true;
-                        } elseif ($targetTypeVal && $activeMenu === $targetTypeVal) {
-                            // CPT match — e.g. activeMenu='movies' matches type=movies
-                            $isActive = true;
-                        } elseif (!$targetTypeVal && $targetPath === 'admin/' . $activeMenu) {
-                            // Other modules like media, menus, acpt, etc.
-                            $isActive = true;
+                        
+                        // Check if the current user can access this menu
+                        if (!\Acme\CmsDashboard\View\Components\Admin\Sidebar::canAccess($href)) {
+                            continue;
                         }
 
-                        // Also check children to decide if parent should expand
+                        $isActive = \Acme\CmsDashboard\View\Components\Admin\Sidebar::isUrlActive($href);
+
                         if (!$isActive && $hasChildren) {
                             foreach($menu->children as $child) {
-                                $childHref = $resolveRoute($child->route, $child->title);
-                                parse_str(parse_url($childHref, PHP_URL_QUERY), $childQueryParams);
-                                $childTypeVal = $childQueryParams['type'] ?? null;
-                                $childPath = trim(parse_url($childHref, PHP_URL_PATH), '/');
-
-                                if ($activeMenu === 'pages' && $childTypeVal === 'page') { $isActive = true; break; }
-                                if ($childTypeVal && $childTypeVal === $activeMenu) { $isActive = true; break; }
-                                if (!$childTypeVal && $childPath === 'admin/' . $activeMenu) { $isActive = true; break; }
+                                if (\Acme\CmsDashboard\View\Components\Admin\Sidebar::isUrlActive($resolveRoute($child->route, $child->title))) {
+                                    $isActive = true;
+                                    break;
+                                }
                             }
                         }
+
+                        // Determine if we need separator lines
+                        $isComments = ($menu->title === 'Comments');
+                        $isMenu = ($menu->title === 'Menu');
+                        
+                        $liClasses = 'group sidebar-item relative';
+                        if ($isComments) {
+                            $liClasses .= ' border-b border-[#2c3338] pb-2 mb-2';
+                        }
+                        if ($isMenu) {
+                            $liClasses .= ' border-t border-[#2c3338] pt-2 mt-2';
+                        }
                     @endphp
-                <li class="group sidebar-item {{ $menu->title === 'Menu' ? 'mt-2 border-t border-[#2c3338] pt-2' : '' }} {{ $menu->title === 'Comments' ? 'border-b border-[#2c3338] pb-2 mb-2' : '' }}">
+                <li class="{{ $liClasses }}">
                     <a href="{{ $href }}" class="sidebar-item-link relative flex items-center px-3 py-[8px] transition-colors {{ $isActive ? 'bg-[#2271b1] text-white' : 'hover:bg-[#2c3338] hover:text-[#72aee6] text-[#c3c4c7]' }}">
                         <div class="w-5 h-5 mr-3 flex items-center justify-center {!! $isActive ? 'text-white' : 'text-[#c3c4c7] group-hover:text-[#72aee6]' !!}">
                             {!! $menu->icon !!}
@@ -63,9 +53,12 @@
                             <div class="bg-[#2c3338] block w-full">
                                 <ul class="py-1">
                                     @foreach($menu->children as $child)
-                                        @php $isChildActive = request()->fullUrl() === url($resolveRoute($child->route, $child->title)); @endphp
+                                        @php 
+                                            $childHref = $resolveRoute($child->route, $child->title);
+                                            $isChildActive = \Acme\CmsDashboard\View\Components\Admin\Sidebar::isUrlActive($childHref);
+                                        @endphp
                                         <li>
-                                            <a href="{{ $resolveRoute($child->route, $child->title) }}" class="block px-3 py-[6px] transition text-[13px] {{ $isChildActive ? 'text-white font-semibold' : 'text-[#c3c4c7] hover:text-[#72aee6]' }}">
+                                            <a href="{{ $childHref }}" class="block px-3 py-[6px] transition text-[13px] {{ $isChildActive ? 'text-white font-semibold' : 'text-[#c3c4c7] hover:text-[#72aee6]' }}">
                                                 {{ $child->title }}
                                             </a>
                                         </li>
@@ -102,14 +95,6 @@
                     </div>
                 </div>
                 <span class="text-[13px] collapse-text">Collapse Menu</span>
-            </a>
-        <li class="border-t border-[#2c3338] group relative sidebar-item">
-            <form action="{{ route('admin.logout') }}" method="POST" id="sidebar-logout-form" class="hidden">@csrf</form>
-            <a href="javascript:void(0)" onclick="document.getElementById('sidebar-logout-form').submit();" class="sidebar-item-link flex items-center px-3 py-[8px] transition hover:text-red-400 text-[#c3c4c7]">
-                <div class="w-5 h-5 mr-3 flex items-center justify-center text-[#c3c4c7] group-hover:text-red-400">
-                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1"/></svg>
-                </div>
-                <span class="text-[13px] collapse-text">Log Out</span>
             </a>
         </li>
     </ul>

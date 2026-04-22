@@ -29,8 +29,25 @@
                             <td class="p-2">
                                 <div class="font-semibold text-[#2271b1]">{{ $role->name }}</div>
                                 <div class="opacity-0 group-hover:opacity-100 flex gap-2 mt-1 text-[12px]">
-                                    <a href="{{ route('admin.roles.edit', $role->id) }}" class="text-[#2271b1] hover:text-[#135e96]">Edit</a>
-                                    @if(!in_array($role->slug, ['administrator', 'subscriber']))
+                                    @php
+                                        $isSystemRole = in_array($role->slug, ['super-admin', 'administrator', 'subscriber']);
+                                        $canManage = true;
+                                        $currentUser = auth()->user();
+                                        
+                                        // Protection Logic:
+                                        // 1. If target is Super Admin, only Super Admin can manage it.
+                                        if ($role->slug === 'super-admin' && !$currentUser->hasRole('super-admin')) {
+                                            $canManage = false;
+                                        }
+                                        
+                                        // 2. Administrators can manage themselves and others, but not Super Admin.
+                                    @endphp
+
+                                    @if($canManage)
+                                        <a href="{{ route('admin.roles.edit', $role->id) }}" class="text-[#2271b1] hover:text-[#135e96]">Edit</a>
+                                    @endif
+
+                                    @if(!$isSystemRole && $canManage)
                                         <span class="text-[#dcdcde]">|</span>
                                         <form action="{{ route('admin.roles.destroy', $role->id) }}" method="POST" class="inline">
                                             @csrf @method('DELETE')

@@ -78,9 +78,9 @@
                         <tr class="{{ $idx % 2 === 0 ? 'bg-[#f6f7f7]' : 'bg-[#fff]' }} group">
                             <td class="wp-table-cell text-center"><input type="checkbox" name="ids[]" value="{{ $tag->id }}" class="cb-select-item rounded-sm border-[#8c8f94] text-[#2271b1]"></td>
                             <td class="wp-table-cell align-top">
-                                <strong><a href="{{ route('admin.tags.edit', $tag) }}" class="text-[#2271b1] hover:text-[#135e96]">{{ $tag->name }}</a></strong>
+                                <strong><a href="{{ route('admin.tags.edit', [$tag, 'type' => 'post']) }}" class="text-[#2271b1] hover:text-[#135e96]">{{ $tag->name }}</a></strong>
                                 <div class="invisible group-hover:visible mt-1 text-[13px] space-x-1">
-                                    <a href="{{ route('admin.tags.edit', $tag) }}" class="text-[#2271b1]">Edit</a> <span class="text-[#c3c4c7]">|</span>
+                                    <a href="{{ route('admin.tags.edit', [$tag, 'type' => 'post']) }}" class="text-[#2271b1]">Edit</a> <span class="text-[#c3c4c7]">|</span>
                                     <button form="delete-form-{{ $tag->id }}" type="submit" class="text-[#b32d2e] hover:text-[#8a2424]" onclick="return confirm('Delete this tag?');">Delete</button>
                                      <span class="text-[#c3c4c7]">|</span>
                                     <a href="#" class="text-[#2271b1]">View</a>

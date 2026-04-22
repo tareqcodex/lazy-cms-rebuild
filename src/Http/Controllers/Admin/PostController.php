@@ -63,7 +63,8 @@ class PostController extends Controller
     public function index(Request $request)
     {
         $type = $request->query('type', 'post');
-        if (!auth()->user()->hasPermission($type === 'page' ? 'manage_pages' : 'manage_posts')) {
+        $permission = ($type === 'page') ? 'manage_pages' : (($type === 'post') ? 'manage_posts' : 'manage_' . $type);
+        if (!auth()->user()->hasPermission($permission)) {
             abort(403, "You do not have permission to manage {$type}s.");
         }
         $this->checkTypeActive($type);
@@ -127,7 +128,8 @@ class PostController extends Controller
     public function create(Request $request)
     {
         $type = $request->query('type', 'post');
-        if (!auth()->user()->hasPermission($type === 'page' ? 'manage_pages' : 'manage_posts')) {
+        $permission = ($type === 'page') ? 'manage_pages' : (($type === 'post') ? 'manage_posts' : 'manage_' . $type);
+        if (!auth()->user()->hasPermission($permission)) {
             abort(403, "You do not have permission to create {$type}s.");
         }
         $this->checkTypeActive($type);
@@ -175,7 +177,8 @@ class PostController extends Controller
     public function store(Request $request)
     {
         $type = $request->input('type', 'post');
-        if (!auth()->user()->hasPermission($type === 'page' ? 'manage_pages' : 'manage_posts')) {
+        $permission = ($type === 'page') ? 'manage_pages' : (($type === 'post') ? 'manage_posts' : 'manage_' . $type);
+        if (!auth()->user()->hasPermission($permission)) {
             abort(403, "You do not have permission to store {$type}s.");
         }
         $this->checkTypeActive($type);
@@ -264,7 +267,9 @@ class PostController extends Controller
 
     public function edit(Post $post)
     {
-        if (!auth()->user()->hasPermission($post->type === 'page' ? 'manage_pages' : 'manage_posts')) {
+        $type = $post->type;
+        $permission = ($type === 'page') ? 'manage_pages' : (($type === 'post') ? 'manage_posts' : 'manage_' . $type);
+        if (!auth()->user()->hasPermission($permission)) {
             abort(403, "You do not have permission to edit {$post->type}s.");
         }
         $this->checkTypeActive($post->type);
@@ -317,7 +322,9 @@ class PostController extends Controller
 
     public function update(Request $request, Post $post)
     {
-        if (!auth()->user()->hasPermission($post->type === 'page' ? 'manage_pages' : 'manage_posts')) {
+        $type = $post->type;
+        $permission = ($type === 'page') ? 'manage_pages' : (($type === 'post') ? 'manage_posts' : 'manage_' . $type);
+        if (!auth()->user()->hasPermission($permission)) {
             abort(403, "You do not have permission to update {$post->type}s.");
         }
         $this->checkTypeActive($post->type);
@@ -409,7 +416,9 @@ class PostController extends Controller
 
     public function destroy(Post $post)
     {
-        if (!auth()->user()->hasPermission($post->type === 'page' ? 'manage_pages' : 'manage_posts')) {
+        $type = $post->type;
+        $permission = ($type === 'page') ? 'manage_pages' : (($type === 'post') ? 'manage_posts' : 'manage_' . $type);
+        if (!auth()->user()->hasPermission($permission)) {
             abort(403, "You do not have permission to delete {$post->type}s.");
         }
         $type = $post->type;

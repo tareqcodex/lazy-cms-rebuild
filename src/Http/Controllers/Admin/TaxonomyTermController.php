@@ -23,12 +23,25 @@ class TaxonomyTermController extends Controller
         }
 
         $terms   = $query->latest()->paginate(20);
-        $parents = TaxonomyTerm::where('taxonomy_slug', $taxonomySlug)
+        
+        $allTerms = TaxonomyTerm::where('taxonomy_slug', $taxonomySlug)
             ->where('cpt_slug', $cptSlug)
-            ->whereNull('parent_id')
             ->get();
+            
+        $fullParents = collect();
+        $visitedIds = [];
+        $buildTree = function($parentId, $level) use (&$buildTree, $allTerms, &$fullParents, &$visitedIds) {
+            foreach ($allTerms->where('parent_id', $parentId) as $term) {
+                if (in_array($term->id, $visitedIds)) continue;
+                $visitedIds[] = $term->id;
+                $term->level = $level;
+                $fullParents->push($term);
+                $buildTree($term->id, $level + 1);
+            }
+        };
+        $buildTree(null, 0);
 
-        return view('cms-dashboard::admin.acpt.taxonomies.terms', compact('taxonomy', 'terms', 'parents', 'cptSlug'));
+        return view('cms-dashboard::admin.acpt.taxonomies.terms', compact('taxonomy', 'terms', 'fullParents', 'cptSlug'));
     }
 
     public function ajaxStore(Request $request)
@@ -90,6 +103,76 @@ class TaxonomyTermController extends Controller
         ]);
 
         return redirect()->back()->with('success', '"' . $request->name . '" added successfully.');
+    }
+
+    public function edit(Request $request, $taxonomySlug, $id)
+    {
+        $taxonomy = CustomTaxonomy::where('slug', $taxonomySlug)->firstOrFail();
+        $term = TaxonomyTerm::findOrFail($id);
+        $cptSlug = $request->query('cpt');
+
+        $allTerms = TaxonomyTerm::where('taxonomy_slug', $taxonomySlug)
+            ->where('cpt_slug', $cptSlug)
+            ->where('id', '!=', $id)
+            ->get();
+            
+        $fullParents = collect();
+        $visitedIds = [];
+        $buildTree = function($parentId, $level) use (&$buildTree, $allTerms, &$fullParents, &$visitedIds) {
+            foreach ($allTerms->where('parent_id', $parentId) as $t) {
+                if (in_array($t->id, $visitedIds)) continue;
+                $visitedIds[] = $t->id;
+                $t->level = $level;
+                $fullParents->push($t);
+                $buildTree($t->id, $level + 1);
+            }
+        };
+        $buildTree(null, 0);
+
+        return view('cms-dashboard::admin.acpt.taxonomies.term_edit', compact('taxonomy', 'term', 'fullParents', 'cptSlug'));
+    }
+
+    public function update(Request $request, $taxonomySlug, $id)
+    {
+        $term = TaxonomyTerm::findOrFail($id);
+        $cptSlug = $request->input('cpt_slug');
+
+        $request->validate([
+            'name'      => 'required|string|max:255',
+            'slug'      => 'nullable|string|max:255',
+            'parent_id' => [
+                'nullable',
+                'exists:taxonomy_terms,id',
+                function ($attribute, $value, $fail) use ($term) {
+                    if ($value == $term->id) {
+                        $fail('A term cannot be its own parent.');
+                        return;
+                    }
+                    if ($value) {
+                        $parent = TaxonomyTerm::find($value);
+                        while ($parent) {
+                            if ($parent->id == $term->id) {
+                                $fail('Circular reference detected: The selected parent is already a sub-term of this term.');
+                                break;
+                            }
+                            $parent = $parent->parent;
+                        }
+                    }
+                },
+            ],
+        ]);
+
+        $baseName = $request->slug ? $request->slug : $request->name;
+        $slug = TaxonomyTerm::generateUniqueSlug($baseName, $term->id, $cptSlug);
+
+        $term->update([
+            'name'        => $request->name,
+            'slug'        => $slug,
+            'description' => $request->description,
+            'parent_id'   => $request->parent_id ?: null,
+        ]);
+
+        return redirect()->route('admin.acpt.terms.index', [$taxonomySlug, 'cpt' => $cptSlug])->with('success', 'Term updated successfully.');
     }
 
     public function destroy(Request $request, $taxonomySlug, $id)

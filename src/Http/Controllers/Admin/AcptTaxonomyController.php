@@ -23,7 +23,7 @@ class AcptTaxonomyController extends Controller
 
     public function create()
     {
-        $postTypes = PostType::all();
+        $postTypes = PostType::where('is_builtin', false)->get();
         return view('cms-dashboard::admin.acpt.taxonomies.create', compact('postTypes'));
     }
 
@@ -56,7 +56,7 @@ class AcptTaxonomyController extends Controller
     public function edit($id)
     {
         $taxonomy = CustomTaxonomy::findOrFail($id);
-        $postTypes = PostType::all();
+        $postTypes = PostType::where('is_builtin', false)->get();
         return view('cms-dashboard::admin.acpt.taxonomies.edit', compact('taxonomy', 'postTypes'));
     }
 

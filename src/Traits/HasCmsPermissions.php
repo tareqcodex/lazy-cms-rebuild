@@ -16,7 +16,7 @@ trait HasCmsPermissions
 
     public function isAdmin(): bool
     {
-        return $this->hasRole('admin') || $this->hasRole('administrator');
+        return $this->hasRole('super-admin');
     }
 
     public function hasPermission(string $permission): bool

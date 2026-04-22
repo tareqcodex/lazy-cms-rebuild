@@ -35,17 +35,15 @@
                     <p class="text-[12px] text-[#646970] mt-1">URL-friendly version. Lowercase letters, numbers, and hyphens only.</p>
                 </div>
 
-                @if($parents->isNotEmpty())
                 <div class="mb-4">
                     <label class="block text-[13px] text-[#1d2327] mb-1">Parent {{ $taxonomy->singular_name ?? $taxonomy->name }}</label>
                     <select name="parent_id" class="wp-input w-full">
                         <option value="">None</option>
-                        @foreach($parents as $parent)
-                            <option value="{{ $parent->id }}">{{ $parent->name }}</option>
+                        @foreach($fullParents as $parent)
+                            <option value="{{ $parent->id }}">{{ str_repeat('— ', $parent->level ?? 0) }}{{ $parent->name }}</option>
                         @endforeach
                     </select>
                 </div>
-                @endif
 
                 <div class="mb-4">
                     <label class="block text-[13px] text-[#1d2327] mb-1">Description</label>
@@ -102,7 +100,7 @@
                                         <span class="text-[#646970] text-[12px]"> — {{ optional($term->parent)->name }}</span>
                                     @endif
                                     <div class="invisible group-hover:visible mt-1 text-[13px] space-x-1">
-                                        <a href="#" class="text-[#2271b1]">Edit</a>
+                                        <a href="{{ route('admin.acpt.terms.edit', [$taxonomy->slug, $term->id, 'cpt' => $cptSlug]) }}" class="text-[#2271b1]">Edit</a>
                                         <span class="text-[#c3c4c7]">|</span>
                                         <button form="delete-form-{{ $term->id }}" type="submit" class="text-[#b32d2e] hover:text-[#8a2424]">Delete</button>
                                     </div>

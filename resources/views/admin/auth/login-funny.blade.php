@@ -175,9 +175,11 @@
             </div>
         </form>
 
+        @if(get_cms_option('users_can_register', '0') == '1')
         <div class="footer-text">
             Not a legend yet? <a href="{{ route('admin.register') }}">Join Us</a>
         </div>
+        @endif
     </div>
 
     <script>

@@ -16,6 +16,19 @@
         </div>
     @endif
 
+    @if(session('error') || $errors->any())
+        <div class="bg-white border-l-4 border-[#d63638] shadow-sm p-3 mb-4 text-[13px]">
+            @if(session('error')) <p>{{ session('error') }}</p> @endif
+            @if($errors->any())
+                <ul class="list-disc pl-5">
+                    @foreach($errors->all() as $error)
+                        <li>{{ $error }}</li>
+                    @endforeach
+                </ul>
+            @endif
+        </div>
+    @endif
+
     <div class="flex flex-col md:flex-row gap-6">
         <!-- Add New Term Column -->
         <div class="w-full md:w-1/3">
@@ -23,7 +36,7 @@
             
             <form action="{{ route('admin.acpt.terms.store', $taxonomy->slug) }}" method="POST">
                 @csrf
-                <input type="hidden" name="cpt_slug" value="{{ request('cpt') }}">
+                <input type="hidden" name="cpt_slug" value="{{ request('cpt') ?: ($taxonomy->post_types[0] ?? '') }}">
                 <div class="mb-4">
                     <label class="block text-[14px] text-[#2c3338] mb-1 font-semibold">Name</label>
                     <input type="text" name="name" class="wp-input w-full" required>
@@ -40,8 +53,8 @@
                     <label class="block text-[14px] text-[#2c3338] mb-1 font-semibold">Parent {{ $taxonomy->singular_name ?? $taxonomy->name }}</label>
                     <select name="parent_id" class="wp-input w-full h-8 py-0">
                         <option value="">None</option>
-                        @foreach($terms as $t)
-                            <option value="{{ $t->id }}">{{ $t->name }}</option>
+                        @foreach($fullTree ?? [] as $t)
+                            <option value="{{ $t->id }}">{{ str_repeat('— ', $t->level ?? 0) }}{{ $t->name }}</option>
                         @endforeach
                     </select>
                 </div>
@@ -87,9 +100,9 @@
                             <tr class="border-b border-[#f0f0f1] hover:bg-[#f6f7f7] group">
                                 <td class="p-3"><input type="checkbox" name="ids[]" value="{{ $term->id }}" class="item-checkbox"></td>
                                 <td class="p-3">
-                                    <a href="#" class="text-[#2271b1] font-bold block">{{ str_repeat('— ', $term->level ?? 0) }}{{ $term->name }}</a>
+                                    <a href="{{ route('admin.acpt.terms.edit', [$taxonomy->slug, $term->id, 'cpt' => request('cpt') ?: ($taxonomy->post_types[0] ?? '')]) }}" class="text-[#2271b1] font-bold block">{{ str_repeat('— ', $term->level ?? 0) }}{{ $term->name }}</a>
                                     <div class="mt-1 invisible group-hover:visible space-x-2 text-[12px]">
-                                        <a href="{{ route('admin.acpt.terms.edit', [$taxonomy->slug, $term->id]) }}" class="text-[#2271b1]">Edit</a> | 
+                                        <a href="{{ route('admin.acpt.terms.edit', [$taxonomy->slug, $term->id, 'cpt' => request('cpt') ?: ($taxonomy->post_types[0] ?? '')]) }}" class="text-[#2271b1]">Edit</a> | 
                                         <button type="button" class="text-[#b32d2e] hover:underline delete-term-btn" data-id="{{ $term->id }}">Delete</button>
                                     </div>
                                 </td>

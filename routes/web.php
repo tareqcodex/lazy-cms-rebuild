@@ -1,5 +1,5 @@
 <?php
-
+ 
 use Illuminate\Support\Facades\Route;
 use Acme\CmsDashboard\Http\Controllers\Admin\PostController;
 use Acme\CmsDashboard\Http\Controllers\Admin\PostTypeController;
@@ -15,17 +15,23 @@ use Acme\CmsDashboard\Http\Controllers\Admin\AcptTaxonomyController;
 use Acme\CmsDashboard\Http\Controllers\Admin\AcptTermController;
 use Acme\CmsDashboard\Http\Controllers\FrontendController;
 
-// Dynamic Login & Registration URLs from Settings (Highest Priority)
-Route::middleware(['web'])->group(function() {
-    try {
-        $login_slug = get_cms_option('login_url', 'super-lazy-admin');
-        $register_slug = get_cms_option('register_url', 'super-lazy-register');
+// 1. Dynamic Login & Registration URLs (Highest Priority - Outside any group)
+$login_slug = get_cms_option('login_url', 'super-lazy-admin');
+$register_slug = get_cms_option('register_url', 'super-lazy-register');
 
-        Route::get($login_slug, [LoginController::class, 'showLoginForm']);
-        Route::get($register_slug, [RegisterController::class, 'showRegistrationForm']);
-    } catch (\Exception $e) {}
+Route::middleware(['web'])->group(function() use ($login_slug, $register_slug) {
+    Route::get($login_slug, [LoginController::class, 'showLoginForm'])->name('admin.login');
+    Route::post($login_slug, [LoginController::class, 'login']);
+    
+    Route::get($register_slug, [RegisterController::class, 'showRegistrationForm'])->name('admin.register');
+    Route::post($register_slug, [RegisterController::class, 'register']);
+
+    // Redirect standard admin/login and admin/register to custom slugs
+    Route::get('admin/login', function() use ($login_slug) { return redirect($login_slug); });
+    Route::get('admin/register', function() use ($register_slug) { return redirect($register_slug); });
 });
 
+// 2. Authenticated Admin Routes
 Route::prefix('admin')->name('admin.')->middleware(['web', \Acme\CmsDashboard\Http\Middleware\AdminMiddleware::class])->group(function () {
     // Media and posts
     Route::get('media', [MediaController::class, 'index'])->name('media.index');
@@ -33,7 +39,7 @@ Route::prefix('admin')->name('admin.')->middleware(['web', \Acme\CmsDashboard\Ht
     Route::post('media', [MediaController::class, 'store'])->name('media.store');
     Route::put('media/{media}', [MediaController::class, 'update'])->name('media.update');
     Route::delete('media/{media}', [MediaController::class, 'destroy'])->name('media.destroy');
-
+ 
     Route::get('edit-post', [PostController::class, 'edit'])->name('edit-post');
     Route::post('posts/bulk', [PostController::class, 'bulk'])->name('posts.bulk');
     Route::post('categories/bulk', [\Acme\CmsDashboard\Http\Controllers\Admin\CategoryController::class, 'bulk'])->name('categories.bulk');
@@ -44,13 +50,26 @@ Route::prefix('admin')->name('admin.')->middleware(['web', \Acme\CmsDashboard\Ht
     Route::get('builder/{id}', [PostController::class, 'builder'])->name('builder');
     Route::post('builder/{id}/save', [PostController::class, 'saveBuilder'])->name('builder.save');
     Route::get('builder/{id}/preview', [PostController::class, 'previewBuilder'])->name('builder.preview');
-
+ 
     Route::post('pages/bulk', [\Acme\CmsDashboard\Http\Controllers\Admin\PageController::class, 'bulk'])->name('pages.bulk');
     Route::post('pages/{page}/restore', [\Acme\CmsDashboard\Http\Controllers\Admin\PageController::class, 'restore'])->name('pages.restore')->withTrashed();
     Route::delete('pages/{page}/force-delete', [\Acme\CmsDashboard\Http\Controllers\Admin\PageController::class, 'forceDelete'])->name('pages.force-delete')->withTrashed();
     Route::resource('pages', \Acme\CmsDashboard\Http\Controllers\Admin\PageController::class);
-    Route::resource('categories', \Acme\CmsDashboard\Http\Controllers\Admin\CategoryController::class);
-    Route::resource('tags', \Acme\CmsDashboard\Http\Controllers\Admin\TagController::class);
+
+    // Categories
+    Route::get('categories', [\Acme\CmsDashboard\Http\Controllers\Admin\CategoryController::class, 'index'])->name('categories.index');
+    Route::post('categories', [\Acme\CmsDashboard\Http\Controllers\Admin\CategoryController::class, 'store'])->name('categories.store');
+    Route::get('categories/edit/{category}', [\Acme\CmsDashboard\Http\Controllers\Admin\CategoryController::class, 'edit'])->name('categories.edit');
+    Route::put('categories/{category}', [\Acme\CmsDashboard\Http\Controllers\Admin\CategoryController::class, 'update'])->name('categories.update');
+    Route::delete('categories/{category}', [\Acme\CmsDashboard\Http\Controllers\Admin\CategoryController::class, 'destroy'])->name('categories.destroy');
+
+    // Tags
+    Route::get('tags', [\Acme\CmsDashboard\Http\Controllers\Admin\TagController::class, 'index'])->name('tags.index');
+    Route::post('tags', [\Acme\CmsDashboard\Http\Controllers\Admin\TagController::class, 'store'])->name('tags.store');
+    Route::get('tags/edit/{tag}', [\Acme\CmsDashboard\Http\Controllers\Admin\TagController::class, 'edit'])->name('tags.edit');
+    Route::put('tags/{tag}', [\Acme\CmsDashboard\Http\Controllers\Admin\TagController::class, 'update'])->name('tags.update');
+    Route::delete('tags/{tag}', [\Acme\CmsDashboard\Http\Controllers\Admin\TagController::class, 'destroy'])->name('tags.destroy');
+
     Route::resource('post-types', PostTypeController::class)->only(['index', 'store', 'destroy']);
     
     Route::post('categories/ajax', function(\Illuminate\Http\Request $request) {
@@ -66,7 +85,7 @@ Route::prefix('admin')->name('admin.')->middleware(['web', \Acme\CmsDashboard\Ht
         
         return response()->json($category);
     })->name('categories.ajax');
-
+ 
     // Navigation Menus
     Route::resource('menus', \Acme\CmsDashboard\Http\Controllers\Admin\MenuManagementController::class);
     
@@ -75,7 +94,7 @@ Route::prefix('admin')->name('admin.')->middleware(['web', \Acme\CmsDashboard\Ht
     Route::post('taxonomies/{slug}/terms', [\Acme\CmsDashboard\Http\Controllers\Admin\TaxonomyTermController::class, 'store'])->name('old.terms.store');
     Route::delete('taxonomies/{slug}/terms/{id}', [\Acme\CmsDashboard\Http\Controllers\Admin\TaxonomyTermController::class, 'destroy'])->name('old.terms.destroy');
     Route::post('taxonomies/{slug}/terms/bulk', [\Acme\CmsDashboard\Http\Controllers\Admin\TaxonomyTermController::class, 'bulk'])->name('old.terms.bulk');
-
+ 
     // Advanced Custom Post Types (ACPT) - Latest Version
     Route::prefix('acpt')->name('acpt.')->group(function() {
         Route::post('cpt/bulk', [AcptCptController::class, 'bulk'])->name('cpt.bulk');
@@ -96,33 +115,27 @@ Route::prefix('admin')->name('admin.')->middleware(['web', \Acme\CmsDashboard\Ht
         Route::post('fields/store-field', [CustomFieldController::class, 'storeField'])->name('fields.store-field');
         Route::resource('fields', CustomFieldController::class);
     });
-
+ 
     // Dashboard index
     Route::get('/', [DashboardController::class, 'index'])->name('dashboard.index');
-
+ 
     // Users
     Route::get('profile', function() {
         return redirect()->route('admin.users.edit', auth()->id());
     })->name('profile');
     Route::resource('users', UserController::class);
     Route::resource('roles', RoleController::class);
-
+ 
     // Settings
     Route::get('settings', [DashboardController::class, 'settings'])->name('settings.index');
     Route::post('settings', [DashboardController::class, 'updateSettings'])->name('settings.update');
-
-    // Auth
-    Route::get('login', [LoginController::class, 'showLoginForm'])->name('login');
-    Route::post('login', [LoginController::class, 'login']);
+ 
     Route::post('logout', [LoginController::class, 'logout'])->name('logout');
     Route::post('login/check', [LoginController::class, 'checkCredentials'])->name('login.check');
     Route::post('admin/login/check', [LoginController::class, 'checkCredentials'])->name('admin.login.check');
-
-    Route::get('register', [RegisterController::class, 'showRegistrationForm'])->name('register');
-    Route::post('register', [RegisterController::class, 'register']);
     Route::post('email/check', [RegisterController::class, 'checkEmail'])->name('email.check');
     Route::post('admin/email/check', [RegisterController::class, 'checkEmail'])->name('admin.email.check');
-
+ 
     // DB Fix / Seeding
     Route::get('fix-db', function() {
         try {
@@ -143,14 +156,14 @@ Route::prefix('admin')->name('admin.')->middleware(['web', \Acme\CmsDashboard\Ht
             if ($usersMenu) {
                 \Acme\CmsDashboard\Models\Menu::updateOrCreate(['parent_id' => $usersMenu->id, 'title' => 'Roles'], ['route' => 'admin.roles.index', 'order' => 3]);
             }
-
+ 
             return "Database and Menus fixed successfully!";
         } catch (\Exception $e) {
             return "Error: " . $e->getMessage();
         }
     });
-
+ 
     // Frontend Routes (Catch-all for posts/pages)
     Route::get('/{typeOrSlug}/{slug?}', [FrontendController::class, 'show'])->name('frontend.show');
-
+ 
 });

@@ -72,9 +72,11 @@
             <button type="submit" class="btn-modern">Sign In</button>
         </form>
 
+        @if(get_cms_option('users_can_register', '0') == '1')
         <p class="text-center mt-8 text-sm text-gray-500">
             Don't have an account? <a href="{{ route('admin.register') }}" class="text-indigo-600 hover:text-indigo-500 font-semibold">Sign up</a>
         </p>
+        @endif
     </div>
 
     <script>

@@ -46,14 +46,35 @@
                         <label class="text-[14px] font-semibold text-[#1d2327]">Privileges</label>
                     </th>
                     <td>
-                        <div class="grid grid-cols-2 gap-4">
-                            @foreach($permissions as $permission)
-                                <label class="inline-flex items-center">
-                                    <input type="checkbox" name="permissions[]" value="{{ $permission->id }}" 
-                                        class="w-4 h-4 mr-2" {{ in_array($permission->id, $rolePermissions) ? 'checked' : '' }}>
-                                    <span class="text-[13px] text-[#1d2327]">{{ $permission->name }}</span>
-                                </label>
-                            @endforeach
+                        <div class="space-y-6">
+                            <!-- Core Permissions -->
+                            <div>
+                                <h4 class="text-[12px] font-bold text-[#1d2327] uppercase tracking-wider mb-3 border-b border-[#f0f0f1] pb-1">Core Permissions</h4>
+                                <div class="grid grid-cols-2 gap-x-4 gap-y-2">
+                                    @foreach($corePermissions as $permission)
+                                        <label class="inline-flex items-center">
+                                            <input type="checkbox" name="permissions[]" value="{{ $permission->id }}" 
+                                                class="w-4 h-4 mr-2" {{ in_array($permission->id, $rolePermissions) ? 'checked' : '' }}>
+                                            <span class="text-[13px] text-[#1d2327]">{{ $permission->name }}</span>
+                                        </label>
+                                    @endforeach
+                                </div>
+                            </div>
+
+                            <!-- CPT Permissions -->
+                            @if($cptPermissions->count() > 0)
+                            <div>
+                                <div class="grid grid-cols-2 gap-x-4 gap-y-2">
+                                    @foreach($cptPermissions as $permission)
+                                        <label class="inline-flex items-center">
+                                            <input type="checkbox" name="permissions[]" value="{{ $permission->id }}" 
+                                                class="w-4 h-4 mr-2" {{ in_array($permission->id, $rolePermissions) ? 'checked' : '' }}>
+                                            <span class="text-[13px] text-[#1d2327]">{{ $permission->name }}</span>
+                                        </label>
+                                    @endforeach
+                                </div>
+                            </div>
+                            @endif
                         </div>
                     </td>
                 </tr>
