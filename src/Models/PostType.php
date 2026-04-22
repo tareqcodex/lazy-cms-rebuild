@@ -1,0 +1,24 @@
+<?php
+
+namespace Acme\CmsDashboard\Models;
+
+use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\HasMany;
+
+class PostType extends Model
+{
+    protected $fillable = ['name', 'singular_name', 'slug', 'description', 'icon', 'is_builtin', 'is_active', 'show_in_menu', 'is_public', 'supports'];
+
+    protected $casts = [
+        'supports' => 'array',
+        'is_builtin' => 'boolean',
+        'is_active' => 'boolean',
+        'show_in_menu' => 'boolean',
+        'is_public' => 'boolean',
+    ];
+
+    public function posts(): HasMany
+    {
+        return $this->hasMany(Post::class, 'type', 'slug');
+    }
+}
