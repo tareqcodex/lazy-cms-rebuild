@@ -40,7 +40,11 @@
                 <li class="{{ $liClasses }}">
                     <a href="{{ $href }}" class="sidebar-item-link relative flex items-center px-3 py-[8px] transition-colors {{ $isActive ? 'bg-[#2271b1] text-white' : 'hover:bg-[#2c3338] hover:text-[#72aee6] text-[#c3c4c7]' }}">
                         <div class="w-5 h-5 mr-3 flex items-center justify-center {!! $isActive ? 'text-white' : 'text-[#c3c4c7] group-hover:text-[#72aee6]' !!}">
-                            {!! $menu->icon !!}
+                            @if(str_starts_with($menu->icon, '<svg'))
+                                {!! $menu->icon !!}
+                            @else
+                                <span class="material-symbols-outlined text-[20px]">{{ $menu->icon ?: 'radio_button_unchecked' }}</span>
+                            @endif
                         </div>
                         <span class="text-[14px] leading-none {{ $isActive ? 'font-semibold' : '' }}">{{ $menu->title }}</span>
                         @if($isActive)
@@ -85,18 +89,35 @@
                 </li>
             @endforeach
         @endforeach
-        
-        <!-- Collapse Menu Option -->
-        <li class="mt-4 border-t border-[#2c3338] group relative sidebar-item">
-            <a href="javascript:void(0)" id="collapse-sidebar" class="sidebar-item-link flex items-center px-3 py-2 transition hover:text-[#72aee6] text-[#c3c4c7]">
-                <div class="w-5 h-5 mr-3 opacity-80 group-hover:opacity-100 collapse-icon transition-transform flex items-center justify-center">
-                    <div class="w-5 h-5 rounded-full bg-[#c3c4c7] flex items-center justify-center shadow-sm">
-                        <svg class="w-3 h-3 text-[#1d2327]" fill="none" stroke="currentColor" stroke-width="4" stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24"><polyline points="15 18 9 12 15 6"></polyline></svg>
-                    </div>
-                </div>
-                <span class="text-[13px] collapse-text">Collapse Menu</span>
-            </a>
-        </li>
+
+        {{-- Dynamic Options Pages --}}
+        @php $customPages = config('lazy-options.pages') ?? []; @endphp
+        @if(!empty($customPages))
+            <li class="mt-4 mb-1 px-3 text-[10px] font-semibold text-[#8c8f94] uppercase tracking-wider">Custom Options</li>
+            @foreach($customPages as $slug => $page)
+                @php 
+                    $href = route('admin.options.index', $slug);
+                    $isActive = request()->is('admin/options/' . $slug);
+                @endphp
+                <li class="group sidebar-item relative">
+                    <a href="{{ $href }}" class="sidebar-item-link relative flex items-center px-3 py-[8px] transition-colors {{ $isActive ? 'bg-[#2271b1] text-white' : 'hover:bg-[#2c3338] hover:text-[#72aee6] text-[#c3c4c7]' }}">
+                        <div class="w-5 h-5 mr-3 flex items-center justify-center {!! $isActive ? 'text-white' : 'text-[#c3c4c7] group-hover:text-[#72aee6]' !!}">
+                            @if(isset($page['icon']) && str_starts_with($page['icon'], '<svg'))
+                                {!! $page['icon'] !!}
+                            @elseif(isset($page['icon']))
+                                <span class="material-symbols-outlined text-[20px]">{{ $page['icon'] }}</span>
+                            @else
+                                <span class="material-symbols-outlined text-[20px]">settings</span>
+                            @endif
+                        </div>
+                        <span class="text-[14px] leading-none {{ $isActive ? 'font-semibold' : '' }}">{{ $page['title'] }}</span>
+                        @if($isActive)
+                            <div class="absolute right-0 top-1/2 -translate-y-1/2 w-0 h-0 border-y-[6px] border-y-transparent border-r-[6px] border-r-[#f0f0f1]"></div>
+                        @endif
+                    </a>
+                </li>
+            @endforeach
+        @endif
     </ul>
 </div>
 

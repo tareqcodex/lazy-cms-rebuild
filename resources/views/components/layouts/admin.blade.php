@@ -6,6 +6,7 @@
     <title>{{ $title ?? 'Dashboard' }} &lsaquo; CMS &#8212; WordPress</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js"></script>
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200" />
     <style>
         body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Oxygen-Sans, Ubuntu, Cantarell, "Helvetica Neue", sans-serif; background-color: #f0f0f1; transition: padding-left 0.2s; padding-left: 160px; }
         .wp-btn-primary { background: #2271b1; color: #fff; border: 1px solid #2271b1; border-radius: 3px; padding: 0 10px; min-height: 30px; font-size: 13px; line-height: 2.15384615; cursor: pointer; transition: all 0.1s; display: inline-flex; align-items: center; }

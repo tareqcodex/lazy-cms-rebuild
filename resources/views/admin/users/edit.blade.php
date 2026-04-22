@@ -19,13 +19,12 @@
                 <tr>
                     <th scope="row" class="w-[200px] text-left align-top pt-2"><label for="password" class="text-[14px] font-semibold text-[#1d2327]">New Password</label></th>
                     <td>
-                        <input type="password" name="password" id="password" class="wp-input w-[400px] h-8 shadow-sm mb-1">
-                        <p class="text-[12px] text-[#646970]">Leave blank if you don't want to change it.</p>
+                        <input type="password" name="password" id="password" class="wp-input w-[400px] h-8 shadow-sm mb-1" required>
                     </td>
                 </tr>
                 <tr>
                     <th scope="row" class="w-[200px] text-left align-top pt-2"><label for="password_confirmation" class="text-[14px] font-semibold text-[#1d2327]">Confirm New Password</label></th>
-                    <td><input type="password" name="password_confirmation" id="password_confirmation" class="wp-input w-[400px] h-8 shadow-sm"></td>
+                    <td><input type="password" name="password_confirmation" id="password_confirmation" class="wp-input w-[400px] h-8 shadow-sm" required></td>
                 </tr>
                 <tr>
                     <th scope="row" class="w-[200px] text-left align-top pt-2"><label for="role_id" class="text-[14px] font-semibold text-[#1d2327]">Role</label></th>

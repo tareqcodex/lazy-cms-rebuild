@@ -22,6 +22,14 @@ class Post extends Model
         'published_at' => 'datetime',
     ];
 
+    public function scopePublished(Builder $query): Builder
+    {
+        return $query->where('status', 'published')
+                     ->whereHas('user', function($q) {
+                         $q->where('is_blocked', false);
+                     });
+    }
+
     public function scopeType(Builder $query, string $type): Builder
     {
         return $query->where('type', $type);

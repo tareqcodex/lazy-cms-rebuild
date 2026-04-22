@@ -113,7 +113,7 @@ class Sidebar extends Component
         }
 
         // Users
-        if (str_contains($targetPath, 'admin/users')) return $user->hasPermission('manage_users');
+        if (str_contains($targetPath, 'admin/users') || str_contains($targetPath, 'admin/blacklist')) return $user->hasPermission('manage_users');
         
         // Roles
         if (str_contains($targetPath, 'admin/roles')) return $user->hasPermission('manage_roles');

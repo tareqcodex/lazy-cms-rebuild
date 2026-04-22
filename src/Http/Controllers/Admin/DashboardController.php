@@ -15,20 +15,37 @@ class DashboardController extends Controller
     public function index()
     {
         $stats = [
-            'client_rating' => [
+            'total_posts' => [
                 'label' => 'Total Posts',
-                'score' => Post::count(),
-                'change' => '+12.5%'
+                'count' => Post::where('type', 'post')->count(),
+                'change' => '+4.2%'
             ],
-            'instagram_followers' => [
+            'total_pages' => [
+                'label' => 'Total Pages',
+                'count' => Post::where('type', 'page')->count(),
+                'change' => '+1.5%'
+            ],
+            'total_users' => [
                 'label' => 'Total Users',
                 'count' => User::count(),
-                'change' => '-1.2%'
+                'change' => '+2.1%'
             ],
-            'total_revenue' => [
-                'label' => 'Media Library',
-                'amount' => DB::table('media')->count(),
-                'change' => '+8.4%'
+            'blocked_users' => [
+                'label' => 'Blocked Users',
+                'count' => User::where('is_blocked', true)->orWhere(function($q){
+                    $q->whereNotNull('blocked_until')->where('blocked_until', '>', now());
+                })->count(),
+                'change' => 'Security'
+            ],
+            'blacklisted_ips' => [
+                'label' => 'Blacklisted IPs',
+                'count' => \Acme\CmsDashboard\Models\BlockedIp::count(),
+                'change' => 'Protection'
+            ],
+            'media_count' => [
+                'label' => 'Media Assets',
+                'count' => DB::table('media')->count(),
+                'change' => '+12.3%'
             ],
             'main_chart' => [
                 'labels' => ['Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'],
@@ -36,20 +53,12 @@ class DashboardController extends Controller
                 'data2' => [20, 30, 25, 40, 30, 45, 40]
             ],
             'traffic_stats' => [
-                'new_subscribers' => [
-                    'value' => Post::where('type', 'page')->count(),
-                    'change' => '+15%',
-                    'data' => [10, 15, 8, 20, 18, 25, 22]
-                ],
+                'labels' => ['Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'],
+                'impressions' => [300, 450, 350, 500, 400, 600, 550],
+                'visitors' => [200, 300, 250, 400, 300, 450, 400],
                 'conversion_rate' => [
                     'value' => '24.8%',
-                    'change' => '-2.4%',
-                    'data' => [20, 18, 15, 22, 20, 18, 16]
-                ],
-                'bounce_rate' => [
-                    'value' => '42.5%',
-                    'change' => '+0.8%',
-                    'data' => [40, 42, 45, 41, 43, 40, 42]
+                    'change' => '-2.4%'
                 ]
             ]
         ];

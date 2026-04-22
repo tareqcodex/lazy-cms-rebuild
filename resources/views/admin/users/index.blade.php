@@ -19,7 +19,8 @@
                 <li class="px-2 border-r border-slate-300"><a href="{{ route('admin.users.index', ['role' => 'administrator']) }}" class="{{ request('role') == 'administrator' ? 'font-bold' : 'text-[#2271b1]' }}">Administrator <span class="text-[#646970] font-normal">({{ $adminCount }})</span></a></li>
                 <li class="px-2 border-r border-slate-300"><a href="{{ route('admin.users.index', ['role' => 'editor']) }}" class="{{ request('role') == 'editor' ? 'font-bold' : 'text-[#2271b1]' }}">Editor <span class="text-[#646970] font-normal">({{ $editorCount }})</span></a></li>
                 <li class="px-2 border-r border-slate-300"><a href="{{ route('admin.users.index', ['role' => 'author']) }}" class="{{ request('role') == 'author' ? 'font-bold' : 'text-[#2271b1]' }}">Author <span class="text-[#646970] font-normal">({{ $authorCount }})</span></a></li>
-                <li class="pl-2"><a href="{{ route('admin.users.index', ['role' => 'subscriber']) }}" class="{{ request('role') == 'subscriber' ? 'font-bold' : 'text-[#2271b1]' }}">Subscriber <span class="text-[#646970] font-normal">({{ $subscriberCount }})</span></a></li>
+                <li class="px-2 border-r border-slate-300"><a href="{{ route('admin.users.index', ['role' => 'subscriber']) }}" class="{{ request('role') == 'subscriber' ? 'font-bold' : 'text-[#2271b1]' }}">Subscriber <span class="text-[#646970] font-normal">({{ $subscriberCount }})</span></a></li>
+                <li class="pl-2"><a href="{{ route('admin.users.index', ['status' => 'blocked']) }}" class="{{ request('status') == 'blocked' ? 'font-bold' : 'text-[#2271b1]' }}">Blocked <span class="text-[#f87171] font-normal">({{ $blockedCount }})</span></a></li>
             </ul>
         </div>
 
@@ -58,13 +59,29 @@
                                 <div class="flex items-center gap-2">
                                     <img src="https://secure.gravatar.com/avatar/{{ md5($user->email) }}?s=32&d=mm" class="w-8 h-8 rounded">
                                     <div>
-                                        <a href="{{ route('admin.users.edit', $user) }}" class="text-[#2271b1] block">{{ $user->username ?: $user->name }}</a>
-                                        <div class="flex gap-2 opacity-0 group-hover:opacity-100 text-[12px] mt-1 pr-4">
+                                        @php 
+                                            $isBlocked = $user->is_blocked || ($user->blocked_until && $user->blocked_until->isFuture());
+                                        @endphp
+                                        <div class="flex items-center gap-2">
+                                            <a href="{{ route('admin.users.edit', $user) }}" class="text-[#2271b1] font-semibold">{{ $user->username ?: $user->name }}</a>
+                                            @if($isBlocked)
+                                                <span class="bg-[#f87171] text-white text-[10px] px-1.5 py-0.5 rounded font-bold uppercase">Blocked</span>
+                                            @endif
+                                        </div>
+                                        <div class="flex gap-2 opacity-0 group-hover:opacity-100 text-[12px] mt-1 pr-4 items-center">
                                             <a href="{{ route('admin.users.edit', $user) }}" class="text-[#2271b1]">Edit</a>
                                             <span class="text-[#c3c4c7]">|</span>
                                             <form action="{{ route('admin.users.destroy', $user) }}" method="POST" class="inline" onsubmit="return confirm('Are you sure?')">
                                                 @csrf @method('DELETE')
                                                 <button type="submit" class="text-[#b32d2e] {{ auth()->id() == $user->id ? 'hidden' : '' }}">Delete</button>
+                                            </form>
+                                            <span class="text-[#c3c4c7] {{ auth()->id() == $user->id ? 'hidden' : '' }}">|</span>
+                                            
+                                            <form action="{{ route('admin.users.toggle-block', $user) }}" method="POST" class="inline">
+                                                @csrf
+                                                <button type="submit" class="{{ $isBlocked ? 'text-[#00a32a]' : 'text-[#b32d2e]' }} {{ auth()->id() == $user->id ? 'hidden' : '' }}">
+                                                    {{ $isBlocked ? 'Unblock' : 'Block' }}
+                                                </button>
                                             </form>
                                             <span class="text-[#c3c4c7] {{ auth()->id() == $user->id ? 'hidden' : '' }}">|</span>
                                             <a href="#" class="text-[#2271b1]">View</a>

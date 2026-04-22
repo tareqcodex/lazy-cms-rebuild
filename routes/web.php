@@ -124,6 +124,14 @@ Route::prefix('admin')->name('admin.')->middleware(['web', \Acme\CmsDashboard\Ht
         return redirect()->route('admin.users.edit', auth()->id());
     })->name('profile');
     Route::resource('users', UserController::class);
+    Route::post('users/{user}/toggle-block', [UserController::class, 'toggleBlock'])->name('users.toggle-block');
+    Route::get('blacklist', [\Acme\CmsDashboard\Http\Controllers\Admin\BlacklistController::class, 'index'])->name('blacklist.index');
+    Route::delete('blacklist/{id}', [\Acme\CmsDashboard\Http\Controllers\Admin\BlacklistController::class, 'destroy'])->name('blacklist.destroy');
+    
+    // Dynamic Options Pages
+    Route::get('options/{slug}', [\Acme\CmsDashboard\Http\Controllers\Admin\CustomOptionsController::class, 'index'])->name('options.index');
+    Route::post('options/{slug}', [\Acme\CmsDashboard\Http\Controllers\Admin\CustomOptionsController::class, 'update'])->name('options.update');
+
     Route::resource('roles', RoleController::class);
  
     // Settings
