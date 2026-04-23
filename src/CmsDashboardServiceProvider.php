@@ -9,6 +9,10 @@ class CmsDashboardServiceProvider extends ServiceProvider
 {
     public function boot(): void
     {
+        \Illuminate\Support\Facades\Gate::before(function ($user, $ability) {
+            return $user->role && $user->role->slug === 'super-admin' ? true : null;
+        });
+
         $this->loadRoutesFrom(__DIR__ . '/../routes/web.php');
         $this->loadMigrationsFrom(__DIR__ . '/../database/migrations');
         $this->loadViewsFrom(__DIR__ . '/../resources/views', 'cms-dashboard');

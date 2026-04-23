@@ -66,6 +66,7 @@ class InstallLazyCms extends Command
         // 6. Create Default Roles
         $this->info('Creating default roles...');
         $roles = [
+            ['name' => 'Super Admin', 'slug' => 'super-admin', 'description' => 'Unrestricted access to all system features.'],
             ['name' => 'Administrator', 'slug' => 'administrator', 'description' => 'Full access to all settings and content.'],
             ['name' => 'Editor', 'slug' => 'editor', 'description' => 'Can publish and manage posts.'],
             ['name' => 'Author', 'slug' => 'author', 'description' => 'Can publish and manage their own posts.'],
@@ -75,7 +76,7 @@ class InstallLazyCms extends Command
         foreach ($roles as $roleData) {
             $role = Role::updateOrCreate(['slug' => $roleData['slug']], $roleData);
             
-            if ($role->slug === 'administrator') {
+            if ($role->slug === 'administrator' || $role->slug === 'super-admin') {
                 $allPermissionIds = \Acme\CmsDashboard\Models\Permission::pluck('id')->toArray();
                 $role->permissions()->sync($allPermissionIds);
             }
@@ -98,7 +99,7 @@ class InstallLazyCms extends Command
             $this->info('No password entered. Defaulting to: password');
         }
 
-        $adminRole = Role::where('slug', 'administrator')->first();
+        $adminRole = Role::where('slug', 'super-admin')->first();
 
         $user = User::updateOrCreate(
             ['email' => $email],
