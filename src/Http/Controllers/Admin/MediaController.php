@@ -124,7 +124,10 @@ class MediaController extends Controller
             'user_id' => auth()->id(),
         ]);
 
-        return response()->json($media);
+        return response()->json([
+            'success' => true,
+            'data' => $media
+        ]);
     }
 
     public function bulkDestroy(Request $request)
@@ -178,7 +181,10 @@ class MediaController extends Controller
         $media->save();
 
         if ($request->ajax() || $request->expectsJson()) {
-            return response()->json($media);
+            return response()->json([
+            'success' => true,
+            'data' => $media
+        ]);
         }
 
         return redirect()->back()->with('success', 'Media updated successfully');

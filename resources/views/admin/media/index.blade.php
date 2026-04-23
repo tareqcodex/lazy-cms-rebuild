@@ -497,7 +497,8 @@
                     body: JSON.stringify(data)
                 })
                 .then(res => res.json())
-                .then(data => {
+                .then(response => {
+                    const data = response.data;
                     this.innerText = 'Update';
                     this.disabled = false;
                     statusMsg.classList.remove('hidden');
