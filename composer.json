@@ -1,0 +1,22 @@
+{
+    "name": "tareqcodex/lazy-cms-rebuild",
+    "description": "A reusable WordPress-like admin dashboard package.",
+    "type": "library",
+    "require": {
+        "php": "^8.1",
+        "illuminate/support": "^10.0|^11.0|^12.0|^13.0"
+    },
+    "autoload": {
+        "psr-4": {
+            "Acme\\CmsDashboard\\": "src/",
+            "Acme\\CmsDashboard\\Database\\Seeders\\": "database/seeders/"
+        }
+    },
+    "extra": {
+        "laravel": {
+            "providers": [
+                "Acme\\CmsDashboard\\CmsDashboardServiceProvider"
+            ]
+        }
+    }
+}
