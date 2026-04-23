@@ -32,7 +32,7 @@ class InstallLazyCms extends Command
         $this->info('Setting up default configurations...');
         $options = [
             'login_url' => 'lazy-admin',
-            'register_url' => 'lazy-lazy-registration',
+            'register_url' => 'lazy-registration',
             'login_theme' => 'breeze',
             'register_theme' => 'breeze',
         ];
@@ -109,6 +109,6 @@ class InstallLazyCms extends Command
         $this->info("Login Email: {$email}");
         $this->info("Login Password: " . (empty($password) ? 'password' : ' [hidden]'));
         $this->info('Login URL: ' . url('/lazy-admin'));
-        $this->info('Registration URL: ' . url('/lazy-lazy-registration'));
+        $this->info('Registration URL: ' . url('/lazy-registration'));
     }
 }
