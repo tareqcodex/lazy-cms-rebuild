@@ -52,7 +52,6 @@ return [
     // ],
 
     // New standalone custom pages
-    // Retrieval: Use {{ get_cms_option('field_key') }} in frontend to show these values.
     'pages' => [
         'ad-settings' => [
             'title' => 'Ad Management',
