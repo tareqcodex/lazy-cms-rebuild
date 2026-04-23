@@ -17,6 +17,7 @@ return new class extends Migration
             $table->text('description')->nullable();
             $table->string('icon')->nullable();
             $table->boolean('is_builtin')->default(false);
+            $table->softDeletes();
             $table->timestamps();
         });
 
