@@ -242,7 +242,9 @@
 
         async function deleteExistingField(id) {
             if(!confirm('Permanently delete this field?')) return;
-            const res = await fetch(`{{ route('admin.acpt.fields.delete-field', '') }}/${id}`, {
+            let url = "{{ route('admin.acpt.fields.delete-field', ':id') }}";
+            url = url.replace(':id', id);
+            const res = await fetch(url, {
                 method: 'DELETE',
                 headers: { 'X-CSRF-TOKEN': '{{ csrf_token() }}' }
             });

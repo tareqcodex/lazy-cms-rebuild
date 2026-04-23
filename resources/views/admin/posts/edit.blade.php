@@ -108,21 +108,26 @@
                                 @foreach($group->fields as $field)
                                 @php $val = $fieldValues[$field->id] ?? ''; @endphp
                                 <div class="field-row">
-                                    <label class="block text-[13px] font-bold text-[#1d2327] mb-1">{{ $field->label }}</label>
+                                    <label class="block text-[13px] font-bold text-[#1d2327] mb-1">
+                                        {{ $field->label }}
+                                        @if($field->required)
+                                            <span class="text-[#d63638]">*</span>
+                                        @endif
+                                    </label>
                                     @if($field->instructions)
                                         <p class="text-[12px] text-[#646970] mb-2 italic">{{ $field->instructions }}</p>
                                     @endif
 
                                     @if($field->type === 'text')
-                                        <input type="text" name="custom_fields[{{ $field->id }}]" value="{{ $val }}" class="wp-input w-full">
+                                        <input type="text" name="custom_fields[{{ $field->id }}]" value="{{ $val }}" class="wp-input w-full" {{ $field->required ? 'required' : '' }}>
                                     @elseif($field->type === 'textarea')
-                                        <textarea name="custom_fields[{{ $field->id }}]" rows="4" class="wp-input w-full">{{ $val }}</textarea>
+                                        <textarea name="custom_fields[{{ $field->id }}]" rows="4" class="wp-input w-full" {{ $field->required ? 'required' : '' }}>{{ $val }}</textarea>
                                     @elseif($field->type === 'select')
-                                        <select name="custom_fields[{{ $field->id }}]" class="wp-input w-full h-8 py-0">
+                                        <select name="custom_fields[{{ $field->id }}]" class="wp-input w-full h-8 py-0" {{ $field->required ? 'required' : '' }}>
                                             <option value="">Select an option</option>
                                         </select>
                                     @elseif($field->type === 'wysiwyg')
-                                        <textarea name="custom_fields[{{ $field->id }}]" class="wp-input w-full h-32">{{ $val }}</textarea>
+                                        <textarea name="custom_fields[{{ $field->id }}]" class="wp-input w-full h-32" {{ $field->required ? 'required' : '' }}>{{ $val }}</textarea>
                                     @elseif($field->type === 'image')
                                         <div class="flex items-center gap-4">
                                             <div class="w-20 h-20 bg-[#f0f0f1] border border-[#c3c4c7] rounded-sm flex items-center justify-center overflow-hidden">
@@ -133,10 +138,10 @@
                                                 @endif
                                             </div>
                                             <button type="button" class="wp-btn-secondary h-8 px-4 text-[12px]">Change Image</button>
-                                            <input type="hidden" name="custom_fields[{{ $field->id }}]" value="{{ $val }}">
+                                            <input type="hidden" name="custom_fields[{{ $field->id }}]" value="{{ $val }}" {{ $field->required ? 'required' : '' }}>
                                         </div>
                                     @else
-                                        <input type="text" name="custom_fields[{{ $field->id }}]" value="{{ $val }}" class="wp-input w-full">
+                                        <input type="text" name="custom_fields[{{ $field->id }}]" value="{{ $val }}" class="wp-input w-full" {{ $field->required ? 'required' : '' }}>
                                     @endif
                                 </div>
                                 @endforeach

@@ -182,6 +182,9 @@ class PostController extends Controller
             abort(403, "You do not have permission to store {$type}s.");
         }
         $this->checkTypeActive($type);
+        
+        $this->validateCustomFields($request);
+
         $validated = $request->validate([
             'title'   => 'required|string|max:255',
             'slug'    => 'nullable|string|max:255',
@@ -328,6 +331,9 @@ class PostController extends Controller
             abort(403, "You do not have permission to update {$post->type}s.");
         }
         $this->checkTypeActive($post->type);
+        
+        $this->validateCustomFields($request);
+
         $validated = $request->validate([
             'title'   => 'required|string|max:255',
             'slug'    => 'nullable|string|max:255',
@@ -472,5 +478,31 @@ class PostController extends Controller
         }
 
         return redirect()->back();
+    }
+
+    protected function validateCustomFields(Request $request)
+    {
+        $type = $request->input('type');
+        if (!$type) return;
+
+        $fieldGroups = \Acme\CmsDashboard\Models\FieldGroup::where('is_active', true)
+            ->whereJsonContains('rules->post_type', $type)
+            ->with('fields')
+            ->get();
+
+        $rules = [];
+        $messages = [];
+        foreach ($fieldGroups as $group) {
+            foreach ($group->fields as $field) {
+                if ($field->required) {
+                    $rules["custom_fields.{$field->id}"] = 'required';
+                    $messages["custom_fields.{$field->id}.required"] = "The {$field->label} field is required.";
+                }
+            }
+        }
+
+        if (!empty($rules)) {
+            $request->validate($rules, $messages);
+        }
     }
 }

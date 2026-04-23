@@ -13,12 +13,33 @@ class AcptTaxonomyController extends Controller
     public function index(Request $request)
     {
         $query = CustomTaxonomy::query();
+        
         if ($request->filled('s')) {
-            $query->where('name', 'like', '%' . $request->s . '%')
+            $query->where(function($q) use ($request) {
+                $q->where('name', 'like', '%' . $request->s . '%')
                   ->orWhere('slug', 'like', '%' . $request->s . '%');
+            });
         }
+
+        $status = $request->query('status');
+        if ($status === 'active') {
+            $query->where('is_active', 1)->withoutTrashed();
+        } elseif ($status === 'inactive') {
+            $query->where('is_active', 0)->withoutTrashed();
+        } elseif ($status === 'trash') {
+            $query->onlyTrashed();
+        } else {
+            $query->withoutTrashed();
+        }
+
         $taxonomies = $query->latest()->paginate(10)->withQueryString();
-        return view('cms-dashboard::admin.acpt.taxonomies.index', compact('taxonomies'));
+        
+        $allCount = CustomTaxonomy::withoutTrashed()->count();
+        $activeCount = CustomTaxonomy::withoutTrashed()->where('is_active', 1)->count();
+        $inactiveCount = CustomTaxonomy::withoutTrashed()->where('is_active', 0)->count();
+        $trashCount = CustomTaxonomy::onlyTrashed()->count();
+
+        return view('cms-dashboard::admin.acpt.taxonomies.index', compact('taxonomies', 'allCount', 'activeCount', 'inactiveCount', 'trashCount'));
     }
 
     public function create()
@@ -115,16 +136,46 @@ class AcptTaxonomyController extends Controller
                 $this->removeTaxonomyMenus($taxonomy);
                 $taxonomy->delete();
             }
-            return redirect()->back()->with('success', 'Selected Taxonomies deleted.');
+            return redirect()->back()->with('success', 'Selected Taxonomies moved to trash.');
+        }
+
+        if ($action === 'restore') {
+            $taxonomies = CustomTaxonomy::onlyTrashed()->whereIn('id', $ids)->get();
+            foreach ($taxonomies as $taxonomy) {
+                $taxonomy->restore();
+                if ($taxonomy->is_active) {
+                    $this->syncTaxonomyMenus($taxonomy);
+                }
+            }
+            return redirect()->back()->with('success', 'Selected Taxonomies restored.');
+        }
+
+        if ($action === 'delete') {
+            $taxonomies = CustomTaxonomy::onlyTrashed()->whereIn('id', $ids)->get();
+            foreach ($taxonomies as $taxonomy) {
+                $this->removeTaxonomyMenus($taxonomy);
+                $taxonomy->forceDelete();
+            }
+            return redirect()->back()->with('success', 'Selected Taxonomies permanently deleted.');
         }
 
         if ($action === 'deactivate') {
-            CustomTaxonomy::whereIn('id', $ids)->update(['is_active' => false]);
+            $taxonomies = CustomTaxonomy::whereIn('id', $ids)->get();
+            foreach ($taxonomies as $taxonomy) {
+                $taxonomy->is_active = 0;
+                $taxonomy->save();
+                $this->removeTaxonomyMenus($taxonomy);
+            }
             return redirect()->back()->with('success', 'Selected Taxonomies deactivated.');
         }
 
         if ($action === 'activate') {
-            CustomTaxonomy::whereIn('id', $ids)->update(['is_active' => true]);
+            $taxonomies = CustomTaxonomy::whereIn('id', $ids)->get();
+            foreach ($taxonomies as $taxonomy) {
+                $taxonomy->is_active = 1;
+                $taxonomy->save();
+                $this->syncTaxonomyMenus($taxonomy);
+            }
             return redirect()->back()->with('success', 'Selected Taxonomies activated.');
         }
 

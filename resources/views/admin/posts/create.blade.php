@@ -101,22 +101,26 @@
                             <div class="space-y-6">
                                 @foreach($group->fields as $field)
                                 <div class="field-row">
-                                    <label class="block text-[13px] font-bold text-[#1d2327] mb-1">{{ $field->label }}</label>
+                                    <label class="block text-[13px] font-bold text-[#1d2327] mb-1">
+                                        {{ $field->label }}
+                                        @if($field->required)
+                                            <span class="text-[#d63638]">*</span>
+                                        @endif
+                                    </label>
                                     @if($field->instructions)
                                         <p class="text-[12px] text-[#646970] mb-2 italic">{{ $field->instructions }}</p>
                                     @endif
 
                                     @if($field->type === 'text')
-                                        <input type="text" name="custom_fields[{{ $field->id }}]" class="wp-input w-full" placeholder="">
+                                        <input type="text" name="custom_fields[{{ $field->id }}]" class="wp-input w-full" placeholder="" {{ $field->required ? 'required' : '' }}>
                                     @elseif($field->type === 'textarea')
-                                        <textarea name="custom_fields[{{ $field->id }}]" rows="4" class="wp-input w-full"></textarea>
+                                        <textarea name="custom_fields[{{ $field->id }}]" rows="4" class="wp-input w-full" {{ $field->required ? 'required' : '' }}></textarea>
                                     @elseif($field->type === 'select')
-                                        <select name="custom_fields[{{ $field->id }}]" class="wp-input w-full h-8 py-0">
-                                            <!-- Assuming options might be added later, for now just a placeholder -->
+                                        <select name="custom_fields[{{ $field->id }}]" class="wp-input w-full h-8 py-0" {{ $field->required ? 'required' : '' }}>
                                             <option value="">Select an option</option>
                                         </select>
                                     @elseif($field->type === 'wysiwyg')
-                                        <textarea name="custom_fields[{{ $field->id }}]" class="wp-input w-full h-32"></textarea>
+                                        <textarea name="custom_fields[{{ $field->id }}]" class="wp-input w-full h-32" {{ $field->required ? 'required' : '' }}></textarea>
                                     @elseif($field->type === 'image')
                                         <div class="flex items-center gap-4">
                                             <div class="w-20 h-20 bg-[#f0f0f1] border border-[#c3c4c7] rounded-sm flex items-center justify-center overflow-hidden">
@@ -124,10 +128,10 @@
                                                 <svg class="w-8 h-8 text-[#c3c4c7]" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"></path></svg>
                                             </div>
                                             <button type="button" class="wp-btn-secondary h-8 px-4 text-[12px]">Choose Image</button>
-                                            <input type="hidden" name="custom_fields[{{ $field->id }}]">
+                                            <input type="hidden" name="custom_fields[{{ $field->id }}]" {{ $field->required ? 'required' : '' }}>
                                         </div>
                                     @else
-                                        <input type="text" name="custom_fields[{{ $field->id }}]" class="wp-input w-full">
+                                        <input type="text" name="custom_fields[{{ $field->id }}]" class="wp-input w-full" {{ $field->required ? 'required' : '' }}>
                                     @endif
                                 </div>
                                 @endforeach

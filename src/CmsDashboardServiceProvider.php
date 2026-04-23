@@ -13,6 +13,26 @@ class CmsDashboardServiceProvider extends ServiceProvider
         $this->loadMigrationsFrom(__DIR__ . '/../database/migrations');
         $this->loadViewsFrom(__DIR__ . '/../resources/views', 'cms-dashboard');
 
+        // Register View Composers for Magic Keys
+        $viewMap = [
+            'admin.users.edit' => 'users-edit',
+            'admin.settings.index' => 'general-settings',
+            
+            'cms-dashboard::admin.users.edit' => 'users-edit',
+            'cms-dashboard::admin.settings.index' => 'general-settings',
+        ];
+
+        view()->composer('*', function ($view) use ($viewMap) {
+            $viewName = $view->getName();
+            $magicKey = $viewMap[$viewName] ?? null;
+
+            if ($magicKey) {
+                $dynamicFields = config("lazy-options.hooks.{$magicKey}.fields", []);
+                $settings = \Illuminate\Support\Facades\DB::table('cms_settings')->pluck('value', 'key')->toArray();
+                $view->with(compact('dynamicFields', 'settings'));
+            }
+        });
+
         Blade::componentNamespace('Acme\\CmsDashboard\\View\\Components', 'cms-dashboard');
 
         if ($this->app->runningInConsole()) {

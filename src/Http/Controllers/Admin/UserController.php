@@ -90,10 +90,7 @@ class UserController extends Controller
 
     public function edit(User $user)
     {
-        if (!auth()->user()->hasPermission('manage_users')) {
-            abort(403);
-        }
-        $roles = Role::orderBy('name')->get();
+        $roles = Role::all();
         return view('cms-dashboard::admin.users.edit', compact('user', 'roles'));
     }
 

@@ -4,7 +4,11 @@
     <div class="px-2">
         <div class="flex items-center gap-3 mb-8">
             <div class="w-10 h-10 bg-indigo-50 rounded-xl flex items-center justify-center text-indigo-600">
-                {!! $config['icon'] ?? '' !!}
+                @if(isset($config['icon']) && str_starts_with($config['icon'], '<svg'))
+                    {!! $config['icon'] !!}
+                @else
+                    <span class="material-symbols-outlined">{{ $config['icon'] ?? 'settings' }}</span>
+                @endif
             </div>
             <h1 class="text-[23px] font-normal text-[#1d2327]">{{ $config['title'] }}</h1>
         </div>

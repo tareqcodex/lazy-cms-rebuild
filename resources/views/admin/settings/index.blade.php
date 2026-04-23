@@ -178,6 +178,8 @@
                 </tr>
             </table>
 
+            @include('cms-dashboard::components.admin.dynamic-fields')
+
             <div class="mt-8 pt-6 border-t border-[#c3c4c7]">
                 <button type="submit" class="wp-btn-primary h-[32px] px-4 font-semibold">Save Changes</button>
             </div>

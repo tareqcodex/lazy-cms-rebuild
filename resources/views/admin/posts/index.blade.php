@@ -267,4 +267,5 @@
             @csrf @method('DELETE')
         </form>
     @endforeach
+ 
 </x-cms-dashboard::layouts.admin>

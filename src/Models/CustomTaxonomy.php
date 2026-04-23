@@ -3,9 +3,12 @@
 namespace Acme\CmsDashboard\Models;
 
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\SoftDeletes;
 
 class CustomTaxonomy extends Model
 {
+    use SoftDeletes;
+
     protected $table = 'custom_taxonomies';
 
     protected $guarded = [];

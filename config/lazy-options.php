@@ -2,34 +2,62 @@
 
 return [
     /*
-    |--------------------------------------------------------------------------
-    | Custom Dashboard Options
-    |--------------------------------------------------------------------------
+    | 1. hooks (Inject into Existing Pages):
+    |    Define fields here to inject them into standard CMS pages.
+    |    Supported Keys (Hooks):
+    |    - 'users-edit'       : User Edit Page
+    |    - 'general-settings' : Main Settings Page
     |
-    | Supported Field Types:
-    | - 'text'     : Standard text input
-    | - 'number'   : Numeric input
-    | - 'textarea' : Large text area for codes/scripts
-    | - 'select'   : Dropdown menu (requires 'options' array)
-    | - 'checkbox' : Toggle switch (supports 'checkbox_label')
-    | - 'image'    : Image upload field (with preview)
+    | 2. pages (Create New Standalone Pages):
+    |    Define new administrative pages here. They will appear in the sidebar.
     |
-    | Icon Support:
-    | - Use Google Material Symbols names (e.g., 'settings', 'person', 'ads_click')
+    | 3. Field Configuration:
+    |    - 'type'        : text, number, textarea, select, checkbox, image
+    |    - 'label'       : Field title
+    |    - 'desc'        : (Optional) Small italic description
+    |    - 'placeholder' : (Optional) Input placeholder
+    |    - 'default'     : (Optional) Default value
     |
-    | Common Field Attributes:
-    | - 'label'      : The field title shown on the page
-    | - 'desc'       : (Optional) Small italic description below the field
-    | - 'placeholder': (Optional) Placeholder text
-    | - 'default'    : (Optional) Default value if not set
+    | 4. Frontend Usage (Retrieving Values):
+    |    A. For Global Settings (Hooks & Custom Pages):
+    |       Use: {{ get_cms_option('field_key', 'default_value') }}
+    |       Example: {!! get_cms_option('header_ad_code') !!}
+    |
+    |    B. For Dynamic Custom Fields (ACPT):
+    |       Use: {{ get_custom_field($post, 'field_name', 'default_value') }}
+    |       Example: {{ get_custom_field($post, 'hero_subtitle') }}
+    |
+    |    C. Images:
+    |       Example: <img src="{{ asset(get_cms_option('header_ad_banner')) }}">
     |
     */
 
+    // Injections into existing pages
+    
+    // 'hooks' => [
+    //     'general-settings' => [
+    //         'fields' => [
+    //             'languages' => [
+    //                 'type' => 'select',
+    //                 'label' => 'Languages',
+    //                 'options' => [
+    //                     'en' => 'English',
+    //                     'bn' => 'Bangla',
+    //                 ],
+    //                 'default' => 'en'
+    //             ]
+    //         ]
+    //     ],
+     
+    // ],
+
+    // New standalone custom pages
+    // Retrieval: Use {{ get_cms_option('field_key') }} in frontend to show these values.
     'pages' => [
         'ad-settings' => [
             'title' => 'Ad Management',
             'icon' => 'ads_click',
-            'group' => 'Settings',
+            'group' => 'Marketing',
             'fields' => [
                 'header_ad_code' => [
                     'type' => 'textarea',
@@ -39,15 +67,6 @@ return [
                 'header_ad_banner' => [
                     'type' => 'image',
                     'label' => 'Header Ad Banner',
-                ],
-                'header_ad_url' => [
-                    'type' => 'text',
-                    'label' => 'Header Ad URL',
-                ],
-                'header_ad_target' => [
-                    'type' => 'checkbox',
-                    'label' => 'Open in new tab',
-                    'default' => '1'
                 ],
             ]
         ],

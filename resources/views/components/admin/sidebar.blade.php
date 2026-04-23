@@ -90,11 +90,19 @@
             @endforeach
         @endforeach
 
-        {{-- Dynamic Options Pages --}}
-        @php $customPages = config('lazy-options.pages') ?? []; @endphp
-        @if(!empty($customPages))
-            <li class="mt-4 mb-1 px-3 text-[10px] font-semibold text-[#8c8f94] uppercase tracking-wider">Custom Options</li>
-            @foreach($customPages as $slug => $page)
+        {{-- Dynamic Options Pages Grouped by 'group' --}}
+        @php 
+            $customPages = config('lazy-options.pages') ?? []; 
+            $groupedPages = [];
+            foreach($customPages as $slug => $page) {
+                $group = $page['group'] ?? 'Custom Options';
+                $groupedPages[$group][$slug] = $page;
+            }
+        @endphp
+
+        @foreach($groupedPages as $groupName => $pages)
+            <li class="mt-4 mb-1 px-3 text-[10px] font-semibold text-[#8c8f94] uppercase tracking-wider">{{ $groupName }}</li>
+            @foreach($pages as $slug => $page)
                 @php 
                     $href = route('admin.options.index', $slug);
                     $isActive = request()->is('admin/options/' . $slug);
@@ -117,7 +125,7 @@
                     </a>
                 </li>
             @endforeach
-        @endif
+        @endforeach
     </ul>
 </div>
 

@@ -71,8 +71,8 @@ class DashboardController extends Controller
         if (!auth()->user()->hasPermission('manage_settings')) {
             abort(403);
         }
-        $settings = DB::table('cms_settings')->pluck('value', 'key')->toArray();
-        return view('cms-dashboard::admin.settings.index', compact('settings'));
+        
+        return view('cms-dashboard::admin.settings.index');
     }
 
     public function updateSettings(Request $request)

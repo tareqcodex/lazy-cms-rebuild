@@ -24,12 +24,31 @@ class AcptCptController extends Controller
         $query = \Acme\CmsDashboard\Models\PostType::where('is_builtin', false);
         
         if ($request->filled('s')) {
-            $query->where('name', 'like', '%' . $request->s . '%')
+            $query->where(function($q) use ($request) {
+                $q->where('name', 'like', '%' . $request->s . '%')
                   ->orWhere('slug', 'like', '%' . $request->s . '%');
+            });
+        }
+
+        $status = $request->query('status');
+        if ($status === 'active') {
+            $query->where('is_active', 1)->withoutTrashed();
+        } elseif ($status === 'inactive') {
+            $query->where('is_active', 0)->withoutTrashed();
+        } elseif ($status === 'trash') {
+            $query->onlyTrashed();
+        } else {
+            $query->withoutTrashed();
         }
 
         $postTypes = $query->latest()->get();
-        return view('cms-dashboard::admin.acpt.cpt.index', compact('postTypes'));
+
+        $allCount = \Acme\CmsDashboard\Models\PostType::where('is_builtin', false)->withoutTrashed()->count();
+        $activeCount = \Acme\CmsDashboard\Models\PostType::where('is_builtin', false)->withoutTrashed()->where('is_active', 1)->count();
+        $inactiveCount = \Acme\CmsDashboard\Models\PostType::where('is_builtin', false)->withoutTrashed()->where('is_active', 0)->count();
+        $trashCount = \Acme\CmsDashboard\Models\PostType::where('is_builtin', false)->onlyTrashed()->count();
+
+        return view('cms-dashboard::admin.acpt.cpt.index', compact('postTypes', 'allCount', 'activeCount', 'inactiveCount', 'trashCount'));
     }
 
     public function bulk(Request $request)
@@ -45,17 +64,41 @@ class AcptCptController extends Controller
         }
 
         if ($action === 'trash') {
-            foreach ($ids as $id) {
-                $this->destroy($id); // reuse destroy method which cleans up menus
+            $postTypes = \Acme\CmsDashboard\Models\PostType::whereIn('id', $ids)->get();
+            foreach ($postTypes as $postType) {
+                $this->removeCptMenus($postType);
+                $postType->delete();
             }
-            return redirect()->back()->with('success', 'Selected Post Types trashed.');
+            return redirect()->back()->with('success', 'Selected Post Types moved to trash.');
+        }
+
+        if ($action === 'restore') {
+            $postTypes = \Acme\CmsDashboard\Models\PostType::onlyTrashed()->whereIn('id', $ids)->get();
+            foreach ($postTypes as $postType) {
+                $postType->restore();
+                if ($postType->is_active) {
+                    $this->syncCptMenus($postType);
+                }
+            }
+            return redirect()->back()->with('success', 'Selected Post Types restored.');
+        }
+
+        if ($action === 'delete') {
+            $postTypes = \Acme\CmsDashboard\Models\PostType::onlyTrashed()->whereIn('id', $ids)->get();
+            foreach ($postTypes as $postType) {
+                $this->removeCptMenus($postType);
+                $postType->forceDelete();
+            }
+            return redirect()->back()->with('success', 'Selected Post Types permanently deleted.');
         }
 
         if ($action === 'deactivate') {
             foreach ($ids as $id) {
                 $postType = \Acme\CmsDashboard\Models\PostType::find($id);
                 if ($postType && $postType->is_active) {
-                    $this->toggleStatus($id);
+                    $postType->is_active = 0;
+                    $postType->save();
+                    $this->removeCptMenus($postType);
                 }
             }
             return redirect()->back()->with('success', 'Selected Post Types deactivated.');
@@ -65,13 +108,50 @@ class AcptCptController extends Controller
             foreach ($ids as $id) {
                 $postType = \Acme\CmsDashboard\Models\PostType::find($id);
                 if ($postType && !$postType->is_active) {
-                    $this->toggleStatus($id);
+                    $postType->is_active = 1;
+                    $postType->save();
+                    $this->syncCptMenus($postType);
                 }
             }
             return redirect()->back()->with('success', 'Selected Post Types activated.');
         }
 
         return redirect()->back();
+    }
+
+    protected function syncCptMenus($postType)
+    {
+        $order = 50 + $postType->id;
+        $defaultIcon = '<svg class="w-full h-full" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 002-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10"></path></svg>';
+
+        $parentMenu = \Acme\CmsDashboard\Models\Menu::firstOrCreate(
+            ['title' => $postType->name, 'parent_id' => null],
+            [
+                'route' => '/admin/posts?type=' . $postType->slug,
+                'icon' => $postType->icon ?: $defaultIcon,
+                'group' => 'Main',
+                'order' => $order,
+            ]
+        );
+
+        \Acme\CmsDashboard\Models\Menu::firstOrCreate(
+            ['parent_id' => $parentMenu->id, 'title' => 'All ' . $postType->name],
+            ['route' => '/admin/posts?type=' . $postType->slug, 'order' => 1]
+        );
+
+        \Acme\CmsDashboard\Models\Menu::firstOrCreate(
+            ['parent_id' => $parentMenu->id, 'title' => 'Add New'],
+            ['route' => '/admin/posts/create?type=' . $postType->slug, 'order' => 2]
+        );
+    }
+
+    protected function removeCptMenus($postType)
+    {
+        $parentMenu = \Acme\CmsDashboard\Models\Menu::where('title', $postType->name)->whereNull('parent_id')->first();
+        if ($parentMenu) {
+            \Acme\CmsDashboard\Models\Menu::where('parent_id', $parentMenu->id)->delete();
+            $parentMenu->delete();
+        }
     }
 
     public function create()
