@@ -4,11 +4,17 @@
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <title>{{ $title ?? 'Dashboard' }} &lsaquo; CMS &#8212; WordPress</title>
-    <script src="https://cdn.tailwindcss.com"></script>
-    <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js"></script>
-    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200" />
+    <script src="{{ asset('vendor/cms-dashboard/js/tailwind.min.js') }}"></script>
     <style>
-        body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Oxygen-Sans, Ubuntu, Cantarell, "Helvetica Neue", sans-serif; background-color: #f0f0f1; transition: padding-left 0.2s; padding-left: 160px; }
+        /* CRITICAL FALLBACKS & CORE STYLES */
+        #wpadminbar { position: fixed !important; top: 0; left: 0; right: 0; height: 32px !important; background: #1d2327 !important; z-index: 9999 !important; display: flex !important; align-items: center !important; }
+        #adminmenuwrap { position: fixed !important; top: 32px !important; left: 0 !important; bottom: 0 !important; width: 160px !important; background: #1d2327 !important; z-index: 999 !important; overflow-y: auto !important; }
+        body { padding-top: 32px !important; padding-left: 160px !important; margin: 0 !important; background: #f0f0f1 !important; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Oxygen-Sans, Ubuntu, Cantarell, "Helvetica Neue", sans-serif; transition: padding-left 0.2s; }
+        
+        svg, .material-symbols-outlined { max-width: 24px; max-height: 24px; }
+        #wpadminbar svg { width: 18px; height: 18px; fill: #c3c4c7; }
+        .material-symbols-outlined { font-size: 20px !important; }
+
         .wp-btn-primary { background: #2271b1; color: #fff; border: 1px solid #2271b1; border-radius: 3px; padding: 0 10px; min-height: 30px; font-size: 13px; line-height: 2.15384615; cursor: pointer; transition: all 0.1s; display: inline-flex; align-items: center; }
         .wp-btn-primary:hover { background: #135e96; border-color: #135e96; }
         .wp-btn-secondary { background: #f6f7f7; color: #2271b1; border: 1px solid #2271b1; border-radius: 3px; padding: 0 10px; min-height: 30px; font-size: 13px; line-height: 2.15384615; cursor: pointer; transition: all 0.1s; display: inline-flex; align-items: center;}
@@ -22,20 +28,17 @@
         .wp-metabox { background: #fff; border: 1px solid #c3c4c7; border-top: 1px solid #c3c4c7; margin-bottom: 20px; box-shadow: 0 1px 1px rgba(0,0,0,.04); }
         .wp-metabox-header { border-bottom: 1px solid #c3c4c7; padding: 8px 12px; margin: 0; font-size: 14px; font-weight: 600; color: #1d2327; background: #fff; }
         .wp-metabox-content { padding: 12px; }
-
+        
         /* Sidebar Collapsed States */
         body.sidebar-collapsed { padding-left: 36px; }
         body.sidebar-collapsed #adminmenuwrap { width: 36px; overflow: visible; }
         body.sidebar-collapsed .collapse-text, 
         body.sidebar-collapsed .sidebar-item span,
         body.sidebar-collapsed li[class*="uppercase"] { display: none !important; }
-        
         body.sidebar-collapsed .sidebar-item a,
         body.sidebar-collapsed .sidebar-item-link { justify-content: center !important; padding-left: 0 !important; padding-right: 0 !important; }
-        
         body.sidebar-collapsed .sidebar-item div[class*="mr-3"],
         body.sidebar-collapsed .sidebar-item div[class*="mr-2"] { margin-right: 0 !important; }
-        
         body.sidebar-collapsed .sidebar-item div[class*="bg-[#2c3338]"] { display: none !important; }
         body.sidebar-collapsed .sidebar-flyout { display: none !important; }
         
@@ -44,6 +47,8 @@
         .rotate-180 { transform: rotate(180deg); }
         [x-cloak] { display: none !important; }
     </style>
+    <script defer src="{{ asset('vendor/cms-dashboard/js/alpine.min.js') }}"></script>
+    <link rel="stylesheet" href="{{ asset('vendor/cms-dashboard/css/material-symbols.css') }}" />
 </head>
 <body class="text-[#1d2327] text-[13px] antialiased overflow-x-hidden pt-8">
     

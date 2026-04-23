@@ -19,9 +19,22 @@ class InstallLazyCms extends Command
 
         // 1. Run Migrations
         $this->info('Running migrations...');
-        $this->call('migrate');
+        $this->call('migrate', ['--force' => true]);
 
-        // 2. Create Default Permissions
+        // 2. Set Default Options
+        $this->info('Setting up default configurations...');
+        $options = [
+            'login_url' => 'lazy-admin',
+            'register_url' => 'lazy-lazy-registration',
+            'login_theme' => 'breeze',
+            'register_theme' => 'breeze',
+        ];
+
+        foreach ($options as $key => $value) {
+            DB::table('cms_settings')->updateOrInsert(['key' => $key], ['value' => $value]);
+        }
+
+        // 3. Create Default Permissions
         $this->info('Creating default permissions...');
         $permissions = [
             ['name' => 'Manage Content', 'slug' => 'manage_content'],
@@ -39,7 +52,7 @@ class InstallLazyCms extends Command
             \Acme\CmsDashboard\Models\Permission::updateOrCreate(['slug' => $p['slug']], $p);
         }
 
-        // 3. Create Default Roles
+        // 4. Create Default Roles
         $this->info('Creating default roles...');
         $roles = [
             ['name' => 'Administrator', 'slug' => 'administrator', 'description' => 'Full access to all settings and content.'],
@@ -51,14 +64,20 @@ class InstallLazyCms extends Command
         foreach ($roles as $roleData) {
             $role = Role::updateOrCreate(['slug' => $roleData['slug']], $roleData);
             
-            // Sync all permissions to administrator
             if ($role->slug === 'administrator') {
                 $allPermissionIds = \Acme\CmsDashboard\Models\Permission::pluck('id')->toArray();
                 $role->permissions()->sync($allPermissionIds);
             }
         }
 
-        // 4. Create Admin User
+        // 5. Run Menu Seeder
+        $this->info('Seeding default menus...');
+        $this->call('db:seed', [
+            '--class' => 'Acme\\CmsDashboard\\Database\\Seeders\\MenuSeeder',
+            '--force' => true
+        ]);
+
+        // 6. Create Admin User
         $this->info('Setting up Administrator user...');
         $email = $this->ask('Enter Admin email', 'admin@admin.com');
         $password = $this->secret('Enter Admin password (min 8 chars)');
@@ -66,11 +85,6 @@ class InstallLazyCms extends Command
         if (empty($password)) {
             $password = 'password';
             $this->info('No password entered. Defaulting to: password');
-        }
-
-        if (strlen($password) < 8) {
-            $this->error('Password must be at least 8 characters.');
-            return;
         }
 
         $adminRole = Role::where('slug', 'administrator')->first();
@@ -87,6 +101,7 @@ class InstallLazyCms extends Command
         $this->info('Lazy CMS installed successfully!');
         $this->info("Login Email: {$email}");
         $this->info("Login Password: " . (empty($password) ? 'password' : ' [hidden]'));
-        $this->info('Login URL: ' . url('/admin/login'));
+        $this->info('Login URL: ' . url('/lazy-admin'));
+        $this->info('Registration URL: ' . url('/lazy-lazy-registration'));
     }
 }

@@ -171,7 +171,7 @@
     </div>
 
     @push('scripts')
-    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="{{ asset('vendor/cms-dashboard/js/chart.min.js') }}"></script>
     <script>
         const ctx = document.getElementById('impressionChart').getContext('2d');
         new Chart(ctx, {

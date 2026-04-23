@@ -33,7 +33,7 @@
                 </select>
                 <button type="submit" form="blacklist-bulk-form" class="border border-[#2271b1] text-[#2271b1] px-3 py-1 rounded-[3px] text-[13px] font-semibold hover:bg-[#f0f6fa]">Apply</button>
             </div>
-            <x-cms-dashboard::admin.pagination :paginator="$blockedIps" size="small" />
+            <x-cms-dashboard::admin.pagination :paginator="$blockedIps" />
         </div>
 
         <div class="bg-white border border-[#c3c4c7] shadow-sm">
@@ -90,7 +90,6 @@
                     <option value="delete">Delete (Unblock)</option>
                 </select>
                 <button type="submit" form="blacklist-bulk-form" class="border border-[#2271b1] text-[#2271b1] px-3 py-1 rounded-[3px] text-[13px] font-semibold hover:bg-[#f0f6fa]">Apply</button>
-                <span class="ml-2 text-[#2c3338]">{{ $blockedIps->total() }} items</span>
             </div>
             <x-cms-dashboard::admin.pagination :paginator="$blockedIps" />
         </div>

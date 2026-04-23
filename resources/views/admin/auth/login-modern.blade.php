@@ -4,19 +4,20 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Login - Lazy CMS Modern</title>
-    <script src="https://cdn.tailwindcss.com"></script>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <script src="{{ asset('vendor/cms-dashboard/js/tailwind.min.js') }}"></script>
+    <link href="{{ asset('vendor/cms-dashboard/css/inter.css') }}" rel="stylesheet">
     <style>
-        body { font-family: 'Inter', sans-serif; background-color: #f3f4f6; }
-        .modern-card { background: #ffffff; border-radius: 12px; box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.1), 0 8px 10px -6px rgba(0, 0, 0, 0.1); }
-        .wp-input { border: 1px solid #d1d5db; border-radius: 8px; padding: 10px 14px; width: 100%; transition: all 0.2s; background: #f9fafb; }
-        .wp-input:focus { border-color: #6366f1; ring: 2px; ring-color: #6366f1; outline: none; background: #fff; }
-        .btn-modern { background: #4f46e5; color: white; padding: 10px; border-radius: 8px; font-weight: 600; transition: background 0.2s; width: 100%; }
+        body { font-family: 'Inter', sans-serif; background-color: #f3f4f6; margin: 0; }
+        .flex-fallback { display: flex; align-items: center; justify-content: center; min-height: 100vh; padding: 1rem; box-sizing: border-box; }
+        .modern-card { background: #ffffff; border-radius: 12px; box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.1), 0 8px 10px -6px rgba(0, 0, 0, 0.1); width: 100%; max-width: 400px; padding: 2rem; box-sizing: border-box; }
+        .wp-input { border: 1px solid #d1d5db; border-radius: 8px; padding: 10px 14px; width: 100%; transition: all 0.2s; background: #f9fafb; box-sizing: border-box; }
+        .wp-input:focus { border-color: #6366f1; outline: none; background: #fff; }
+        .btn-modern { background: #4f46e5; color: white; padding: 12px; border: none; border-radius: 8px; font-weight: 600; transition: background 0.2s; width: 100%; cursor: pointer; }
         .btn-modern:hover { background: #4338ca; }
         .toggle-password {
             position: absolute;
             right: 12px;
-            top: 20px;
+            top: 50%;
             transform: translateY(-50%);
             background: none;
             border: none;
@@ -25,15 +26,11 @@
             padding: 0px;
             line-height: 0;
             z-index: 10;
-            display: flex;
-            align-items: center;
-            justify-content: flex-end;
-            width: 50px;
         }
     </style>
 </head>
-<body class="flex items-center justify-center min-height-screen p-4" style="min-height: 100vh;">
-    <div class="modern-card w-full max-w-[400px] p-8">
+<body class="flex-fallback">
+    <div class="modern-card">
         <div class="text-center mb-8">
             <h1 class="text-2xl font-bold text-gray-900 mb-2">Welcome Back</h1>
             <p class="text-gray-500 text-sm">Please enter your details to sign in</p>

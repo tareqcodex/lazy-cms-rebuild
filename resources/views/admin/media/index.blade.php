@@ -7,51 +7,179 @@
     </div>
 
     <!-- Media Toolbar -->
-    <div class="flex flex-wrap items-center justify-between gap-4 mb-4 bg-white p-2 border border-[#c3c4c7] rounded-sm">
+    <form action="{{ route('admin.media.index') }}" method="GET" class="flex flex-wrap items-center justify-between gap-4 mb-4 bg-white p-2 border border-[#c3c4c7] rounded-sm">
         <div class="flex items-center gap-2">
             <!-- View Icons -->
             <div class="flex border-r border-[#c3c4c7] pr-2 mr-2">
-                <button class="p-1 text-[#2271b1]"><svg class="w-5 h-5" fill="currentColor" viewBox="0 0 20 20"><path d="M5 3a2 2 0 00-2 2v2a2 2 0 002 2h2a2 2 0 002-2V5a2 2 0 00-2-2H5zM5 11a2 2 0 00-2 2v2a2 2 0 002 2h2a2 2 0 002-2v-2a2 2 0 00-2-2H5zM11 5a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2V5zM11 13a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2v-2z" /></svg></button>
-                <button class="p-1 text-[#646970]"><svg class="w-5 h-5" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M3 4a1 1 0 011-1h12a1 1 0 110 2H4a1 1 0 01-1-1zm0 4a1 1 0 011-1h12a1 1 0 110 2H4a1 1 0 01-1-1zm0 4a1 1 0 011-1h12a1 1 0 110 2H4a1 1 0 01-1-1zm0 4a1 1 0 011-1h12a1 1 0 110 2H4a1 1 0 01-1-1z" clip-rule="evenodd" /></svg></button>
+                <button type="button" id="view-grid-btn" class="p-1 text-[#646970] hover:bg-[#f0f0f1] rounded" title="Grid View">
+                    <svg class="w-5 h-5" fill="currentColor" viewBox="0 0 20 20"><path d="M5 3a2 2 0 00-2 2v2a2 2 0 002 2h2a2 2 0 002-2V5a2 2 0 00-2-2H5zM5 11a2 2 0 00-2 2v2a2 2 0 002 2h2a2 2 0 002-2v-2a2 2 0 00-2-2H5zM11 5a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2V5zM11 13a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2v-2z" /></svg>
+                </button>
+                <button type="button" id="view-list-btn" class="p-1 text-[#2271b1] hover:bg-[#f0f0f1] rounded" title="List View">
+                    <svg class="w-5 h-5" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M3 4a1 1 0 011-1h12a1 1 0 110 2H4a1 1 0 01-1-1zm0 4a1 1 0 011-1h12a1 1 0 110 2H4a1 1 0 01-1-1zm0 4a1 1 0 011-1h12a1 1 0 110 2H4a1 1 0 01-1-1zm0 4a1 1 0 011-1h12a1 1 0 110 2H4a1 1 0 01-1-1z" clip-rule="evenodd" /></svg>
+                </button>
             </div>
             
-            <select class="wp-input h-7 text-[13px] py-0 w-36">
-                <option>All media items</option>
-                <option>Images</option>
+            <select name="type" class="wp-input h-7 text-[13px] py-0 w-36">
+                <option value="all" {{ request('type') == 'all' ? 'selected' : '' }}>All media items</option>
+                @foreach($types as $value => $label)
+                    <option value="{{ $value }}" {{ request('type') == $value ? 'selected' : '' }}>{{ $label }}</option>
+                @endforeach
             </select>
-            <select class="wp-input h-7 text-[13px] py-0 w-32">
-                <option>All dates</option>
+            <select name="m" class="wp-input h-7 text-[13px] py-0 w-32">
+                <option value="">All dates</option>
+                @foreach($months as $month)
+                    <option value="{{ $month->month_val }}" {{ request('m') == $month->month_val ? 'selected' : '' }}>
+                        {{ $month->month_label }}
+                    </option>
+                @endforeach
             </select>
-            <button class="wp-btn-secondary h-7 px-3 text-[13px]">Bulk select</button>
+            <button type="submit" class="wp-btn-secondary h-7 px-3 text-[13px]">Filter</button>
         </div>
         
         <div class="flex items-center gap-2">
-            <span class="text-[13px] text-[#646970]">Search media items:</span>
-            <input type="text" class="wp-input h-7 text-[13px] w-48">
+            <input type="text" name="s" value="{{ request('s') }}" class="wp-input h-7 text-[13px] w-48" placeholder="Search media...">
+            <button type="submit" class="wp-btn-secondary h-7 px-3 text-[13px]">Search Media</button>
+        </div>
+    </form>
+
+    <!-- Top Bulk Actions & Pagination -->
+    <div class="flex items-center justify-between mb-2">
+        <div class="flex items-center gap-2">
+            <select id="bulk-action-selector-top" class="wp-input h-7 text-[13px] py-0 w-32">
+                <option value="">Bulk actions</option>
+                <option value="delete">Delete permanently</option>
+            </select>
+            <button id="apply-bulk-action-top" class="wp-btn-secondary h-7 px-3 text-[13px]">Apply</button>
+            <button id="bulk-select-btn" class="wp-btn-secondary h-7 px-3 text-[13px] hidden">Bulk Select</button>
+        </div>
+        <div id="pagination-top" class="flex items-center gap-4 text-[13px] text-[#646970]">
+            <span>{{ $media->total() }} items</span>
+            <div class="flex items-center gap-1">
+                {{ $media->links('cms-dashboard::components.admin.pagination') }}
+            </div>
         </div>
     </div>
 
-    <!-- Media Grid -->
-    <div class="grid grid-cols-3 sm:grid-cols-6 md:grid-cols-8 lg:grid-cols-10 gap-3 bg-white p-4 border border-[#c3c4c7]">
-        @forelse($media as $index => $item)
-            <div class="relative cursor-pointer group media-item"
-                 data-item='@json($item)' data-index="{{ $index }}">
-                <!-- Thumbnail -->
-                <div class="aspect-square border-2 border-transparent bg-[#f0f0f1] overflow-hidden group-hover:border-[#2271b1] transition-all">
-                    <img src="{{ asset('storage/'.$item->path) }}" class="w-full h-full object-cover">
-                </div>
-                <!-- Filename Info -->
-                <div class="mt-1 px-1">
-                    <div class="text-[10px] text-[#1d2327] truncate font-medium" title="{{ $item->filename }}">
-                        {{ $item->filename }}
+    <!-- Media Grid Container -->
+    <div id="media-grid-view" class="hidden">
+        <div id="media-grid-container" class="grid grid-cols-3 sm:grid-cols-6 md:grid-cols-8 lg:grid-cols-10 gap-3 bg-white p-4 border border-[#c3c4c7]">
+            @forelse($media as $index => $item)
+                <div class="relative cursor-pointer group media-item-container" data-id="{{ $item->id }}" data-index="{{ $index }}">
+                    <div class="media-item" data-item='@json($item)' data-index="{{ $index }}">
+                        <div class="aspect-square border-2 border-transparent bg-[#f0f0f1] overflow-hidden group-hover:border-[#2271b1] transition-all flex items-center justify-center">
+                            @if(strpos($item->mime_type, 'image/') === 0)
+                                <img src="{{ asset('storage/'.$item->path) }}" class="w-full h-full object-cover">
+                            @elseif(strpos($item->mime_type, 'video/') === 0)
+                                <span class="material-symbols-outlined text-[#646970] text-4xl">movie</span>
+                            @elseif($item->mime_type === 'application/pdf')
+                                <span class="material-symbols-outlined text-[#646970] text-4xl">description</span>
+                            @else
+                                <span class="material-symbols-outlined text-[#646970] text-4xl">draft</span>
+                            @endif
+                        </div>
+                    </div>
+                    <div class="absolute top-1 right-1 z-10 media-checkbox-wrapper hidden">
+                        <input type="checkbox" value="{{ $item->id }}" class="media-checkbox w-5 h-5 cursor-pointer">
+                    </div>
+                    <div class="mt-1 px-1 overflow-hidden">
+                        <div class="text-[11px] text-[#1d2327] truncate font-bold media-display-title" title="{{ $item->title ?: $item->filename }}">
+                            {{ $item->title ?: $item->filename }}
+                        </div>
+                        <div class="text-[9px] text-[#646970] truncate media-display-filename">{{ $item->filename }}</div>
                     </div>
                 </div>
+            @empty
+                <div class="col-span-full py-20 text-center text-[#646970] italic">No media files found.</div>
+            @endforelse
+        </div>
+        <!-- Load More Button -->
+        <div id="load-more-container" class="flex justify-center mt-6 mb-10 {{ $media->hasMorePages() ? '' : 'hidden' }}">
+            <button id="load-more-btn" class="wp-btn-secondary h-10 px-8 text-[14px] font-semibold" data-next-page="2">Load more items</button>
+        </div>
+    </div>
+
+    <!-- Media List Table -->
+    <div id="media-list-container" class="bg-white border border-[#c3c4c7]">
+        <table class="wp-list-table w-full text-left text-[13px] border-collapse">
+            <thead>
+                <tr class="border-b border-[#c3c4c7] bg-[#f9f9f9]">
+                    <th class="p-2 w-8"><input type="checkbox" id="select-all-media" class="w-4 h-4"></th>
+                    <th class="p-2 w-20">File</th>
+                    <th class="p-2 font-semibold">Title</th>
+                    <th class="p-2 font-semibold">Author</th>
+                    <th class="p-2 font-semibold">Uploaded to</th>
+                    <th class="p-2 font-semibold">Date</th>
+                </tr>
+            </thead>
+            <tbody>
+                @forelse($media as $index => $item)
+                    <tr class="border-b border-[#f0f0f1] hover:bg-[#f6f7f7] group" data-id="{{ $item->id }}" data-index="{{ $index }}">
+                        <td class="p-2 text-center align-top pt-3">
+                            <input type="checkbox" value="{{ $item->id }}" class="media-checkbox w-4 h-4">
+                        </td>
+                        <td class="p-2 align-top">
+                            <div class="w-16 h-16 bg-[#f0f0f1] border border-[#c3c4c7] overflow-hidden cursor-pointer media-item flex items-center justify-center" data-item='@json($item)' data-index="{{ $index }}">
+                                @if(strpos($item->mime_type, 'image/') === 0)
+                                    <img src="{{ asset('storage/'.$item->path) }}" class="w-full h-full object-cover">
+                                @elseif(strpos($item->mime_type, 'video/') === 0)
+                                    <span class="material-symbols-outlined text-[#646970] text-3xl">movie</span>
+                                @elseif($item->mime_type === 'application/pdf')
+                                    <span class="material-symbols-outlined text-[#646970] text-3xl">description</span>
+                                @else
+                                    <span class="material-symbols-outlined text-[#646970] text-3xl">draft</span>
+                                @endif
+                            </div>
+                        </td>
+                        <td class="p-2 align-top pt-3">
+                            <div class="font-bold text-[#2271b1] hover:text-[#135e96] cursor-pointer media-item media-display-title" data-item='@json($item)' data-index="{{ $index }}">
+                                {{ $item->title ?: $item->filename }}
+                            </div>
+                            <div class="text-[11px] text-[#646970] mt-1 media-display-filename">{{ $item->filename }}</div>
+                            <!-- Row Actions -->
+                            <div class="flex gap-2 mt-2 opacity-0 group-hover:opacity-100 transition-opacity text-[12px]">
+                                <a href="#" class="text-[#2271b1] hover:text-[#135e96] media-item" data-item='@json($item)' data-index="{{ $index }}">Edit</a>
+                                <span class="text-[#c3c4c7]">|</span>
+                                <button class="text-[#b32d2e] hover:text-[#8a2424]" onclick="confirmDelete('{{ $item->id }}')">Delete Permanently</button>
+                                <span class="text-[#c3c4c7]">|</span>
+                                <a href="{{ asset('storage/'.$item->path) }}" target="_blank" class="text-[#2271b1] hover:underline">View</a>
+                            </div>
+                        </td>
+                        <td class="p-2 align-top pt-3 text-[#2271b1]">{{ $item->user->name ?? 'Admin' }}</td>
+                        <td class="p-2 align-top pt-3">
+                            @if($item->model_type && $item->model_id)
+                                <div class="text-[#2271b1] hover:text-[#135e96] cursor-pointer">Linked Content</div>
+                                <div class="text-[11px] text-[#646970] mt-1 italic">Detach</div>
+                            @else
+                                <span class="text-[#646970] italic">(Unattached)</span>
+                                <div class="text-[11px] text-[#2271b1] hover:text-[#135e96] mt-1 cursor-pointer">Attach</div>
+                            @endif
+                        </td>
+                        <td class="p-2 align-top pt-3 text-[#646970]">{{ $item->created_at->format('Y/m/d') }}</td>
+                    </tr>
+                @empty
+                    <tr>
+                        <td colspan="6" class="p-10 text-center text-[#646970] italic bg-white">No media files found.</td>
+                    </tr>
+                @endforelse
+            </tbody>
+        </table>
+    </div>
+
+    <!-- Bottom Bulk Actions & Pagination -->
+    <div id="pagination-bottom-container" class="flex items-center justify-between mt-4">
+        <div class="flex items-center gap-2">
+            <select id="bulk-action-selector-bottom" class="wp-input h-7 text-[13px] py-0 w-32">
+                <option value="">Bulk actions</option>
+                <option value="delete">Delete permanently</option>
+            </select>
+            <button id="apply-bulk-action-bottom" class="wp-btn-secondary h-7 px-3 text-[13px]">Apply</button>
+        </div>
+        <div class="flex items-center gap-4 text-[13px] text-[#646970]">
+            <span>{{ $media->total() }} items</span>
+            <div class="flex items-center gap-1">
+                {{ $media->links('cms-dashboard::components.admin.pagination') }}
             </div>
-        @empty
-            <div class="col-span-full py-20 text-center text-[#646970] italic">
-                No media files yet. <a href="{{ route('admin.media.create') }}" class="text-[#2271b1] underline">Upload some?</a>
-            </div>
-        @endforelse
+        </div>
     </div>
 
     <!-- Attachment Details Modal (WP Full Page Style) -->
@@ -103,9 +231,15 @@
                         <div><label class="block text-[12px] font-bold text-[#646970] mb-1">File URL:</label><div class="flex gap-1"><input type="text" id="modal-meta-url" readonly class="wp-input grow text-[11px] h-8 bg-[#f6f7f7]"><button onclick="document.getElementById('modal-meta-url').select();document.execCommand('copy');alert('Copied!')" class="wp-btn-secondary h-8 px-2 text-[11px]">Copy</button></div></div>
                     </div>
 
-                    <div class="mt-6 pt-4 border-t border-[#c3c4c7] flex flex-wrap gap-4 text-[13px]">
-                        <a href="#" id="modal-view-file" target="_blank" class="text-[#2271b1] hover:underline">View media file</a>
-                        <button id="modal-delete-btn" class="text-[#b32d2e] hover:underline">Delete permanently</button>
+                    <div class="mt-6 pt-4 border-t border-[#c3c4c7] space-y-4">
+                        <div class="flex justify-between items-center">
+                            <button id="modal-update-btn" class="wp-btn-primary h-8 px-6 text-[13px] font-semibold">Update</button>
+                            <span id="update-status-msg" class="text-[12px] text-green-600 font-medium hidden">Saved!</span>
+                        </div>
+                        <div class="flex flex-wrap gap-4 text-[13px]">
+                            <a href="#" id="modal-view-file" target="_blank" class="text-[#2271b1] hover:underline">View media file</a>
+                            <button id="modal-delete-btn" class="text-[#b32d2e] hover:underline">Delete permanently</button>
+                        </div>
                     </div>
                 </div>
             </div>
@@ -120,10 +254,24 @@
         }
 
         document.addEventListener('DOMContentLoaded', function() {
-            const items = Array.from(document.querySelectorAll('.media-item')).map(el => JSON.parse(el.dataset.item));
+            // State
+            let items = Array.from(document.querySelectorAll('.media-item')).map(el => {
+                try { return JSON.parse(el.dataset.item); } catch(e) { return null; }
+            }).filter(i => i !== null);
+            
             const modal = document.getElementById('attachment-details-modal');
+            const bulkSelectBtn = document.getElementById('bulk-select-btn');
+            const gridView = document.getElementById('media-grid-view');
+            const listContainer = document.getElementById('media-list-container');
+            const gridContainer = document.getElementById('media-grid-container');
+            const paginationTop = document.getElementById('pagination-top');
+            const paginationBottom = document.getElementById('pagination-bottom-container');
+            const loadMoreBtn = document.getElementById('load-more-btn');
+            
             let currentIndex = -1;
+            let isBulkSelectMode = false;
 
+            // Modal Functions
             function openDetails(index) {
                 currentIndex = index;
                 const item = items[index];
@@ -167,35 +315,260 @@
                 document.getElementById('next-attachment').disabled = (index === items.length - 1);
             }
 
-            document.querySelectorAll('.media-item').forEach(el => {
-                el.addEventListener('click', () => openDetails(parseInt(el.dataset.index)));
+            // View Control
+            function updateViewUI(view) {
+                if (view === 'grid') {
+                    gridView.classList.remove('hidden');
+                    listContainer.classList.add('hidden');
+                    paginationTop.classList.add('invisible');
+                    paginationBottom.classList.add('hidden');
+                    bulkSelectBtn.classList.remove('hidden');
+                    document.getElementById('view-grid-btn').classList.add('text-[#2271b1]');
+                    document.getElementById('view-grid-btn').classList.remove('text-[#646970]');
+                    document.getElementById('view-list-btn').classList.add('text-[#646970]');
+                    document.getElementById('view-list-btn').classList.remove('text-[#2271b1]');
+                } else {
+                    gridView.classList.add('hidden');
+                    listContainer.classList.remove('hidden');
+                    paginationTop.classList.remove('invisible');
+                    paginationBottom.classList.remove('hidden');
+                    bulkSelectBtn.classList.add('hidden');
+                    document.getElementById('view-list-btn').classList.add('text-[#2271b1]');
+                    document.getElementById('view-list-btn').classList.remove('text-[#646970]');
+                    document.getElementById('view-grid-btn').classList.add('text-[#646970]');
+                    document.getElementById('view-grid-btn').classList.remove('text-[#2271b1]');
+                    disableBulkSelectMode();
+                }
+            }
+
+            function handleMediaItemClick(index, el) {
+                if (isBulkSelectMode) {
+                    const container = el.closest('.media-item-container') || el.closest('tr');
+                    const cb = container.querySelector('.media-checkbox');
+                    if (cb) cb.checked = !cb.checked;
+                } else {
+                    openDetails(index);
+                }
+            }
+
+            function disableBulkSelectMode() {
+                isBulkSelectMode = false;
+                bulkSelectBtn.innerText = 'Bulk Select';
+                bulkSelectBtn.classList.remove('bg-[#f0f0f1]');
+                document.querySelectorAll('.media-checkbox-wrapper').forEach(el => el.classList.add('hidden'));
+                document.querySelectorAll('.media-checkbox').forEach(cb => cb.checked = false);
+            }
+
+            // Listeners
+            document.getElementById('view-grid-btn').addEventListener('click', () => { updateViewUI('grid'); localStorage.setItem('media_view', 'grid'); });
+            document.getElementById('view-list-btn').addEventListener('click', () => { updateViewUI('list'); localStorage.setItem('media_view', 'list'); });
+            
+            bulkSelectBtn.addEventListener('click', () => {
+                isBulkSelectMode = !isBulkSelectMode;
+                if (isBulkSelectMode) {
+                    bulkSelectBtn.innerText = 'Cancel Selection';
+                    bulkSelectBtn.classList.add('bg-[#f0f0f1]');
+                    document.querySelectorAll('.media-checkbox-wrapper').forEach(el => el.classList.remove('hidden'));
+                    // Auto-select all visible items in the grid
+                    document.querySelectorAll('#media-grid-container .media-checkbox').forEach(cb => cb.checked = true);
+                } else {
+                    disableBulkSelectMode();
+                }
             });
 
-            document.getElementById('close-details-modal').addEventListener('click', () => modal.classList.add('hidden'));
-            document.getElementById('details-modal-backdrop').addEventListener('click', () => modal.classList.add('hidden'));
+            document.querySelectorAll('.media-item').forEach(el => {
+                el.addEventListener('click', (e) => {
+                    e.stopPropagation();
+                    handleMediaItemClick(parseInt(el.dataset.index), el);
+                });
+            });
 
             document.getElementById('prev-attachment').addEventListener('click', () => { if(currentIndex > 0) openDetails(currentIndex - 1); });
             document.getElementById('next-attachment').addEventListener('click', () => { if(currentIndex < items.length - 1) openDetails(currentIndex + 1); });
+            document.getElementById('close-details-modal').addEventListener('click', () => modal.classList.add('hidden'));
+            document.getElementById('details-modal-backdrop').addEventListener('click', () => modal.classList.add('hidden'));
+
+            // Load More
+            if (loadMoreBtn) {
+                loadMoreBtn.addEventListener('click', function() {
+                    const nextPage = this.dataset.nextPage;
+                    const url = new URL(window.location.href);
+                    url.searchParams.set('page', nextPage);
+
+                    this.disabled = true;
+                    this.innerText = 'Loading...';
+
+                    fetch(url, { headers: { 'X-Requested-With': 'XMLHttpRequest' } })
+                    .then(res => res.json())
+                    .then(data => {
+                        if (data.data.length > 0) {
+                            data.data.forEach(item => {
+                                const newIndex = items.length;
+                                items.push(item);
+                                const html = `
+                                    <div class="relative cursor-pointer group media-item-container" data-id="${item.id}" data-index="${newIndex}">
+                                        <div class="media-item" data-index="${newIndex}" data-item='${JSON.stringify(item)}'>
+                                            <div class="aspect-square border-2 border-transparent bg-[#f0f0f1] overflow-hidden group-hover:border-[#2271b1] transition-all flex items-center justify-center">
+                                                ${item.mime_type.startsWith('image/') 
+                                                    ? `<img src="/storage/${item.path}" class="w-full h-full object-cover">`
+                                                    : `<span class="material-symbols-outlined text-[#646970] text-4xl">${item.mime_type.startsWith('video/') ? 'movie' : (item.mime_type === 'application/pdf' ? 'description' : 'draft')}</span>`
+                                                }
+                                            </div>
+                                        </div>
+                                        <div class="absolute top-1 right-1 z-10 media-checkbox-wrapper ${isBulkSelectMode ? '' : 'hidden'}">
+                                            <input type="checkbox" value="${item.id}" class="media-checkbox w-5 h-5 cursor-pointer">
+                                        </div>
+                                        <div class="mt-1 px-1 overflow-hidden">
+                                            <div class="text-[11px] text-[#1d2327] truncate font-bold media-display-title" title="${item.title || item.filename}">${item.title || item.filename}</div>
+                                            <div class="text-[9px] text-[#646970] truncate media-display-filename">${item.filename}</div>
+                                        </div>
+                                    </div>`;
+                                const div = document.createElement('div');
+                                div.innerHTML = html.trim();
+                                const newEl = div.firstChild;
+                                newEl.querySelector('.media-item').addEventListener('click', (e) => {
+                                    e.stopPropagation();
+                                    handleMediaItemClick(newIndex, newEl.querySelector('.media-item'));
+                                });
+                                gridContainer.appendChild(newEl);
+                            });
+
+                            if (data.next_page_url) {
+                                this.dataset.nextPage = parseInt(nextPage) + 1;
+                                this.disabled = false;
+                                this.innerText = 'Load more items';
+                            } else {
+                                document.getElementById('load-more-container').classList.add('hidden');
+                            }
+                        }
+                    });
+                });
+            }
+
+            // Bulk Action Handlers
+            const applyTop = document.getElementById('apply-bulk-action-top');
+            const applyBottom = document.getElementById('apply-bulk-action-bottom');
+            
+            function executeBulkDelete(ids) {
+                if (!confirm('Are you sure you want to delete selected items permanently?')) return;
+                fetch('{{ route('admin.media.bulk-delete') }}', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json', 'X-Requested-With': 'XMLHttpRequest', 'X-CSRF-TOKEN': '{{ csrf_token() }}' },
+                    body: JSON.stringify({ ids: ids })
+                }).then(() => location.reload());
+            }
+
+            applyTop.addEventListener('click', () => {
+                const action = document.getElementById('bulk-action-selector-top').value;
+                const ids = Array.from(document.querySelectorAll('.media-checkbox:checked')).map(cb => cb.value);
+                if (action === 'delete' && ids.length > 0) executeBulkDelete(ids);
+            });
+
+            applyBottom.addEventListener('click', () => {
+                const action = document.getElementById('bulk-action-selector-bottom').value;
+                const ids = Array.from(document.querySelectorAll('.media-checkbox:checked')).map(cb => cb.value);
+                if (action === 'delete' && ids.length > 0) executeBulkDelete(ids);
+            });
+
+            window.confirmDelete = (id) => executeBulkDelete([id]);
+
+            // Update Manual Save
+            const updateBtn = document.getElementById('modal-update-btn');
+            const statusMsg = document.getElementById('update-status-msg');
+            updateBtn.addEventListener('click', function() {
+                if (currentIndex === -1) return;
+                const item = items[currentIndex];
+                
+                this.disabled = true;
+                this.innerText = 'Saving...';
+
+                const data = {
+                    alt_text: document.getElementById('modal-meta-alt').value,
+                    title: document.getElementById('modal-meta-title').value,
+                    caption: document.getElementById('modal-meta-caption').value,
+                    description: document.getElementById('modal-meta-desc').value,
+                    _token: '{{ csrf_token() }}',
+                    _method: 'PUT'
+                };
+
+                fetch(`/admin/media/${item.id}`, {
+                    method: 'POST',
+                    headers: {'Content-Type': 'application/json', 'X-Requested-With': 'XMLHttpRequest'},
+                    body: JSON.stringify(data)
+                })
+                .then(res => res.json())
+                .then(data => {
+                    this.innerText = 'Update';
+                    this.disabled = false;
+                    statusMsg.classList.remove('hidden');
+                    
+                    // Update local state completely with server data
+                    items[currentIndex] = data;
+
+                    // Update UI (Grid & List) and data-item attributes using UNIQUE ID
+                    const newTitle = data.title || data.filename;
+                    const containers = document.querySelectorAll(`[data-id="${data.id}"]`);
+                    
+                    containers.forEach(container => {
+                        // 1. Update text displays
+                        const titleEl = container.classList.contains('media-display-title') ? container : container.querySelector('.media-display-title');
+                        const filenameEl = container.classList.contains('media-display-filename') ? container : container.querySelector('.media-display-filename');
+                        
+                        if (titleEl) {
+                            titleEl.innerText = newTitle;
+                            titleEl.title = newTitle;
+                        }
+                        if (filenameEl) {
+                            filenameEl.innerText = data.filename;
+                        }
+
+                        // 2. Update data-item attribute for all children that have it
+                        const dataItemEls = container.hasAttribute('data-item') ? [container] : [];
+                        container.querySelectorAll('[data-item]').forEach(el => dataItemEls.push(el));
+                        
+                        dataItemEls.forEach(el => {
+                            el.dataset.item = JSON.stringify(data);
+                        });
+
+                        // 3. Update thumbnail if renamed (the image source)
+                        const img = container.querySelector('img');
+                        if (img) img.src = `/storage/${data.path}?v=${new Date().getTime()}`;
+                    });
+
+                    // Update Modal View for renamed file
+                    document.getElementById('modal-detail-img').src = `/storage/${data.path}?v=${new Date().getTime()}`;
+                    document.getElementById('modal-detail-filename').innerText = data.filename;
+                    document.getElementById('modal-meta-url').value = window.location.origin + '/storage/' + data.path;
+                    document.getElementById('modal-view-file').href = `/storage/${data.path}`;
+
+                    setTimeout(() => {
+                        statusMsg.classList.add('hidden');
+                    }, 3000);
+                });
+            });
 
             // Auto-save on blur
             ['alt', 'title', 'caption', 'desc'].forEach(meta => {
-                document.getElementById(`modal-meta-${meta}`).addEventListener('blur', function() {
-                    if (currentIndex === -1) return;
-                    const item = items[currentIndex];
-                    const data = {
-                        alt_text: document.getElementById('modal-meta-alt').value,
-                        title: document.getElementById('modal-meta-title').value,
-                        caption: document.getElementById('modal-meta-caption').value,
-                        description: document.getElementById('modal-meta-desc').value,
-                        _token: '{{ csrf_token() }}',
-                        _method: 'PUT'
-                    };
-                    fetch(`/admin/media/${item.id}`, {
-                        method: 'POST',
-                        headers: {'Content-Type': 'application/json', 'X-Requested-With': 'XMLHttpRequest'},
-                        body: JSON.stringify(data)
+                const el = document.getElementById(`modal-meta-${meta}`);
+                if (el) {
+                    el.addEventListener('blur', function() {
+                        if (currentIndex === -1) return;
+                        const item = items[currentIndex];
+                        const data = {
+                            alt_text: document.getElementById('modal-meta-alt').value,
+                            title: document.getElementById('modal-meta-title').value,
+                            caption: document.getElementById('modal-meta-caption').value,
+                            description: document.getElementById('modal-meta-desc').value,
+                            _token: '{{ csrf_token() }}',
+                            _method: 'PUT'
+                        };
+                        fetch(`/admin/media/${item.id}`, {
+                            method: 'POST',
+                            headers: {'Content-Type': 'application/json', 'X-Requested-With': 'XMLHttpRequest'},
+                            body: JSON.stringify(data)
+                        });
                     });
-                });
+                }
             });
 
             document.getElementById('modal-delete-btn').addEventListener('click', function() {
@@ -207,11 +580,11 @@
                     body: JSON.stringify({_token: '{{ csrf_token() }}', _method: 'DELETE'})
                 }).then(() => location.reload());
             });
+
+            // Restore preference
+            const savedView = localStorage.getItem('media_view') || 'grid';
+            updateViewUI(savedView);
         });
     </script>
-
-    <div class="mt-4">
-        {{ $media->links('cms-dashboard::components.admin.pagination') }}
-    </div>
 
 </x-cms-dashboard::layouts.admin>

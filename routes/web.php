@@ -34,6 +34,7 @@ Route::middleware(['web'])->group(function() use ($login_slug, $register_slug) {
 // 2. Authenticated Admin Routes
 Route::prefix('admin')->name('admin.')->middleware(['web', \Acme\CmsDashboard\Http\Middleware\AdminMiddleware::class])->group(function () {
     // Media and posts
+    Route::post('media/bulk-delete', [MediaController::class, 'bulkDestroy'])->name('media.bulk-delete');
     Route::get('media', [MediaController::class, 'index'])->name('media.index');
     Route::get('media/upload', [MediaController::class, 'create'])->name('media.create');
     Route::post('media', [MediaController::class, 'store'])->name('media.store');
@@ -146,32 +147,6 @@ Route::prefix('admin')->name('admin.')->middleware(['web', \Acme\CmsDashboard\Ht
     Route::post('email/check', [RegisterController::class, 'checkEmail'])->name('email.check');
     Route::post('admin/email/check', [RegisterController::class, 'checkEmail'])->name('admin.email.check');
  
-    // DB Fix / Seeding
-    Route::get('fix-db', function() {
-        try {
-            \Illuminate\Support\Facades\Artisan::call('migrate', ['--force' => true]);
-            \Illuminate\Support\Facades\Artisan::call('db:seed', [
-                '--class' => 'Acme\\CmsDashboard\\Database\\Seeders\\MenuSeeder', 
-                '--force' => true
-            ]);
-            
-            $pagesMenu = \Acme\CmsDashboard\Models\Menu::where('title', 'Pages')->first();
-            if ($pagesMenu) {
-                \Acme\CmsDashboard\Models\Menu::where('parent_id', $pagesMenu->id)->delete();
-                \Acme\CmsDashboard\Models\Menu::create(['parent_id' => $pagesMenu->id, 'title' => 'All Pages', 'route' => 'admin.pages.index', 'order' => 1]);
-                \Acme\CmsDashboard\Models\Menu::create(['parent_id' => $pagesMenu->id, 'title' => 'Add New', 'route' => 'admin.pages.create', 'order' => 2]);
-            }
-            
-            $usersMenu = \Acme\CmsDashboard\Models\Menu::where('title', 'Users')->first();
-            if ($usersMenu) {
-                \Acme\CmsDashboard\Models\Menu::updateOrCreate(['parent_id' => $usersMenu->id, 'title' => 'Roles'], ['route' => 'admin.roles.index', 'order' => 3]);
-            }
- 
-            return "Database and Menus fixed successfully!";
-        } catch (\Exception $e) {
-            return "Error: " . $e->getMessage();
-        }
-    });
  
     // Frontend Routes (Catch-all for posts/pages)
     Route::get('/{typeOrSlug}/{slug?}', [FrontendController::class, 'show'])->name('frontend.show');

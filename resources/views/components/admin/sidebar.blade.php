@@ -39,11 +39,11 @@
                     @endphp
                 <li class="{{ $liClasses }}">
                     <a href="{{ $href }}" class="sidebar-item-link relative flex items-center px-3 py-[8px] transition-colors {{ $isActive ? 'bg-[#2271b1] text-white' : 'hover:bg-[#2c3338] hover:text-[#72aee6] text-[#c3c4c7]' }}">
-                        <div class="w-5 h-5 mr-3 flex items-center justify-center {!! $isActive ? 'text-white' : 'text-[#c3c4c7] group-hover:text-[#72aee6]' !!}">
+                        <div class="w-6 h-6 mr-3 flex items-center justify-center {!! $isActive ? 'text-white' : 'text-[#a7aaad] group-hover:text-[#72aee6]' !!}">
                             @if(str_starts_with($menu->icon, '<svg'))
-                                {!! $menu->icon !!}
+                                <div class="w-5 h-5 flex items-center justify-center">{!! $menu->icon !!}</div>
                             @else
-                                <span class="material-symbols-outlined text-[20px]">{{ $menu->icon ?: 'radio_button_unchecked' }}</span>
+                                <span class="material-symbols-outlined text-[20px] leading-none" style="font-variation-settings: 'FILL' 1, 'wght' 300, 'GRAD' 0, 'opsz' 20;">{{ $menu->icon ?: 'radio_button_unchecked' }}</span>
                             @endif
                         </div>
                         <span class="text-[14px] leading-none {{ $isActive ? 'font-semibold' : '' }}">{{ $menu->title }}</span>
@@ -109,13 +109,13 @@
                 @endphp
                 <li class="group sidebar-item relative">
                     <a href="{{ $href }}" class="sidebar-item-link relative flex items-center px-3 py-[8px] transition-colors {{ $isActive ? 'bg-[#2271b1] text-white' : 'hover:bg-[#2c3338] hover:text-[#72aee6] text-[#c3c4c7]' }}">
-                        <div class="w-5 h-5 mr-3 flex items-center justify-center {!! $isActive ? 'text-white' : 'text-[#c3c4c7] group-hover:text-[#72aee6]' !!}">
+                        <div class="w-6 h-6 mr-3 flex items-center justify-center {!! $isActive ? 'text-white' : 'text-[#a7aaad] group-hover:text-[#72aee6]' !!}">
                             @if(isset($page['icon']) && str_starts_with($page['icon'], '<svg'))
-                                {!! $page['icon'] !!}
+                                <div class="w-5 h-5 flex items-center justify-center">{!! $page['icon'] !!}</div>
                             @elseif(isset($page['icon']))
-                                <span class="material-symbols-outlined text-[20px]">{{ $page['icon'] }}</span>
+                                <span class="material-symbols-outlined text-[20px] leading-none" style="font-variation-settings: 'FILL' 1, 'wght' 300, 'GRAD' 0, 'opsz' 20;">{{ $page['icon'] }}</span>
                             @else
-                                <span class="material-symbols-outlined text-[20px]">settings</span>
+                                <span class="material-symbols-outlined text-[20px] leading-none" style="font-variation-settings: 'FILL' 1, 'wght' 300, 'GRAD' 0, 'opsz' 20;">settings</span>
                             @endif
                         </div>
                         <span class="text-[14px] leading-none {{ $isActive ? 'font-semibold' : '' }}">{{ $page['title'] }}</span>

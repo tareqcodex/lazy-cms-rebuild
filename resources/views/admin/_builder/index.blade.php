@@ -5,9 +5,9 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Page Builder – Lazy CMS</title>
     <meta name="csrf-token" content="{{ csrf_token() }}">
-    <script src="https://cdn.tailwindcss.com"></script>
-    <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js"></script>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:ital,wght@0,300;0,400;0,500;0,600;0,700&display=swap" rel="stylesheet">
+    <script src="{{ asset('vendor/cms-dashboard/js/tailwind.min.js') }}"></script>
+    <script defer src="{{ asset('vendor/cms-dashboard/js/alpine.min.js') }}"></script>
+    <link href="{{ asset('vendor/cms-dashboard/css/inter.css') }}" rel="stylesheet">
     <style>
         *{ box-sizing:border-box; }
         body{ font-family:'Inter',-apple-system,sans-serif; margin:0; padding:0; background:#efefef; overflow:hidden; }

@@ -40,6 +40,10 @@ class CmsDashboardServiceProvider extends ServiceProvider
                 __DIR__ . '/../resources/views' => resource_path('views/vendor/cms-dashboard'),
             ], 'cms-dashboard-views');
 
+            $this->publishes([
+                __DIR__ . '/../public/assets' => public_path('vendor/cms-dashboard'),
+            ], 'cms-dashboard-assets');
+
             $this->commands([
                 \Acme\CmsDashboard\Console\Commands\MakeDashboardPage::class,
                 \Acme\CmsDashboard\Console\Commands\InstallLazyCms::class,

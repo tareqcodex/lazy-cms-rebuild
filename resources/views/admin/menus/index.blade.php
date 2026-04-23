@@ -231,7 +231,7 @@
                                      display:flex; align-items:center; gap:6px; }
     </style>
 
-    <script src="https://cdn.jsdelivr.net/npm/sortablejs@1.15.0/Sortable.min.js"></script>
+    <script src="{{ asset('vendor/cms-dashboard/js/sortable.min.js') }}"></script>
     <script>
     /* ──────────────────────────────────
        Data: flat array, each item has depth (0|1|2)
