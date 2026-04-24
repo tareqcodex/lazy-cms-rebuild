@@ -1,6 +1,7 @@
 {
     "name": "tareqcodex/lazy-cms-rebuild",
     "description": "A reusable WordPress-like admin dashboard package.",
+    "version": "1.1.0",
     "type": "library",
     "require": {
         "php": "^8.1",

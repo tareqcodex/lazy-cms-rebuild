@@ -428,42 +428,42 @@
                 if (!slugInput.value || slugInput.value === generateSlug(this.value.substring(0, this.value.length - 1))) {
                     let newSlug = generateSlug(this.value);
                     slugInput.value = newSlug;
-                    slugDisplay.innerText = newSlug;
+                    if (slugDisplay) slugDisplay.innerText = newSlug;
                     originalSlug = newSlug;
                     if (this.value) {
-                        permalinkContainer.classList.remove('hidden');
-                        permalinkContainer.classList.add('flex');
+                        permalinkContainer?.classList.remove('hidden');
+                        permalinkContainer?.classList.add('flex');
                     }
                 }
             });
 
             document.getElementById('edit-slug-btn')?.addEventListener('click', function() {
-                viewSpan.classList.add('hidden');
-                editSpan.classList.remove('hidden');
-                slugInput.focus();
+                viewSpan?.classList.add('hidden');
+                editSpan?.classList.remove('hidden');
+                slugInput?.focus();
             });
 
             document.getElementById('ok-slug-btn')?.addEventListener('click', function() {
                 let newSlug = generateSlug(slugInput.value);
                 slugInput.value = newSlug;
-                slugDisplay.innerText = newSlug;
+                if (slugDisplay) slugDisplay.innerText = newSlug;
                 originalSlug = newSlug;
-                viewSpan.classList.remove('hidden');
-                editSpan.classList.add('hidden');
+                viewSpan?.classList.remove('hidden');
+                editSpan?.classList.add('hidden');
             });
 
             document.getElementById('cancel-slug-btn')?.addEventListener('click', (e) => { 
                 e.preventDefault(); 
                 slugInput.value = originalSlug; 
-                viewSpan.classList.remove('hidden'); 
-                editSpan.classList.add('hidden'); 
+                viewSpan?.classList.remove('hidden'); 
+                editSpan?.classList.add('hidden'); 
             });
         }
 
         // Save Draft Logic Override
-        document.getElementById('save-draft-btn').addEventListener('click', function() {
-            statusHidden.value = 'draft';
-            document.getElementById('post-form').submit();
+        document.getElementById('save-draft-btn')?.addEventListener('click', function() {
+            if (statusHidden) statusHidden.value = 'draft';
+            document.getElementById('post-form')?.submit();
         });
 
         // Featured Image UI with Modal
@@ -473,28 +473,28 @@
         const fiPreviewContainer = document.getElementById('fi-preview-container');
         const fiPathHidden = document.getElementById('fi-path-hidden');
 
-        setFiBtn.addEventListener('click', (e) => { 
+        setFiBtn?.addEventListener('click', (e) => { 
             e.preventDefault(); 
             window.openMediaModal(function(media) {
-                fiPathHidden.value = media.path;
-                fiPreview.src = `/storage/${media.path}`;
-                fiPreviewContainer.classList.remove('hidden');
-                setFiBtn.classList.add('hidden');
-                removeFiBtn.classList.remove('hidden');
+                if (fiPathHidden) fiPathHidden.value = media.path;
+                if (fiPreview) fiPreview.src = `/storage/${media.path}`;
+                fiPreviewContainer?.classList.remove('hidden');
+                setFiBtn?.classList.add('hidden');
+                removeFiBtn?.classList.remove('hidden');
             });
         });
 
-        fiPreview.addEventListener('click', (e) => { 
+        fiPreview?.addEventListener('click', (e) => { 
             e.preventDefault(); 
-            setFiBtn.click();
+            setFiBtn?.click();
         });
 
-        removeFiBtn.addEventListener('click', (e) => {
+        removeFiBtn?.addEventListener('click', (e) => {
             e.preventDefault();
-            fiPathHidden.value = '';
-            fiPreviewContainer.classList.add('hidden');
-            setFiBtn.classList.remove('hidden');
-            removeFiBtn.classList.add('hidden');
+            if (fiPathHidden) fiPathHidden.value = '';
+            fiPreviewContainer?.classList.add('hidden');
+            setFiBtn?.classList.remove('hidden');
+            removeFiBtn?.classList.add('hidden');
         });
 
 
@@ -797,6 +797,9 @@
             input.name = 'redirect_to_builder';
             input.value = '1';
             form.appendChild(input);
+
+            const editorTypeInput = document.getElementById('editor_type');
+            if (editorTypeInput) editorTypeInput.value = 'builder';
 
             // Give the button a loading state
             this.innerText = 'Saving & Starting Builder...';

@@ -172,13 +172,22 @@
                     'X-Requested-With': 'XMLHttpRequest'
                 }
             })
-            .then(res => res.json())
-            .then(data => {
-                if (data.success) {
+            .then(async res => {
+                const isJson = res.headers.get('content-type')?.includes('application/json');
+                const data = isJson ? await res.json() : null;
+                
+                if (res.ok && data && data.success) {
                     loadLibrary();
+                    // Clear file input
+                    fileInput.value = '';
                 } else {
-                    alert('Upload failed.');
+                    console.error('Upload Error:', data || await res.text());
+                    alert('Upload failed. Check console for details.');
                 }
+            })
+            .catch(err => {
+                console.error('Fetch Error:', err);
+                alert('Network error or server unavailable.');
             })
             .finally(() => {
                 document.getElementById('media-loading-spinner').classList.add('hidden');

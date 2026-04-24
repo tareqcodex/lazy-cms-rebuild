@@ -80,7 +80,7 @@
                         <h2 class="text-[#2c3338] text-[22px] font-bold mb-3">Welcome to the Page Builder</h2>
                         <p class="text-[#646970] text-[14px] mb-8">This post is now using the amazing page builder.</p>
                         
-                        <button type="button" @if(isset($post->id)) onclick="window.open('{{ route('admin.builder', $post->id) }}', '_blank')" @else onclick="alert('Please save the post first to enable the Page Builder.')" @endif class="wp-btn-primary px-6 py-2 h-auto text-[15px] rounded-md shadow-sm">
+                        <button type="button" @if(isset($post->id)) onclick="window.location.href='{{ route('admin.lazy-builder', $post->id) }}'" @else onclick="alert('Please save the post first to enable the Page Builder.')" @endif class="wp-btn-primary px-6 py-2 h-auto text-[15px] rounded-md shadow-sm">
                             Edit with Page Builder
                         </button>
                     </div>
@@ -468,32 +468,32 @@
                 }
             });
             document.getElementById('edit-slug-btn')?.addEventListener('click', function() {
-                viewSpan.classList.add('hidden');
-                editSpan.classList.remove('hidden');
-                slugInput.focus();
+                viewSpan?.classList.add('hidden');
+                editSpan?.classList.remove('hidden');
+                slugInput?.focus();
             });
 
             document.getElementById('ok-slug-btn')?.addEventListener('click', function() {
                 let newSlug = slugInput.value.toLowerCase().replace(/\s+/g, '-').replace(/[^\w\-]+/g, '');
                 slugInput.value = newSlug;
-                slugDisplay.innerText = newSlug;
+                if (slugDisplay) slugDisplay.innerText = newSlug;
                 originalSlug = newSlug;
-                viewSpan.classList.remove('hidden');
-                editSpan.classList.add('hidden');
+                viewSpan?.classList.remove('hidden');
+                editSpan?.classList.add('hidden');
             });
 
             document.getElementById('cancel-slug-btn')?.addEventListener('click', (e) => { 
                 e.preventDefault(); 
                 slugInput.value = originalSlug; 
-                viewSpan.classList.remove('hidden'); 
-                editSpan.classList.add('hidden'); 
+                viewSpan?.classList.remove('hidden'); 
+                editSpan?.classList.add('hidden'); 
             });
         }
 
         // Save Draft Logic Override
-        document.getElementById('save-draft-btn').addEventListener('click', function() {
-            statusHidden.value = 'draft';
-            document.getElementById('post-form').submit();
+        document.getElementById('save-draft-btn')?.addEventListener('click', function() {
+            if (statusHidden) statusHidden.value = 'draft';
+            document.getElementById('post-form')?.submit();
         });
 
         // Featured Image UI with Modal
@@ -504,30 +504,30 @@
         const fiPathHidden = document.getElementById('fi-path-hidden');
         const removeHidden = document.getElementById('remove-fi-hidden');
 
-        setFiBtn.addEventListener('click', (e) => { 
+        setFiBtn?.addEventListener('click', (e) => { 
             e.preventDefault(); 
             window.openMediaModal(function(media) {
-                fiPathHidden.value = media.path;
-                fiPreview.src = `/storage/${media.path}`;
-                fiPreviewContainer.classList.remove('hidden');
-                setFiBtn.classList.add('hidden');
-                removeFiBtn.classList.remove('hidden');
-                removeHidden.value = "0";
+                if (fiPathHidden) fiPathHidden.value = media.path;
+                if (fiPreview) fiPreview.src = `/storage/${media.path}`;
+                fiPreviewContainer?.classList.remove('hidden');
+                setFiBtn?.classList.add('hidden');
+                removeFiBtn?.classList.remove('hidden');
+                if (removeHidden) removeHidden.value = "0";
             });
         });
 
-        fiPreview.addEventListener('click', (e) => { 
+        fiPreview?.addEventListener('click', (e) => { 
             e.preventDefault(); 
-            setFiBtn.click();
+            setFiBtn?.click();
         });
 
-        removeFiBtn.addEventListener('click', (e) => {
+        removeFiBtn?.addEventListener('click', (e) => {
             e.preventDefault();
-            fiPathHidden.value = '';
-            removeHidden.value = "1";
-            fiPreviewContainer.classList.add('hidden');
-            setFiBtn.classList.remove('hidden');
-            removeFiBtn.classList.add('hidden');
+            if (fiPathHidden) fiPathHidden.value = '';
+            if (removeHidden) removeHidden.value = "1";
+            fiPreviewContainer?.classList.add('hidden');
+            setFiBtn?.classList.remove('hidden');
+            removeFiBtn?.classList.add('hidden');
         });
 
 

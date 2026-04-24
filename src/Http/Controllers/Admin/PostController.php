@@ -14,7 +14,7 @@ class PostController extends Controller
     public function builder($id)
     {
         $post = Post::findOrFail($id);
-        return view('cms-dashboard::admin.builder.index', compact('post'));
+        return view('cms-dashboard::admin.lazy-builder.index', compact('post'));
     }
 
     public function saveBuilder(Request $request, $id)
@@ -32,7 +32,7 @@ class PostController extends Controller
     {
         $post = Post::findOrFail($id);
         // This would typically return a front-end view that renders the builder JSON
-        return view('cms-dashboard::admin.builder.preview', compact('post'));
+        return view('cms-dashboard::admin.lazy-builder.preview', compact('post'));
     }
 
     public function __construct()
@@ -265,7 +265,7 @@ class PostController extends Controller
         }
 
         if ($request->has('redirect_to_builder')) {
-            return redirect()->route('admin.posts.edit', ['post' => $post, 'start_builder' => 1])->with('success', ucfirst($validated['type']) . ' created successfully.');
+            return redirect()->route('admin.lazy-builder', $post->id)->with('success', ucfirst($validated['type']) . ' created successfully.');
         }
 
         return redirect()->route('admin.posts.edit', $post)->with('success', ucfirst($validated['type']) . ' created successfully.');

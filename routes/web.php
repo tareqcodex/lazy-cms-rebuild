@@ -48,9 +48,9 @@ Route::prefix('admin')->name('admin.')->middleware(['web', \Acme\CmsDashboard\Ht
     Route::post('posts/{post}/restore', [PostController::class, 'restore'])->name('posts.restore')->withTrashed();
     Route::delete('posts/{post}/force-delete', [PostController::class, 'forceDelete'])->name('posts.force-delete')->withTrashed();
     Route::resource('posts', PostController::class);
-    Route::get('builder/{id}', [PostController::class, 'builder'])->name('builder');
-    Route::post('builder/{id}/save', [PostController::class, 'saveBuilder'])->name('builder.save');
-    Route::get('builder/{id}/preview', [PostController::class, 'previewBuilder'])->name('builder.preview');
+    Route::get('lazy-builder/{id}', [PostController::class, 'builder'])->name('lazy-builder');
+    Route::post('lazy-builder/{id}/save', [PostController::class, 'saveBuilder'])->name('lazy-builder.save');
+    Route::get('lazy-builder/{id}/preview', [PostController::class, 'previewBuilder'])->name('lazy-builder.preview');
  
     Route::post('pages/bulk', [\Acme\CmsDashboard\Http\Controllers\Admin\PageController::class, 'bulk'])->name('pages.bulk');
     Route::post('pages/{page}/restore', [\Acme\CmsDashboard\Http\Controllers\Admin\PageController::class, 'restore'])->name('pages.restore')->withTrashed();
@@ -148,7 +148,9 @@ Route::prefix('admin')->name('admin.')->middleware(['web', \Acme\CmsDashboard\Ht
     Route::post('admin/email/check', [RegisterController::class, 'checkEmail'])->name('admin.email.check');
  
  
-    // Frontend Routes (Catch-all for posts/pages)
-    Route::get('/{typeOrSlug}/{slug?}', [FrontendController::class, 'show'])->name('frontend.show');
+});
  
+// 3. Frontend Routes (Catch-all for posts/pages) - Outside Admin Group
+Route::middleware(['web'])->group(function() {
+    Route::get('/{typeOrSlug}/{slug?}', [FrontendController::class, 'show'])->name('frontend.show');
 });
