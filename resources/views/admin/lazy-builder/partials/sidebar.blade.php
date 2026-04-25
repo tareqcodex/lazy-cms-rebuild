@@ -1,4 +1,4 @@
-<aside class="builder-sidebar flex flex-col" v-show="!isPreview">
+<aside class="builder-sidebar flex flex-col" v-if="!isPreview">
     <!-- Mini Tab Icons at Top (WP/Avada Style) -->
     <div class="flex border-b border-slate-100 bg-slate-50/50">
         <button @click="activeTab='settings'" :class="activeTab==='settings' ? 'bg-white border-b-2 border-[#0091ea] text-[#0091ea]' : 'text-slate-400'" class="w-12 h-12 flex items-center justify-center transition-all">

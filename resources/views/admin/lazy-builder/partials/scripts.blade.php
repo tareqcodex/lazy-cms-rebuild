@@ -153,6 +153,30 @@
                 }
             });
 
+            // Watch isPreview to directly control layout via DOM
+            watch(isPreview, (val) => {
+                const wrapper = document.getElementById('lazy-builder-app');
+                const sidebar = document.querySelector('.builder-sidebar');
+                if (val) {
+                    // Preview ON: collapse sidebar column to 0
+                    wrapper.style.gridTemplateColumns = '0px 1fr';
+                    if (sidebar) {
+                        sidebar.style.display = 'none';
+                        sidebar.style.width = '0';
+                        sidebar.style.overflow = 'hidden';
+                    }
+                } else {
+                    // Preview OFF: restore sidebar column
+                    wrapper.style.gridTemplateColumns = '';
+                    if (sidebar) {
+                        sidebar.style.display = '';
+                        sidebar.style.width = '';
+                        sidebar.style.overflow = '';
+                    }
+                }
+            });
+
+
             const uid = () => Math.random().toString(36).substr(2, 9);
 
             const columnModalType = ref('new'); // 'new' or 'edit'
@@ -196,6 +220,12 @@
                             paddingTop: 0, paddingBottom: 0,
                             paddingLeft: 0, paddingRight: 0,
                             bgColor: '#ffffff', bgType: 'color',
+                            bgGradientStartColor: '#ffffff', bgGradientEndColor: '#000000',
+                            bgGradientStartPosition: 0, bgGradientEndPosition: 100,
+                            bgGradientType: 'linear', bgGradientAngle: 180,
+                            bgImage: '', bgImageSkipLazy: false, bgImagePosition: 'center center',
+                            bgImageRepeat: 'no-repeat', bgImageSize: 'auto', bgImageFading: false,
+                            bgImageParallax: 'none', bgImageBlendMode: 'normal',
                             contentWidth: 'site', height: 'auto', customHeight: '',
                             alignItems: 'stretch', alignContent: 'flex-start', justifyContent: 'flex-start',
                             flexWrap: 'wrap', columnGap: '', htmlTag: 'div',
@@ -463,19 +493,21 @@
                 const diffY = e.clientY - startY.value;
                 const diffX = e.clientX - startX.value;
                 let newVal = 0;
-                
-                const factor = (dragType.value === 'marginRight' || dragType.value === 'paddingRight' || dragType.value === 'marginBottom') ? -1 : 1;
-                // Simple logic for all directions
+
+                // Original direction logic (drag down = increase for vertical, drag right = increase for horizontal)
+                // Exception: marginRight and paddingRight are inverted (handle on right edge)
                 if (dragType.value.toLowerCase().includes('top') || dragType.value.toLowerCase().includes('bottom')) {
                     newVal = startVal.value + diffY;
                 } else {
                     newVal = startVal.value + diffX;
                 }
 
-                // Handle specific inverse directions
-                if (dragType.value === 'marginRight' || dragType.value === 'paddingRight') newVal = startVal.value - diffX;
-                if (dragType.value === 'marginBottom' || dragType.value === 'paddingBottom') newVal = startVal.value + diffY;
-                
+                // Invert right-side handles: paddingRight and marginRight both invert
+                // marginRight: drag LEFT = increases (right border moves left, left border stays)
+                if (dragType.value === 'paddingRight' || dragType.value === 'marginRight') {
+                    newVal = startVal.value - diffX;
+                }
+
                 let target;
                 if (isNestedDrag.value) {
                     target = layout.value[dragCi.value].columns[dragColi.value].elements[dragEli.value].columns[dragNcoli.value];
@@ -484,7 +516,7 @@
                 } else {
                     target = layout.value[dragCi.value];
                 }
-                
+
                 target.settings[dragType.value] = Math.max(0, newVal);
             };
 
@@ -498,6 +530,21 @@
                 window.removeEventListener('mouseup', stopDrag);
                 document.body.style.cursor = '';
                 document.body.classList.remove('select-none');
+            };
+
+            const openMediaModal = (settingKey) => {
+                if (window.openMediaModal) {
+                    window.openMediaModal((selectedMedia) => {
+                        const url = '/storage/' + selectedMedia.path;
+                        layout.value[editingContext.value.ci].settings[settingKey] = url;
+                    });
+                } else {
+                    const currentVal = layout.value[editingContext.value.ci].settings[settingKey] || '';
+                    const url = prompt("Enter image URL:", currentVal);
+                    if (url !== null) {
+                        layout.value[editingContext.value.ci].settings[settingKey] = url;
+                    }
+                }
             };
 
             const saveLayout = async () => {
@@ -541,6 +588,21 @@
                     boxShadowStr = `${inset}${s.boxShadowPositionHorizontal || 0}px ${s.boxShadowPositionVertical || 0}px ${s.boxShadowBlurRadius || 0}px ${s.boxShadowSpreadRadius || 0}px ${s.boxShadowColor || '#000000'}`;
                 }
 
+                let bgStyle = 'transparent';
+                let bgImageStr = '';
+                
+                if (s.bgType === 'color') {
+                    bgStyle = s.bgColor || 'transparent';
+                } else if (s.bgType === 'gradient') {
+                    if (s.bgGradientType === 'linear') {
+                        bgImageStr = `linear-gradient(${s.bgGradientAngle || 180}deg, ${s.bgGradientStartColor || '#ffffff'} ${s.bgGradientStartPosition || 0}%, ${s.bgGradientEndColor || '#000000'} ${s.bgGradientEndPosition || 100}%)`;
+                    } else {
+                        bgImageStr = `radial-gradient(circle at center, ${s.bgGradientStartColor || '#ffffff'} ${s.bgGradientStartPosition || 0}%, ${s.bgGradientEndColor || '#000000'} ${s.bgGradientEndPosition || 100}%)`;
+                    }
+                } else if (s.bgType === 'image' && s.bgImage) {
+                    bgImageStr = `url('${s.bgImage}')`;
+                }
+
                 return {
                     paddingTop: (s.paddingTop !== undefined && s.paddingTop !== '' ? s.paddingTop : 0) + 'px',
                     paddingBottom: (s.paddingBottom !== undefined && s.paddingBottom !== '' ? s.paddingBottom : 0) + 'px',
@@ -561,7 +623,13 @@
                     boxShadow: boxShadowStr,
                     zIndex: s.zIndex || 'auto',
                     overflow: s.overflow && s.overflow !== 'default' ? s.overflow : 'visible',
-                    backgroundColor: 'transparent',
+                    backgroundColor: bgStyle,
+                    backgroundImage: bgImageStr ? bgImageStr : 'none',
+                    backgroundPosition: s.bgType === 'image' ? (s.bgImagePosition || 'center center') : undefined,
+                    backgroundRepeat: s.bgType === 'image' ? (s.bgImageRepeat || 'no-repeat') : undefined,
+                    backgroundSize: s.bgType === 'image' ? (s.bgImageSize || 'auto') : undefined,
+                    backgroundAttachment: s.bgType === 'image' && s.bgImageParallax === 'fixed' ? 'fixed' : undefined,
+                    backgroundBlendMode: s.bgType === 'image' && s.bgImageBlendMode !== 'normal' ? s.bgImageBlendMode : undefined,
                     minHeight: (100 + Number(s.paddingTop || 0) + Number(s.paddingBottom || 0)) + 'px',
                     height: s.height === 'full' ? '100vh' : (s.height === 'custom' ? (s.customHeight || 'auto') : 'auto')
                 };
@@ -581,13 +649,17 @@
             };
 
             const columnOuterStyle = (column, totalColumns) => {
+                const s = column.settings;
                 const width = column.basis || (100 / totalColumns);
-                // Adjust width for the 2% gap requested by the user
                 const flexBasis = width >= 100 ? '100%' : `calc(${width}% - 2%)`;
                 return {
                     flex: `0 0 ${flexBasis}`,
                     maxWidth: `${flexBasis}`,
                     minWidth: '0',
+                    // Top/Bottom margins on outer: container height adjusts naturally
+                    marginTop: (s.marginTop || 0) + 'px',
+                    marginBottom: (s.marginBottom || 0) + 'px',
+                    // Left/Right margins are NOT here — they live on column-inner
                 };
             };
 
@@ -598,8 +670,7 @@
                     paddingBottom: (s.paddingBottom || 0) + 'px',
                     paddingLeft: (s.paddingLeft || 0) + 'px',
                     paddingRight: (s.paddingRight || 0) + 'px',
-                    marginTop: (s.marginTop || 0) + 'px',
-                    marginBottom: (s.marginBottom || 0) + 'px',
+                    // Left/Right margins on inner: only the inner border moves, outer width unchanged
                     marginLeft: (s.marginLeft || 0) + 'px',
                     marginRight: (s.marginRight || 0) + 'px',
                     minHeight: (100 + (s.paddingTop || 0) + (s.paddingBottom || 0)) + 'px',
@@ -710,7 +781,7 @@
                 activeCi, editingCi, activeColi, activeColCi, editingContext,
                 showColumnModal, columnModalType, columnLayouts, openColumnModal, selectLayout,
                 showElementModal, elementModalTab, elementModalRestricted, openElementModal, selectNestedLayout,
-                addContainer, addColumn, addNestedColumn, addElement, duplicateContainer, duplicateColumn, duplicateNestedColumn, duplicateNestedRow, saveLayout,
+                addContainer, addColumn, addNestedColumn, addElement, duplicateContainer, duplicateColumn, duplicateNestedColumn, duplicateNestedRow, saveLayout, openMediaModal,
                 isDragging, dragType, dragCi, dragColi, dragEli, dragNcoli, startDrag,
                 onDragStart, onDragEnd, onDragOver, onDrop, dragTarget, dragPosition,
                 canvasStyle, containerStyle, containerInnerStyle, columnOuterStyle, columnInnerStyle, formatBasisToFraction,

@@ -26,7 +26,7 @@
              @drop="onDrop($event, 'nested-column', ci, coli, eli, ncoli)">
             
             <!-- Orange Dashed Border (boundary of the column) -->
-            <div class="absolute inset-0 border border-dashed border-[#ff9800]/60 pointer-events-none rounded-sm z-0"></div>
+            <div v-if="!isPreview" class="absolute inset-0 border border-dashed border-[#ff9800]/60 pointer-events-none rounded-sm z-0"></div>
 
             <!-- Nested Column Toolbar (Top Left, Orange) - Fixed Z-Index -->
             <div class="absolute top-0 left-0 opacity-0 group-hover/ncol:opacity-100 transition-opacity z-[500] p-1" v-if="!isPreview">
@@ -106,7 +106,7 @@
 
             <!-- Content Area -->
             <div class="relative z-10 flex-1 flex flex-col items-center justify-center">
-                <div v-if="ncol.elements.length === 0" class="text-center w-full flex flex-col items-center">
+                <div v-if="!isPreview && ncol.elements.length === 0" class="text-center w-full flex flex-col items-center">
                     <button @click.stop="openElementModal(ci, coli, 'design', true, eli, ncoli)" class="w-8 h-8 bg-[#ff9800] text-white rounded shadow-lg flex items-center justify-center hover:scale-110 transition-all relative group/nadd pointer-events-auto">
                         <i class="fa fa-plus text-base pointer-events-none"></i>
                         <div class="lazy-tooltip-v2 !bottom-auto !top-full !mt-2 opacity-0 group-hover/nadd:opacity-100">Add Element</div>

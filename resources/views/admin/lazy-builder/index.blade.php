@@ -29,13 +29,17 @@
 </head>
 <body class="bg-[#f1f1f1]">
 
-    <div id="lazy-builder-app" class="builder-wrapper" v-cloak>
+    <div id="lazy-builder-app" class="builder-wrapper" :class="{ 'is-preview': isPreview }" v-cloak>
         
         <!-- Topbar -->
-        @include('cms-dashboard::admin.lazy-builder.partials.topbar')
+        <header class="builder-topbar">
+            @include('cms-dashboard::admin.lazy-builder.partials.topbar_content')
+        </header>
 
         <!-- Sidebar -->
-        @include('cms-dashboard::admin.lazy-builder.partials.sidebar')
+        <template v-if="!isPreview">
+            @include('cms-dashboard::admin.lazy-builder.partials.sidebar')
+        </template>
 
         <!-- Canvas -->
         @include('cms-dashboard::admin.lazy-builder.partials.canvas')
@@ -43,8 +47,9 @@
         <!-- Modals -->
         @include('cms-dashboard::admin.lazy-builder.partials.modals.column-select')
         @include('cms-dashboard::admin.lazy-builder.partials.modals.element-select')
-
     </div>
+
+    @include('cms-dashboard::components.admin.media-modal')
 
     <!-- Scripts (Corrected Paths) -->
     <script src="{{ asset('vendor/cms-dashboard/js/vue.global.js') }}"></script>

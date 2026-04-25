@@ -16,8 +16,8 @@
         <button @click="activePanelTab = 'design'" :class="activePanelTab === 'design' ? 'bg-[#007cc0] text-white' : 'text-white/70 hover:text-white'" class="flex-1 py-2 text-[10px] font-bold transition-colors">
             Design
         </button>
-        <button @click="activePanelTab = 'media'" :class="activePanelTab === 'media' ? 'bg-[#007cc0] text-white' : 'text-white/70 hover:text-white'" class="flex-1 py-2 text-[12px] transition-colors">
-            <i class="fa fa-photo-video"></i>
+        <button @click="activePanelTab = 'background'" :class="activePanelTab === 'background' ? 'bg-[#007cc0] text-white' : 'text-white/70 hover:text-white'" class="flex-1 py-2 text-[10px] font-bold transition-colors">
+            Background
         </button>
         <button @click="activePanelTab = 'link'" :class="activePanelTab === 'link' ? 'bg-[#007cc0] text-white' : 'text-white/70 hover:text-white'" class="flex-1 py-2 text-[12px] transition-colors">
             <i class="fa fa-link"></i>
@@ -634,6 +634,296 @@
                 </select>
             </div>
 
+        </div>
+
+        <!-- Background Tab -->
+        <div v-show="activePanelTab === 'background'" class="space-y-6">
+            
+            <!-- Background Options -->
+            <div>
+                <div class="flex items-center justify-between mb-2">
+                    <label class="text-[11px] font-bold text-[#444]">Background Options</label>
+                    <div class="flex gap-2 text-slate-300">
+                        <i class="fa fa-chevron-down text-[10px]"></i>
+                        <i class="fa fa-question-circle text-[10px]"></i>
+                    </div>
+                </div>
+                
+                <!-- Sub Tabs for Background Type -->
+                <div class="flex border border-slate-200 rounded overflow-hidden bg-slate-50 mb-4">
+                    <button @click="layout[editingContext.ci].settings.bgType = 'color'" title="Background Color" :class="layout[editingContext.ci].settings.bgType === 'color' ? 'text-[#0091ea] bg-white border-b-2 border-[#0091ea]' : 'text-slate-400 hover:text-[#0091ea]'" class="flex-1 py-2 text-[12px]"><i class="fa fa-fill-drip"></i></button>
+                    <button @click="layout[editingContext.ci].settings.bgType = 'gradient'" title="Background Gradient" :class="layout[editingContext.ci].settings.bgType === 'gradient' ? 'text-[#0091ea] bg-white border-b-2 border-[#0091ea]' : 'text-slate-400 hover:text-[#0091ea]'" class="flex-1 py-2 text-[12px]"><i class="fa fa-adjust"></i></button>
+                    <button @click="layout[editingContext.ci].settings.bgType = 'image'" title="Background Image" :class="layout[editingContext.ci].settings.bgType === 'image' ? 'text-[#0091ea] bg-white border-b-2 border-[#0091ea]' : 'text-slate-400 hover:text-[#0091ea]'" class="flex-1 py-2 text-[12px]"><i class="fa fa-image"></i></button>
+                </div>
+
+                <!-- 1. Color Tab Content -->
+                <div v-show="layout[editingContext.ci].settings.bgType === 'color'" class="space-y-4">
+                    <div>
+                        <div class="flex justify-between items-center mb-2">
+                            <label class="text-[11px] font-bold text-[#444]">Container Background Color</label>
+                            <div class="flex gap-2 text-slate-300">
+                                <i class="fa fa-question-circle text-[10px]"></i>
+                                <i class="fa fa-cog text-[10px]"></i>
+                                <i class="fa fa-undo text-[10px]"></i>
+                                <i class="fa fa-desktop text-[10px]"></i>
+                                <i class="fa fa-database text-[10px]"></i>
+                            </div>
+                        </div>
+                        <div class="flex gap-2 items-center">
+                            <input type="color" v-model="layout[editingContext.ci].settings.bgColor" class="w-6 h-6 p-0 border-0 rounded cursor-pointer appearance-none bg-transparent">
+                            <div class="relative flex-1">
+                                <input type="text" v-model="layout[editingContext.ci].settings.bgColor" class="w-full border border-slate-200 rounded px-2 py-1.5 pl-2 pr-8 text-[11px] text-[#444] focus:outline-none focus:border-[#0091ea]">
+                                <i class="fa fa-globe absolute right-2 top-1/2 -translate-y-1/2 text-[10px] text-slate-400"></i>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 2. Gradient Tab Content -->
+                <div v-show="layout[editingContext.ci].settings.bgType === 'gradient'" class="space-y-4 border border-slate-100 rounded-md p-2">
+                    <!-- Start Color -->
+                    <div class="border-b border-slate-100 pb-3">
+                        <div class="flex justify-between items-center mb-2">
+                            <label class="text-[11px] font-bold text-[#444]">Gradient Start Color</label>
+                            <div class="flex gap-2 text-slate-300">
+                                <i class="fa fa-question-circle text-[10px]"></i>
+                                <i class="fa fa-cog text-[10px]"></i>
+                                <i class="fa fa-undo text-[10px]"></i>
+                                <i class="fa fa-database text-[10px]"></i>
+                            </div>
+                        </div>
+                        <div class="flex gap-2 items-center">
+                            <input type="color" v-model="layout[editingContext.ci].settings.bgGradientStartColor" class="w-6 h-6 p-0 border-0 rounded cursor-pointer appearance-none bg-transparent">
+                            <div class="relative flex-1">
+                                <input type="text" v-model="layout[editingContext.ci].settings.bgGradientStartColor" class="w-full border border-slate-200 rounded px-2 py-1.5 pl-2 pr-8 text-[11px] text-[#444] focus:outline-none focus:border-[#0091ea]">
+                                <i class="fa fa-globe absolute right-2 top-1/2 -translate-y-1/2 text-[10px] text-slate-400"></i>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- End Color -->
+                    <div class="border-b border-slate-100 pb-3">
+                        <div class="flex justify-between items-center mb-2">
+                            <label class="text-[11px] font-bold text-[#444]">Gradient End Color</label>
+                            <div class="flex gap-2 text-slate-300">
+                                <i class="fa fa-question-circle text-[10px]"></i>
+                                <i class="fa fa-cog text-[10px]"></i>
+                                <i class="fa fa-undo text-[10px]"></i>
+                                <i class="fa fa-database text-[10px]"></i>
+                            </div>
+                        </div>
+                        <div class="flex gap-2 items-center">
+                            <input type="color" v-model="layout[editingContext.ci].settings.bgGradientEndColor" class="w-6 h-6 p-0 border-0 rounded cursor-pointer appearance-none bg-transparent">
+                            <div class="relative flex-1">
+                                <input type="text" v-model="layout[editingContext.ci].settings.bgGradientEndColor" class="w-full border border-slate-200 rounded px-2 py-1.5 pl-2 pr-8 text-[11px] text-[#444] focus:outline-none focus:border-[#0091ea]">
+                                <i class="fa fa-globe absolute right-2 top-1/2 -translate-y-1/2 text-[10px] text-slate-400"></i>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Start Position -->
+                    <div class="border-b border-slate-100 pb-3">
+                        <div class="flex justify-between items-center mb-2">
+                            <label class="text-[11px] font-bold text-[#444]">Gradient Start Position</label>
+                            <i class="fa fa-question-circle text-[10px] text-slate-300"></i>
+                        </div>
+                        <div class="flex gap-2 items-center">
+                            <input type="number" v-model="layout[editingContext.ci].settings.bgGradientStartPosition" class="w-16 border border-slate-200 rounded px-2 py-1 text-[11px] text-[#444] focus:outline-none focus:border-[#0091ea]">
+                            <input type="range" min="0" max="100" v-model="layout[editingContext.ci].settings.bgGradientStartPosition" class="flex-1 h-1 bg-[#0091ea] rounded appearance-none cursor-pointer">
+                        </div>
+                    </div>
+
+                    <!-- End Position -->
+                    <div class="border-b border-slate-100 pb-3">
+                        <div class="flex justify-between items-center mb-2">
+                            <label class="text-[11px] font-bold text-[#444]">Gradient End Position</label>
+                            <i class="fa fa-question-circle text-[10px] text-slate-300"></i>
+                        </div>
+                        <div class="flex gap-2 items-center">
+                            <input type="number" v-model="layout[editingContext.ci].settings.bgGradientEndPosition" class="w-16 border border-slate-200 rounded px-2 py-1 text-[11px] text-[#444] focus:outline-none focus:border-[#0091ea]">
+                            <input type="range" min="0" max="100" v-model="layout[editingContext.ci].settings.bgGradientEndPosition" class="flex-1 h-1 bg-[#0091ea] rounded appearance-none cursor-pointer">
+                        </div>
+                    </div>
+
+                    <!-- Type -->
+                    <div class="border-b border-slate-100 pb-3">
+                        <div class="flex justify-between items-center mb-2">
+                            <label class="text-[11px] font-bold text-[#444]">Gradient Type</label>
+                            <i class="fa fa-question-circle text-[10px] text-slate-300"></i>
+                        </div>
+                        <div class="flex bg-slate-100 rounded overflow-hidden">
+                            <button @click="layout[editingContext.ci].settings.bgGradientType = 'linear'" 
+                                    :class="layout[editingContext.ci].settings.bgGradientType === 'linear' ? 'bg-[#0091ea] text-white' : 'text-slate-500 hover:bg-slate-200'"
+                                    class="flex-1 py-1.5 text-[10px] font-bold transition-colors">Linear</button>
+                            <button @click="layout[editingContext.ci].settings.bgGradientType = 'radial'" 
+                                    :class="layout[editingContext.ci].settings.bgGradientType === 'radial' ? 'bg-[#0091ea] text-white' : 'text-slate-500 hover:bg-slate-200'"
+                                    class="flex-1 py-1.5 text-[10px] font-bold transition-colors">Radial</button>
+                        </div>
+                    </div>
+
+                    <!-- Angle -->
+                    <div v-show="layout[editingContext.ci].settings.bgGradientType === 'linear'">
+                        <div class="flex justify-between items-center mb-2">
+                            <label class="text-[11px] font-bold text-[#444]">Gradient Angle</label>
+                            <i class="fa fa-question-circle text-[10px] text-slate-300"></i>
+                        </div>
+                        <div class="flex gap-2 items-center">
+                            <input type="number" v-model="layout[editingContext.ci].settings.bgGradientAngle" class="w-16 border border-slate-200 rounded px-2 py-1 text-[11px] text-[#444] focus:outline-none focus:border-[#0091ea]">
+                            <input type="range" min="0" max="360" v-model="layout[editingContext.ci].settings.bgGradientAngle" class="flex-1 h-1 bg-[#0091ea] rounded appearance-none cursor-pointer">
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 3. Image Tab Content -->
+                <div v-show="layout[editingContext.ci].settings.bgType === 'image'" class="space-y-4 border border-slate-100 rounded-md p-2">
+                    
+                    <!-- Image Selection -->
+                    <div class="border-b border-slate-100 pb-3">
+                        <div class="flex justify-between items-center mb-2">
+                            <label class="text-[11px] font-bold text-[#444]">Background Image</label>
+                            <div class="flex gap-2 text-slate-300">
+                                <i class="fa fa-question-circle text-[10px]"></i>
+                                <i class="fa fa-desktop text-[10px]"></i>
+                                <i class="fa fa-database text-[10px]"></i>
+                            </div>
+                        </div>
+                        <div v-if="layout[editingContext.ci].settings.bgImage" class="relative group">
+                            <img :src="layout[editingContext.ci].settings.bgImage" class="w-full h-[120px] object-cover rounded border border-slate-200">
+                            <div class="flex justify-center gap-2 mt-2">
+                                <button @click="layout[editingContext.ci].settings.bgImage = ''" class="px-3 py-1.5 text-[11px] font-bold border border-slate-200 rounded text-[#444] hover:bg-slate-50 transition-colors">Remove</button>
+                                <button @click="openMediaModal('bgImage')" class="px-3 py-1.5 text-[11px] font-bold bg-[#0091ea] text-white rounded hover:bg-[#007cc0] transition-colors">Edit</button>
+                            </div>
+                        </div>
+                        <div v-else>
+                            <button @click="openMediaModal('bgImage')" class="w-full h-[80px] border border-slate-200 bg-slate-50 hover:bg-slate-100 transition-colors rounded flex flex-col items-center justify-center gap-1">
+                                <i class="fa fa-plus text-[#0091ea] text-lg"></i>
+                            </button>
+                        </div>
+                    </div>
+
+                    <template v-if="layout[editingContext.ci].settings.bgImage">
+                        <!-- Skip Lazy Loading -->
+                        <div class="border-b border-slate-100 pb-3">
+                            <div class="flex justify-between items-center mb-2">
+                                <label class="text-[11px] font-bold text-[#444]">Skip Lazy Loading</label>
+                                <i class="fa fa-question-circle text-[10px] text-slate-300"></i>
+                            </div>
+                            <div class="flex bg-slate-100 rounded overflow-hidden w-[100px]">
+                                <button @click="layout[editingContext.ci].settings.bgImageSkipLazy = true" 
+                                        :class="layout[editingContext.ci].settings.bgImageSkipLazy ? 'bg-slate-800 text-white' : 'text-slate-500 hover:bg-slate-200'"
+                                        class="flex-1 py-1 text-[10px] font-medium transition-colors">Yes</button>
+                                <button @click="layout[editingContext.ci].settings.bgImageSkipLazy = false" 
+                                        :class="!layout[editingContext.ci].settings.bgImageSkipLazy ? 'bg-slate-800 text-white' : 'text-slate-500 hover:bg-slate-200'"
+                                        class="flex-1 py-1 text-[10px] font-medium transition-colors">No</button>
+                            </div>
+                        </div>
+
+                        <!-- Background Position -->
+                        <div class="border-b border-slate-100 pb-3">
+                            <div class="flex justify-between items-center mb-2">
+                                <label class="text-[11px] font-bold text-[#444]">Background Position</label>
+                                <div class="flex gap-2 text-slate-300">
+                                    <i class="fa fa-question-circle text-[10px]"></i>
+                                    <i class="fa fa-desktop text-[10px]"></i>
+                                </div>
+                            </div>
+                            <select v-model="layout[editingContext.ci].settings.bgImagePosition" class="w-full border border-slate-200 rounded px-2 py-1.5 text-[11px] text-[#444] focus:outline-none focus:border-[#0091ea]">
+                                <option value="top left">Top Left</option>
+                                <option value="top center">Top Center</option>
+                                <option value="top right">Top Right</option>
+                                <option value="center left">Center Left</option>
+                                <option value="center center">Center Center</option>
+                                <option value="center right">Center Right</option>
+                                <option value="bottom left">Bottom Left</option>
+                                <option value="bottom center">Bottom Center</option>
+                                <option value="bottom right">Bottom Right</option>
+                            </select>
+                        </div>
+
+                        <!-- Background Repeat -->
+                        <div class="border-b border-slate-100 pb-3">
+                            <div class="flex justify-between items-center mb-2">
+                                <label class="text-[11px] font-bold text-[#444]">Background Repeat</label>
+                                <div class="flex gap-2 text-slate-300">
+                                    <i class="fa fa-question-circle text-[10px]"></i>
+                                    <i class="fa fa-desktop text-[10px]"></i>
+                                </div>
+                            </div>
+                            <select v-model="layout[editingContext.ci].settings.bgImageRepeat" class="w-full border border-slate-200 rounded px-2 py-1.5 text-[11px] text-[#444] focus:outline-none focus:border-[#0091ea]">
+                                <option value="no-repeat">No Repeat</option>
+                                <option value="repeat">Repeat</option>
+                                <option value="repeat-x">Repeat X</option>
+                                <option value="repeat-y">Repeat Y</option>
+                            </select>
+                        </div>
+
+                        <!-- Background Size -->
+                        <div class="border-b border-slate-100 pb-3">
+                            <div class="flex justify-between items-center mb-2">
+                                <label class="text-[11px] font-bold text-[#444]">Background Size</label>
+                                <div class="flex gap-2 text-slate-300">
+                                    <i class="fa fa-question-circle text-[10px]"></i>
+                                    <i class="fa fa-desktop text-[10px]"></i>
+                                </div>
+                            </div>
+                            <select v-model="layout[editingContext.ci].settings.bgImageSize" class="w-full border border-slate-200 rounded px-2 py-1.5 text-[11px] text-[#444] focus:outline-none focus:border-[#0091ea]">
+                                <option value="auto">Default</option>
+                                <option value="cover">Cover</option>
+                                <option value="contain">Contain</option>
+                            </select>
+                        </div>
+
+                        <!-- Fading Animation -->
+                        <div class="border-b border-slate-100 pb-3">
+                            <div class="flex justify-between items-center mb-2">
+                                <label class="text-[11px] font-bold text-[#444]">Fading Animation</label>
+                                <i class="fa fa-question-circle text-[10px] text-slate-300"></i>
+                            </div>
+                            <div class="flex bg-slate-100 rounded overflow-hidden w-[100px]">
+                                <button @click="layout[editingContext.ci].settings.bgImageFading = true" 
+                                        :class="layout[editingContext.ci].settings.bgImageFading ? 'bg-slate-800 text-white' : 'text-slate-500 hover:bg-slate-200'"
+                                        class="flex-1 py-1 text-[10px] font-medium transition-colors">Yes</button>
+                                <button @click="layout[editingContext.ci].settings.bgImageFading = false" 
+                                        :class="!layout[editingContext.ci].settings.bgImageFading ? 'bg-slate-800 text-white' : 'text-slate-500 hover:bg-slate-200'"
+                                        class="flex-1 py-1 text-[10px] font-medium transition-colors">No</button>
+                            </div>
+                        </div>
+
+                        <!-- Background Parallax -->
+                        <div class="border-b border-slate-100 pb-3">
+                            <div class="flex justify-between items-center mb-2">
+                                <label class="text-[11px] font-bold text-[#444]">Background Parallax</label>
+                                <i class="fa fa-question-circle text-[10px] text-slate-300"></i>
+                            </div>
+                            <select v-model="layout[editingContext.ci].settings.bgImageParallax" class="w-full border border-slate-200 rounded px-2 py-1.5 text-[11px] text-[#444] focus:outline-none focus:border-[#0091ea]">
+                                <option value="none">No Parallax (no effects)</option>
+                                <option value="fixed">Fixed</option>
+                            </select>
+                        </div>
+
+                        <!-- Background Blend Mode -->
+                        <div>
+                            <div class="flex justify-between items-center mb-2">
+                                <label class="text-[11px] font-bold text-[#444]">Background Blend Mode</label>
+                                <div class="flex gap-2 text-slate-300">
+                                    <i class="fa fa-question-circle text-[10px]"></i>
+                                    <i class="fa fa-desktop text-[10px]"></i>
+                                </div>
+                            </div>
+                            <select v-model="layout[editingContext.ci].settings.bgImageBlendMode" class="w-full border border-slate-200 rounded px-2 py-1.5 text-[11px] text-[#444] focus:outline-none focus:border-[#0091ea]">
+                                <option value="normal">Disabled</option>
+                                <option value="multiply">Multiply</option>
+                                <option value="screen">Screen</option>
+                                <option value="overlay">Overlay</option>
+                                <option value="darken">Darken</option>
+                                <option value="lighten">Lighten</option>
+                            </select>
+                        </div>
+                    </template>
+
+                </div>
+
+            </div>
         </div>
     </div>
 </div>

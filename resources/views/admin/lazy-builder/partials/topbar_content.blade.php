@@ -1,4 +1,3 @@
-<header class="builder-topbar">
     <!-- Left Section -->
     <div class="flex items-center gap-1 h-full">
         <div class="topbar-icon">
@@ -50,4 +49,3 @@
             <i class="fa fa-times"></i>
         </a>
     </div>
-</header>

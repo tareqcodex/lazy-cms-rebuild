@@ -1,7 +1,8 @@
 <!-- Columns Loop -->
 <div v-for="(column, coli) in container.columns" :key="column.id"
-     class="column-outer relative min-h-[100px]"
+     class="column-outer relative"
      :style="columnOuterStyle(column, container.columns.length)">
+
     
     <div class="column-inner group/col relative h-full min-h-full"
          :class="[
