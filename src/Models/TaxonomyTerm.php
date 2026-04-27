@@ -24,6 +24,17 @@ class TaxonomyTerm extends Model
         return $this->belongsToMany(Post::class, 'post_taxonomy_term', 'taxonomy_term_id', 'post_id');
     }
 
+    public function getFullSlugPath()
+    {
+        $path = [$this->slug];
+        $parent = $this->parent;
+        while ($parent) {
+            array_unshift($path, $parent->slug);
+            $parent = $parent->parent;
+        }
+        return implode('/', $path);
+    }
+
     public static function generateUniqueSlug($name, $id = 0, $cptSlug = null)
     {
         $slug = \Illuminate\Support\Str::slug($name);

@@ -72,7 +72,10 @@ class DashboardController extends Controller
             abort(403);
         }
         
-        return view('cms-dashboard::admin.settings.index');
+        $pages = Post::where('type', 'page')->where('status', 'published')->orderBy('title')->get();
+        $settings = DB::table('cms_settings')->pluck('value', 'key')->toArray();
+
+        return view('cms-dashboard::admin.settings.index', compact('pages', 'settings'));
     }
 
     public function updateSettings(Request $request)
@@ -102,5 +105,10 @@ class DashboardController extends Controller
         } catch (\Exception $e) { }
 
         return redirect()->back()->with('success', 'Settings updated successfully!');
+    }
+
+    public function documentation()
+    {
+        return view('cms-dashboard::admin.documentation');
     }
 }

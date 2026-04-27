@@ -140,6 +140,8 @@
                     </div>
                     @endforeach
                 @endif
+
+                @include('cms-dashboard::admin.posts.partials.seo', ['post' => new \Acme\CmsDashboard\Models\Post()])
             </div>
 
             <!-- Right Column: Metaboxes -->

@@ -141,6 +141,14 @@ Route::prefix('admin')->name('admin.')->middleware(['web', \Acme\CmsDashboard\Ht
     Route::get('settings', [DashboardController::class, 'settings'])->name('settings.index');
     Route::post('settings', [DashboardController::class, 'updateSettings'])->name('settings.update');
  
+    Route::get('documentation', [DashboardController::class, 'documentation'])->name('documentation');
+ 
+    // Comments Management
+    Route::get('comments', [\Acme\CmsDashboard\Http\Controllers\Admin\CommentController::class, 'index'])->name('comments.index');
+    Route::post('comments/{comment}/toggle-approve', [\Acme\CmsDashboard\Http\Controllers\Admin\CommentController::class, 'toggleApprove'])->name('comments.toggle-approve');
+    Route::delete('comments/{comment}', [\Acme\CmsDashboard\Http\Controllers\Admin\CommentController::class, 'destroy'])->name('comments.destroy');
+    Route::post('comments/bulk', [\Acme\CmsDashboard\Http\Controllers\Admin\CommentController::class, 'bulk'])->name('comments.bulk');
+
     Route::post('logout', [LoginController::class, 'logout'])->name('logout');
     Route::post('login/check', [LoginController::class, 'checkCredentials'])->name('login.check');
     Route::post('admin/login/check', [LoginController::class, 'checkCredentials'])->name('admin.login.check');
@@ -152,5 +160,10 @@ Route::prefix('admin')->name('admin.')->middleware(['web', \Acme\CmsDashboard\Ht
  
 // 3. Frontend Routes (Catch-all for posts/pages) - Outside Admin Group
 Route::middleware(['web'])->group(function() {
-    Route::get('/{typeOrSlug}/{slug?}', [FrontendController::class, 'show'])->name('frontend.show');
+    Route::get('/', [FrontendController::class, 'index'])->name('frontend.index');
+    Route::get('/category/{slug}', [FrontendController::class, 'archive'])->name('frontend.category')->where('slug', '.*');
+    Route::get('/tag/{slug}', [FrontendController::class, 'archive'])->name('frontend.tag')->where('slug', '.*');
+    Route::get('/search', [FrontendController::class, 'search'])->name('frontend.search');
+    Route::post('/comment', [FrontendController::class, 'storeComment'])->name('frontend.comment.store');
+    Route::get('/{typeOrSlug}/{slug?}', [FrontendController::class, 'show'])->name('frontend.show')->where('slug', '.*');
 });

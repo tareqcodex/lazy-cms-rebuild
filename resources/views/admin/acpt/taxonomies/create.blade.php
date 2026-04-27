@@ -53,39 +53,17 @@
                     </div>
                 </div>
 
-                <!-- Post Types (multi-select searchable) -->
-                <div class="grid grid-cols-[200px_1fr] items-start" x-data="postTypeSelect()">
-                    <label class="text-[13px] font-semibold text-[#2c3338] pt-1">Post Types</label>
+                <!-- Post Types (Single select) -->
+                <div class="grid grid-cols-[200px_1fr] items-start">
+                    <label class="text-[13px] font-semibold text-[#2c3338] pt-1">Post Type <span class="text-[#d63638]">*</span></label>
                     <div class="w-full max-w-[400px]">
-                        <div class="relative border border-[#8c8f94] rounded-[3px] bg-white shadow-[inset_0_1px_2px_rgba(0,0,0,0.07)]">
-                            <!-- Selected Tags -->
-                            <div class="flex flex-wrap gap-1 p-1 min-h-[36px]" @click="open = true">
-                                <template x-for="(item, index) in selected" :key="item.slug">
-                                    <span class="flex items-center bg-[#2271b1] text-white text-[12px] px-2 py-0.5 rounded-[2px]">
-                                        <span x-text="item.name"></span>
-                                        <button type="button" @click.stop="removeItem(index)" class="ml-1 text-white/80 hover:text-white leading-none">×</button>
-                                        <input type="hidden" :name="'post_types[]'" :value="item.slug">
-                                    </span>
-                                </template>
-                                <input type="text" x-model="search" @focus="open = true" @input="open = true"
-                                    placeholder="Select"
-                                    class="flex-1 min-w-[80px] border-0 outline-none text-[13px] px-1 py-0.5 bg-transparent">
-                            </div>
-
-                            <!-- Dropdown -->
-                            <div x-show="open" @click.away="open = false"
-                                class="absolute left-0 right-0 top-full border border-[#8c8f94] bg-white z-50 max-h-[200px] overflow-y-auto shadow-md">
-                                <template x-for="pt in filtered" :key="pt.slug">
-                                    <div @click="selectItem(pt)"
-                                        class="px-3 py-2 text-[13px] cursor-pointer hover:bg-[#2271b1] hover:text-white"
-                                        :class="isSelected(pt) ? 'bg-[#2271b1] text-white' : 'text-[#1d2327]'"
-                                        x-text="pt.name">
-                                    </div>
-                                </template>
-                                <div x-show="filtered.length === 0" class="px-3 py-2 text-[13px] text-[#646970]">No post types found</div>
-                            </div>
-                        </div>
-                        <p class="text-[12px] text-[#646970] mt-1">Select which post types this taxonomy applies to.</p>
+                        <select name="post_types[]" required class="w-full border-[#8c8f94] focus:border-[#2271b1] border py-1.5 px-3 rounded-[3px] shadow-[inset_0_1px_2px_rgba(0,0,0,0.07)] text-[14px]">
+                            <option value="">— Select Post Type —</option>
+                            @foreach($postTypes as $pt)
+                                <option value="{{ $pt->slug }}">{{ $pt->name }} ({{ $pt->slug }})</option>
+                            @endforeach
+                        </select>
+                        <p class="text-[12px] text-[#646970] mt-1">Select which post type this taxonomy applies to.</p>
                     </div>
                 </div>
 
@@ -127,36 +105,6 @@
                         .replace(/_+/g, '_')
                         .replace(/^_|_$/g, '')
                         .substring(0, 32);
-                }
-            }));
-
-            Alpine.data('postTypeSelect', () => ({
-                open: false,
-                search: '',
-                selected: [],
-                items: availablePostTypes,
-
-                get filtered() {
-                    const q = this.search.toLowerCase();
-                    return this.items.filter(pt =>
-                        pt.name.toLowerCase().includes(q) && !this.isSelected(pt)
-                    );
-                },
-
-                isSelected(pt) {
-                    return this.selected.some(s => s.slug === pt.slug);
-                },
-
-                selectItem(pt) {
-                    if (!this.isSelected(pt)) {
-                        this.selected.push(pt);
-                    }
-                    this.search = '';
-                    this.open = false;
-                },
-
-                removeItem(index) {
-                    this.selected.splice(index, 1);
                 }
             }));
         });

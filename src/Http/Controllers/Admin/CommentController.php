@@ -1,0 +1,72 @@
+<?php
+
+namespace Acme\CmsDashboard\Http\Controllers\Admin;
+
+use Illuminate\Routing\Controller;
+use Acme\CmsDashboard\Models\Comment;
+use Illuminate\Http\Request;
+
+class CommentController extends Controller
+{
+    public function index(Request $request)
+    {
+        $status = $request->query('status');
+        $query = Comment::with('post', 'user')->latest();
+
+        if ($status === 'pending') {
+            $query->where('is_approved', false);
+        } elseif ($status === 'approved') {
+            $query->where('is_approved', true);
+        }
+
+        if ($request->filled('s')) {
+            $query->where(function($q) use ($request) {
+                $q->where('comment', 'like', '%' . $request->s . '%')
+                  ->orWhere('name', 'like', '%' . $request->s . '%')
+                  ->orWhere('email', 'like', '%' . $request->s . '%');
+            });
+        }
+
+        $comments = $query->paginate(20)->withQueryString();
+        
+        $allCount = Comment::count();
+        $pendingCount = Comment::where('is_approved', false)->count();
+        $approvedCount = Comment::where('is_approved', true)->count();
+
+        return view('cms-dashboard::admin.comments.index', compact('comments', 'allCount', 'pendingCount', 'approvedCount'));
+    }
+
+    public function toggleApprove(Comment $comment)
+    {
+        $comment->is_approved = !$comment->is_approved;
+        $comment->save();
+
+        return back()->with('success', $comment->is_approved ? 'Comment approved.' : 'Comment moved to pending.');
+    }
+
+    public function destroy(Comment $comment)
+    {
+        $comment->delete();
+        return back()->with('success', 'Comment deleted successfully.');
+    }
+
+    public function bulk(Request $request)
+    {
+        $action = $request->input('action');
+        $ids = $request->input('comment_ids');
+
+        if (!$ids || $action === '-1') {
+            return back()->with('error', 'Please select items and an action.');
+        }
+
+        if ($action === 'approve') {
+            Comment::whereIn('id', $ids)->update(['is_approved' => true]);
+        } elseif ($action === 'unapprove') {
+            Comment::whereIn('id', $ids)->update(['is_approved' => false]);
+        } elseif ($action === 'delete') {
+            Comment::whereIn('id', $ids)->delete();
+        }
+
+        return back()->with('success', 'Bulk action applied successfully.');
+    }
+}

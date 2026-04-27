@@ -150,6 +150,8 @@
                     </div>
                     @endforeach
                 @endif
+
+                @include('cms-dashboard::admin.posts.partials.seo', ['post' => $post])
             </div>
 
             <!-- Right Column: Metaboxes -->

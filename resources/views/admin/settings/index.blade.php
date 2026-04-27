@@ -49,9 +49,25 @@
                         <input type="email" name="admin_email" id="admin_email"
                             value="{{ $settings['admin_email'] ?? auth()->user()->email }}"
                             class="wp-input w-[400px] h-8 shadow-sm mb-1">
-                        <p class="text-[12px] text-[#646970]">This address is used for admin purposes. If you change
-                            this, an email will be sent to your new address to confirm it. The new address will not
-                            become active until confirmed.</p>
+                        <p class="text-[12px] text-[#646970]">This address is used for admin purposes.</p>
+                    </td>
+                </tr>
+
+                <!-- Homepage Selection -->
+                <tr>
+                    <th scope="row" class="w-[200px] text-left align-top pt-2">
+                        <label for="home_page_id" class="text-[14px] font-semibold text-[#1d2327]">Home Page</label>
+                    </th>
+                    <td>
+                        <select name="home_page_id" id="home_page_id" class="wp-input w-[400px] h-8 py-0 shadow-sm mb-1">
+                            <option value="">Default Laravel Welcome Page</option>
+                            @foreach($pages as $page)
+                                <option value="{{ $page->id }}" {{ ($settings['home_page_id'] ?? '') == $page->id ? 'selected' : '' }}>
+                                    {{ $page->title }}
+                                </option>
+                            @endforeach
+                        </select>
+                        <p class="text-[12px] text-[#646970]">Choose a static page to be your home page. If not selected, the default welcome page will be shown.</p>
                     </td>
                 </tr>
 

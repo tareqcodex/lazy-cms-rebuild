@@ -123,6 +123,8 @@
                     </div>
                     @endforeach
                 @endif
+
+                @include('cms-dashboard::admin.posts.partials.seo', ['post' => $page])
             </div>
 
             <!-- Right Column: Metaboxes -->

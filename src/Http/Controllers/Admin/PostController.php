@@ -200,7 +200,11 @@ class PostController extends Controller
             'template'       => 'nullable|string',
             'menu_order'     => 'nullable|integer',
             'editor_type'    => 'nullable|string|in:rich,builder',
+            'seo'            => 'nullable|array',
         ]);
+
+        $validated['seo_meta'] = $request->input('seo');
+        unset($validated['seo']);
 
         $slugSource = !empty($validated['slug']) ? $validated['slug'] : (!empty($validated['title']) ? $validated['title'] : 'no-title');
         $validated['slug'] = $this->generateUniqueSlug($slugSource, 0, $validated['type']);
@@ -352,7 +356,11 @@ class PostController extends Controller
             'template'       => 'nullable|string',
             'menu_order'     => 'nullable|integer',
             'editor_type'    => 'nullable|string|in:rich,builder',
+            'seo'            => 'nullable|array',
         ]);
+
+        $validated['seo_meta'] = $request->input('seo');
+        unset($validated['seo']);
 
         $slugSource = !empty($validated['slug']) ? $validated['slug'] : (!empty($validated['title']) ? $validated['title'] : 'no-title');
         $validated['slug'] = $this->generateUniqueSlug($slugSource, $post->id, $post->type);

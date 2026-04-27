@@ -121,6 +121,9 @@ class Sidebar extends Component
 
         // Media
         if (str_contains($targetPath, 'admin/media')) return $user->hasPermission('manage_media');
+        
+        // Comments
+        if (str_contains($targetPath, 'admin/comments')) return $user->hasPermission('manage_posts');
 
         // ACPT
         if (str_contains($targetPath, 'admin/acpt')) return $user->hasPermission('manage_settings');
@@ -137,6 +140,7 @@ class Sidebar extends Component
             if ($title === 'Add Post') return route('admin.posts.create');
             if ($title === 'All Pages') return route('admin.pages.index');
             if ($title === 'Add New' || $title === 'Add Page') return route('admin.pages.create');
+            if ($title === 'Comments') return route('admin.comments.index');
 
             try {
                 $postType = \Acme\CmsDashboard\Models\PostType::where('name', $title)->first();

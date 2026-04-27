@@ -46,7 +46,7 @@ class Category extends Model
     public function children(): HasMany { return $this->hasMany(Category::class, 'parent_id'); }
     public function posts(): BelongsToMany { return $this->belongsToMany(Post::class); }
 
-    public function getPathAttribute()
+    public function getFullSlugPath()
     {
         $path = $this->slug;
         $parent = $this->parent;

@@ -13,7 +13,9 @@ class CmsDashboardServiceProvider extends ServiceProvider
             return $user->role && $user->role->slug === 'super-admin' ? true : null;
         });
 
-        $this->loadRoutesFrom(__DIR__ . '/../routes/web.php');
+        $this->app->booted(function () {
+            $this->loadRoutesFrom(__DIR__ . '/../routes/web.php');
+        });
         $this->loadMigrationsFrom(__DIR__ . '/../database/migrations');
         $this->loadViewsFrom(__DIR__ . '/../resources/views', 'cms-dashboard');
 
@@ -59,5 +61,11 @@ class CmsDashboardServiceProvider extends ServiceProvider
     {
         require_once __DIR__ . '/helpers.php';
         $this->mergeConfigFrom(__DIR__ . '/../config/lazy-options.php', 'lazy-options');
+
+        // Load active theme options/functions
+        $themeOptions = __DIR__ . '/../resources/views/themes/lazy-theme/options.php';
+        if (file_exists($themeOptions)) {
+            require_once $themeOptions;
+        }
     }
 }

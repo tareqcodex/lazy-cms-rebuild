@@ -90,6 +90,7 @@
                 <th class="wp-table-header text-left">Title</th>
                 <th class="wp-table-header text-left">Author</th>
                 <th class="wp-table-header text-center w-8"><svg class="w-4 h-4 mx-auto text-[#8c8f94]" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M18 10c0 3.866-3.582 7-8 7a8.841 8.841 0 01-4.083-.98L2 17l1.338-3.123C2.493 12.767 2 11.434 2 10c0-3.866 3.582-7 8-7s8 3.134 8 7zM7 9H5v2h2V9zm8 0h-2v2h2V9zM9 9h2v2H9V9z" clip-rule="evenodd"></path></svg></th>
+                <th class="wp-table-header text-left">SEO</th>
                 <th class="wp-table-header text-left">Date</th>
             </tr>
         </thead>
@@ -110,12 +111,19 @@
                             @else
                                 <a href="{{ route('admin.pages.edit', $item) }}" class="text-[#2271b1] hover:underline">Edit</a> <span class="text-[#c3c4c7]">|</span>
                                 <button form="delete-form-{{ $item->id }}" type="submit" class="text-[#b32d2e] hover:text-[#8a2424] hover:underline cursor-pointer">Trash</button> <span class="text-[#c3c4c7]">|</span>
-                                <a href="#" class="text-[#2271b1] hover:underline">View</a>
+                                <a href="{{ get_lazy_permalink($item) }}" target="_blank" class="text-[#2271b1] hover:underline">View</a>
                             @endif
                         </div>
                     </td>
                     <td class="wp-table-cell text-[#2271b1] text-left">{{ $item->user?->name ?? 'admin' }}</td>
                     <td class="wp-table-cell text-center text-[#646970]">-</td>
+                    <td class="wp-table-cell text-left">
+                        @php $score = $item->getSeoScore(); @endphp
+                        <div class="flex items-center gap-1.5" title="SEO Score: {{ $score }}%">
+                            <div class="w-2.5 h-2.5 rounded-full {{ $score >= 70 ? 'bg-[#00a32a]' : ($score >= 40 ? 'bg-[#dba617]' : 'bg-[#d63638]') }}"></div>
+                            <span class="text-[12px] font-medium">{{ $score }}%</span>
+                        </div>
+                    </td>
                     <td class="wp-table-cell text-[#2c3338] text-left">
                         @if($item->trashed())
                             Last Modified<br>
@@ -138,6 +146,7 @@
                 <th class="wp-table-header text-left border-t">Title</th>
                 <th class="wp-table-header text-left border-t">Author</th>
                 <th class="wp-table-header text-center w-8 border-t"><svg class="w-4 h-4 mx-auto text-[#8c8f94]" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M18 10c0 3.866-3.582 7-8 7a8.841 8.841 0 01-4.083-.98L2 17l1.338-3.123C2.493 12.767 2 11.434 2 10c0-3.866 3.582-7 8-7s8 3.134 8 7zM7 9H5v2h2V9zm8 0h-2v2h2V9zM9 9h2v2H9V9z" clip-rule="evenodd"></path></svg></th>
+                <th class="wp-table-header text-left border-t">SEO</th>
                 <th class="wp-table-header text-left border-t">Date</th>
             </tr>
         </tfoot>

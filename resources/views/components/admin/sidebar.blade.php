@@ -126,6 +126,20 @@
                 </li>
             @endforeach
         @endforeach
+
+        {{-- Documentation Link --}}
+        <li class="mt-4 mb-1 px-3 text-[10px] font-semibold text-[#8c8f94] uppercase tracking-wider">Help & Guide</li>
+        <li class="group sidebar-item relative">
+            <a href="{{ route('admin.documentation') }}" class="sidebar-item-link relative flex items-center px-3 py-[8px] transition-colors {{ request()->routeIs('admin.documentation') ? 'bg-[#2271b1] text-white' : 'hover:bg-[#2c3338] hover:text-[#72aee6] text-[#c3c4c7]' }}">
+                <div class="w-6 h-6 mr-3 flex items-center justify-center {!! request()->routeIs('admin.documentation') ? 'text-white' : 'text-[#a7aaad] group-hover:text-[#72aee6]' !!}">
+                    <span class="material-symbols-outlined text-[20px] leading-none" style="font-variation-settings: 'FILL' 1, 'wght' 300, 'GRAD' 0, 'opsz' 20;">menu_book</span>
+                </div>
+                <span class="text-[14px] leading-none {{ request()->routeIs('admin.documentation') ? 'font-semibold' : '' }}">Documentation</span>
+                @if(request()->routeIs('admin.documentation'))
+                    <div class="absolute right-0 top-1/2 -translate-y-1/2 w-0 h-0 border-y-[6px] border-y-transparent border-r-[6px] border-r-[#f0f0f1]"></div>
+                @endif
+            </a>
+        </li>
     </ul>
 </div>
 

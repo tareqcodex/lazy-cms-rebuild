@@ -27,8 +27,8 @@ class MenuManagementController extends Controller
         $posts = Post::where('type', 'post')->where('status', 'published')->latest()->take(20)->get();
         $categories = Category::all();
 
-        // Dynamic CPTs for Menu Builder
-        $customPostTypes = \Acme\CmsDashboard\Models\PostType::where('show_in_menu', true)
+        // Dynamic CPTs for Menu Builder (Only Active)
+        $customPostTypes = \Acme\CmsDashboard\Models\PostType::where('is_active', true)
             ->where('is_builtin', false)
             ->get();
         
@@ -40,6 +40,27 @@ class MenuManagementController extends Controller
                 'items' => Post::where('type', $type->slug)->where('status', 'published')->latest()->take(20)->get(),
                 'type' => $type->slug
             ];
+        }
+
+        // Dynamic Custom Taxonomies for Menu Builder (Grouped by Active CPTs)
+        $customTaxonomies = \Acme\CmsDashboard\Models\CustomTaxonomy::where('is_active', true)
+            ->where('hierarchical', true)
+            ->get();
+        $taxonomyData = [];
+        
+        $allPostTypes = \Acme\CmsDashboard\Models\PostType::where('is_active', true)->get();
+        
+        foreach ($allPostTypes as $pt) {
+            foreach ($customTaxonomies as $tax) {
+                if (is_array($tax->post_types) && in_array($pt->slug, $tax->post_types)) {
+                    $taxonomyData[] = [
+                        'key' => 'tax_' . $pt->slug . '_' . $tax->slug,
+                        'label' => $pt->singular_name . ' ' . $tax->singular_name,
+                        'items' => \Acme\CmsDashboard\Models\TaxonomyTerm::where('taxonomy_slug', $tax->slug)->orderBy('name')->get(),
+                        'slug' => $tax->slug
+                    ];
+                }
+            }
         }
 
         // Pre-build FLAT JSON (depth-based) to avoid Blade parsing issues
@@ -54,14 +75,19 @@ class MenuManagementController extends Controller
             $categoryIds = $allItems->where('type','category')->pluck('object_id')->filter()->unique()->values()->all();
 
             $postsData = $postIds ? \Acme\CmsDashboard\Models\Post::withTrashed()->whereIn('id', $postIds)->get(['id', 'status', 'deleted_at'])->keyBy('id') : collect();
-            $existingCategoryIds = $categoryIds ? \Acme\CmsDashboard\Models\Category::whereIn('id', $categoryIds)->pluck('id')->map(fn($id)=>(string)$id)->all() : [];
+            
+            // Fetch all terms and their taxonomies for status check
+            $termsData = $categoryIds ? \Acme\CmsDashboard\Models\TaxonomyTerm::whereIn('id', $categoryIds)->get()->keyBy('id') : collect();
+            $standardCatsData = $categoryIds ? \Acme\CmsDashboard\Models\Category::whereIn('id', $categoryIds)->get()->keyBy('id') : collect();
+            $activeTaxSlugs = \Acme\CmsDashboard\Models\CustomTaxonomy::where('is_active', true)->pluck('slug')->toArray();
 
-            $buildItem = function($item, $depth) use ($postsData, $existingCategoryIds) {
+            $buildItem = function($item, $depth) use ($postsData, $termsData, $standardCatsData, $activeTaxSlugs) {
                 $type      = $item->type ?? 'custom';
                 $objectId  = $item->object_id ? (string)$item->object_id : null;
                 $orphaned  = false;
                 $isDraft   = false;
                 $isTrashed = false;
+                $isInactiveTax = false;
 
                 if ($type !== 'category' && $type !== 'custom') {
                     if ($objectId) {
@@ -74,7 +100,35 @@ class MenuManagementController extends Controller
                         }
                     }
                 } elseif ($type === 'category' && $objectId) {
-                    $orphaned = !in_array($objectId, $existingCategoryIds);
+                    $term = $termsData->get($objectId);
+                    $standardCat = $standardCatsData->get($objectId);
+
+                    if (!$term && !$standardCat) {
+                        $orphaned = true;
+                    } else {
+                        // If it's a custom taxonomy term, check if its taxonomy is active
+                        if ($term) {
+                            if (!in_array($term->taxonomy_slug, $activeTaxSlugs) && $term->taxonomy_slug !== 'category') {
+                                $isInactiveTax = true;
+                            }
+                        }
+                        // Standard categories are always considered active unless deleted
+                    }
+                }
+
+                // Determine source label for categories/taxonomies
+                $sourceLabel = null;
+                if ($type === 'category' && $objectId) {
+                    $term = $termsData->get($objectId);
+                    if ($term && $term->taxonomy_slug !== 'category') {
+                        $tax = \Acme\CmsDashboard\Models\CustomTaxonomy::where('slug', $term->taxonomy_slug)->first();
+                        $pts = $tax ? $tax->post_types : null;
+                        $ptSlug = is_array($pts) ? reset($pts) : null;
+                        $pt = \Acme\CmsDashboard\Models\PostType::where('slug', $ptSlug)->first();
+                        if ($pt && $tax) {
+                            $sourceLabel = $pt->singular_name . ' ' . $tax->singular_name;
+                        }
+                    }
                 }
 
                 return [
@@ -84,8 +138,10 @@ class MenuManagementController extends Controller
                     'type'      => $type,
                     'object_id' => $objectId,
                     'depth'     => $depth,
-                    'orphaned'  => $orphaned || $isTrashed,
+                    'orphaned'  => $orphaned || $isTrashed || $isInactiveTax,
                     'is_draft'  => $isDraft,
+                    'is_inactive_tax' => $isInactiveTax,
+                    'source_label' => $sourceLabel
                 ];
             };
 
@@ -103,16 +159,28 @@ class MenuManagementController extends Controller
             $menuItemsJson = json_encode($flat, JSON_UNESCAPED_UNICODE | JSON_HEX_TAG | JSON_HEX_APOS | JSON_HEX_QUOT);
         }
 
-        return view('cms-dashboard::admin.menus.index', compact('menus', 'menu', 'pages', 'posts', 'categories', 'menuItemsJson', 'cptData'));
+        return view('cms-dashboard::admin.menus.index', compact('menus', 'menu', 'pages', 'posts', 'categories', 'menuItemsJson', 'cptData', 'taxonomyData'));
     }
 
     public function store(Request $request)
     {
         $request->validate(['name' => 'required|string|max:255']);
         
+        $isHeader = $request->has('is_header');
+        $isFooter = $request->has('is_footer');
+
+        if ($isHeader) {
+            NavigationMenu::where('is_header', true)->update(['is_header' => false]);
+        }
+        if ($isFooter) {
+            NavigationMenu::where('is_footer', true)->update(['is_footer' => false]);
+        }
+
         $menu = NavigationMenu::create([
             'name' => $request->name,
             'slug' => Str::slug($request->name),
+            'is_header' => $isHeader,
+            'is_footer' => $isFooter,
         ]);
 
         return redirect()->route('admin.menus.index', ['menu' => $menu->id])->with('success', 'Menu created successfully.');
@@ -122,16 +190,26 @@ class MenuManagementController extends Controller
     {
         $menu = NavigationMenu::findOrFail($id);
 
-        // Always update name if provided
-        if ($request->filled('name')) {
-            $menu->update(['name' => $request->name]);
+        $isHeader = $request->has('is_header');
+        $isFooter = $request->has('is_footer');
+
+        if ($isHeader) {
+            NavigationMenu::where('is_header', true)->update(['is_header' => false]);
         }
+        if ($isFooter) {
+            NavigationMenu::where('is_footer', true)->update(['is_footer' => false]);
+        }
+
+        $menu->update([
+            'name' => $request->filled('name') ? $request->name : $menu->name,
+            'is_header' => $isHeader,
+            'is_footer' => $isFooter,
+        ]);
 
         if ($request->has('menu_items')) {
             $items = json_decode($request->menu_items, true);
 
             // Hard-delete ALL existing items for this menu using direct DB query
-            // (avoids relationship cache issues that cause doubling)
             NavigationMenuItem::where('navigation_menu_id', $menu->id)->delete();
 
             // Only save if there are items to save

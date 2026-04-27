@@ -92,7 +92,11 @@ class PageController extends Controller
             'published_at' => 'nullable|date',
             'featured_image' => 'nullable',
             'editor_type' => 'nullable|string|in:rich,builder',
+            'seo' => 'nullable|array',
         ]);
+
+        $validated['seo_meta'] = $request->input('seo');
+        unset($validated['seo']);
 
         $validated['slug'] = $this->generateUniqueSlug($validated['title']);
         $validated['user_id'] = auth()->id();
@@ -162,8 +166,12 @@ class PageController extends Controller
             'slug' => 'nullable|string|max:255',
             'published_at' => 'nullable|date',
             'featured_image' => 'nullable',
-            'editor_type' => 'nullable|string|in:rich,builder'
+            'editor_type' => 'nullable|string|in:rich,builder',
+            'seo' => 'nullable|array'
         ]);
+
+        $validated['seo_meta'] = $request->input('seo');
+        unset($validated['seo']);
 
         if (empty($validated['slug'])) {
             $validated['slug'] = $this->generateUniqueSlug($validated['title'], $page->id);
