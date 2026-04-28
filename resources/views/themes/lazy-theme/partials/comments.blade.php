@@ -62,9 +62,37 @@
                                     <h4 class="font-bold text-gray-900">{{ $reply->name }}</h4>
                                     <span class="text-xs text-gray-400 font-medium">{{ $reply->created_at->diffForHumans() }}</span>
                                 </div>
-                                <p class="text-gray-600 leading-relaxed">
+                                <p class="text-gray-600 leading-relaxed mb-2">
                                     {{ $reply->comment }}
                                 </p>
+                                <button type="button" onclick="document.getElementById('reply-form-{{ $reply->id }}').classList.toggle('hidden')" class="text-xs font-bold text-primary mb-2 hover:underline flex items-center gap-1">
+                                    <svg width="12" height="12" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M3 10h10a8 8 0 018 8v2M3 10l6 6m-6-6l6-6"/></svg>
+                                    Reply
+                                </button>
+                                
+                                <!-- Inline Reply Form for Reply -->
+                                <form id="reply-form-{{ $reply->id }}" action="{{ route('frontend.comment.store') }}" method="POST" class="hidden mt-4 mb-4 space-y-4 bg-white p-6 rounded-2xl border border-gray-100 shadow-sm">
+                                    @csrf
+                                    <input type="hidden" name="post_id" value="{{ $post->id }}">
+                                    <!-- Keep the root comment as the parent to avoid deep nesting -->
+                                    <input type="hidden" name="parent_id" value="{{ $comment->id }}">
+                                    
+                                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                        @guest
+                                            <div>
+                                                <input type="text" name="name" required class="w-full bg-gray-50 border-transparent focus:border-primary focus:ring-2 focus:ring-primary/20 rounded-xl px-4 py-3 text-sm transition-all outline-none" placeholder="Your Name">
+                                            </div>
+                                            <div>
+                                                <input type="email" name="email" required class="w-full bg-gray-50 border-transparent focus:border-primary focus:ring-2 focus:ring-primary/20 rounded-xl px-4 py-3 text-sm transition-all outline-none" placeholder="Email Address">
+                                            </div>
+                                        @endguest
+                                    </div>
+                                    <textarea name="comment" rows="3" required class="w-full bg-gray-50 border-transparent focus:border-primary focus:ring-2 focus:ring-primary/20 rounded-xl px-4 py-3 text-sm transition-all outline-none" placeholder="Reply to {{ $reply->name }}..."></textarea>
+                                    <div class="flex justify-end gap-2">
+                                        <button type="button" onclick="document.getElementById('reply-form-{{ $reply->id }}').classList.add('hidden')" class="text-gray-400 hover:text-gray-600 text-xs font-bold px-4 py-2">Cancel</button>
+                                        <button type="submit" class="bg-primary text-white px-6 py-2 rounded-full text-xs font-bold hover:bg-blue-600 transition">Post Reply</button>
+                                    </div>
+                                </form>
                             </div>
                         </div>
                     @endforeach

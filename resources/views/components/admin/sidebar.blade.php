@@ -46,7 +46,15 @@
                                 <span class="material-symbols-outlined text-[20px] leading-none" style="font-variation-settings: 'FILL' 1, 'wght' 300, 'GRAD' 0, 'opsz' 20;">{{ $menu->icon ?: 'radio_button_unchecked' }}</span>
                             @endif
                         </div>
-                        <span class="text-[14px] leading-none {{ $isActive ? 'font-semibold' : '' }}">{{ $menu->title }}</span>
+                        <span class="text-[14px] leading-none {{ $isActive ? 'font-semibold' : '' }} flex items-center gap-2">
+                            {{ $menu->title }}
+                            @if($isComments)
+                                @php $pendingComments = \Acme\CmsDashboard\Models\Comment::where('is_approved', false)->count(); @endphp
+                                @if($pendingComments > 0)
+                                    <span class="bg-[#d63638] text-white text-[10px] font-bold px-1.5 py-0.5 rounded-full min-w-[16px] text-center">{{ $pendingComments }}</span>
+                                @endif
+                            @endif
+                        </span>
                         @if($isActive)
                             <div class="absolute right-0 top-1/2 -translate-y-1/2 w-0 h-0 border-y-[6px] border-y-transparent border-r-[6px] border-r-[#f0f0f1]"></div>
                         @endif

@@ -81,8 +81,19 @@
                         </div>
                     </td>
                     <td class="wp-table-cell align-top text-[14px] text-left w-48">
+                        @if($comment->parent_id)
+                            <div class="mb-2">
+                                <span class="bg-blue-100 text-[#2271b1] text-[10px] font-bold px-2 py-0.5 rounded-full uppercase tracking-wider">Reply</span>
+                                <span class="text-[11px] text-[#646970] block mt-1">To: {{ $comment->parent->name ?? 'Unknown' }}</span>
+                            </div>
+                        @else
+                            <div class="mb-2">
+                                <span class="bg-gray-100 text-[#646970] text-[10px] font-bold px-2 py-0.5 rounded-full uppercase tracking-wider">Comment</span>
+                            </div>
+                        @endif
+                        
                         @if($comment->post)
-                            <a href="{{ route('admin.posts.edit', $comment->post) }}" class="text-[#2271b1] font-semibold hover:underline block mb-1">{{ $comment->post->title }}</a>
+                            <a href="{{ route('admin.posts.edit', $comment->post) }}" class="text-[#2271b1] font-semibold hover:underline block mb-1 leading-tight">{{ $comment->post->title }}</a>
                             <a href="{{ route('frontend.show', ['typeOrSlug' => $comment->post->type, 'slug' => $comment->post->slug]) }}" target="_blank" class="text-[#646970] text-[12px] hover:text-[#2271b1]">View Post</a>
                         @else
                             <span class="text-[#646970] italic">(Deleted Post)</span>
