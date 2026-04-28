@@ -135,16 +135,31 @@ class FrontendController extends Controller
             'parent_id' => 'nullable|exists:comments,id'
         ]);
 
+        $userId = auth()->id();
+        $email = auth()->check() ? auth()->user()->email : ($validated['email'] ?? null);
+        $name = auth()->check() ? auth()->user()->name : ($validated['name'] ?? 'Guest');
+
+        // Check if this user/email already has at least one approved comment
+        $isApproved = false;
+        $query = \Acme\CmsDashboard\Models\Comment::where('is_approved', true);
+        
+        if ($userId) {
+            $isApproved = (clone $query)->where('user_id', $userId)->exists();
+        } elseif ($email) {
+            $isApproved = (clone $query)->where('email', $email)->exists();
+        }
+
         \Acme\CmsDashboard\Models\Comment::create([
             'post_id' => $validated['post_id'],
-            'user_id' => auth()->id(),
-            'name' => auth()->check() ? auth()->user()->name : ($validated['name'] ?? 'Guest'),
-            'email' => auth()->check() ? auth()->user()->email : ($validated['email'] ?? null),
+            'user_id' => $userId,
+            'name' => $name,
+            'email' => $email,
             'comment' => $validated['comment'],
             'parent_id' => $validated['parent_id'] ?? null,
-            'is_approved' => false // Pending by default, requires admin approval
+            'is_approved' => $isApproved
         ]);
 
-        return back()->with('success', 'Your comment is awaiting moderation.');
+        $message = $isApproved ? 'Comment posted successfully.' : 'Your comment is awaiting moderation.';
+        return back()->with('success', $message);
     }
 }
