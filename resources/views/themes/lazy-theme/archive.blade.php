@@ -4,33 +4,32 @@
 
 @section('content')
     <!-- Archive Header -->
-    <section class="py-20 bg-white border-b border-gray-100">
-        <div class="page-container">
-            <div class="max-w-3xl">
-                <span class="inline-block py-1 px-3 mb-4 text-xs font-bold text-primary bg-blue-50 rounded-full uppercase tracking-widest">
-                    Archive
+    <section class="relative py-24 bg-white overflow-hidden">
+        <div class="absolute top-0 right-0 w-1/2 h-full bg-slate-50/50 -skew-x-12 transform translate-x-20"></div>
+        <div class="container-custom relative">
+            <div class="max-w-4xl mx-auto text-center">
+                <span class="inline-block py-1.5 px-4 mb-6 text-[10px] font-black text-primary bg-blue-50 rounded-xl uppercase tracking-[0.2em]">
+                    Browsing {{ $type }}
                 </span>
-                <h1 class="text-5xl lg:text-7xl font-black mb-6 tracking-tighter text-gray-900">
+                <h1 class="text-4xl lg:text-6xl font-black mb-8 leading-[1.1] tracking-tighter text-slate-900">
                     {{ $title }}
                 </h1>
-                <p class="text-xl text-gray-400 leading-relaxed">
-                    Explore all stories and updates matching the collection of <span class="text-primary font-bold">{{ $title }}</span>.
+                <div class="h-1.5 w-16 bg-primary rounded-full mb-8 mx-auto"></div>
+                <p class="text-lg text-slate-500 font-medium max-w-xl mx-auto">
+                    Discover all the stories and insights filed under the {{ strtolower($type) }} <strong>{{ $title }}</strong>.
                 </p>
             </div>
         </div>
     </section>
 
-    <!-- Posts Grid -->
-    <section class="py-20 lg:py-32 bg-gray-50">
-        <div class="page-container">
-            @include('cms-dashboard::themes.lazy-theme.loop', ['posts' => $items])
-
-            <!-- Pagination -->
-            @if($items->hasPages())
-                <div class="mt-20 flex justify-center">
-                    {{ $items->links() }}
-                </div>
-            @endif
+    <!-- Content Area -->
+    <section class="py-24 bg-[#fcfcfd] border-t border-slate-50">
+        <div class="container-custom">
+            @include('cms-dashboard::themes.lazy-theme.loop', ['posts' => $posts])
+            
+            <div class="mt-20">
+                {{ $posts->links() }}
+            </div>
         </div>
     </section>
 @endsection

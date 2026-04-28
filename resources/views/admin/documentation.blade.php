@@ -21,7 +21,10 @@
                     <a href="#helpers" class="nav-link block px-4 py-2 text-sm font-medium text-gray-600 hover:bg-gray-50 rounded-md transition-all duration-200">Helper Functions</a>
                     <a href="#loops" class="nav-link block px-4 py-2 text-sm font-medium text-gray-600 hover:bg-gray-50 rounded-md transition-all duration-200">Displaying Posts (Loops)</a>
                     <a href="#custom-options" class="nav-link block px-4 py-2 text-sm font-medium text-gray-600 hover:bg-gray-50 rounded-md transition-all duration-200">Custom Settings & Options</a>
+                    <a href="#seo" class="nav-link block px-4 py-2 text-sm font-medium text-gray-600 hover:bg-gray-50 rounded-md transition-all duration-200">SEO & Metadata</a>
                     <a href="#templates" class="nav-link block px-4 py-2 text-sm font-medium text-gray-600 hover:bg-gray-50 rounded-md transition-all duration-200">Custom Templates</a>
+                    <a href="#custom-widgets" class="nav-link block px-4 py-2 text-sm font-medium text-gray-600 hover:bg-gray-50 rounded-md transition-all duration-200">Custom Widgets</a>
+                    <a href="#hooks" class="nav-link block px-4 py-2 text-sm font-medium text-gray-600 hover:bg-gray-50 rounded-md transition-all duration-200">Hooks (Actions & Filters)</a>
                 </nav>
             </div>
 
@@ -207,6 +210,51 @@ Route::get('/blogs', function () {
                     </div>
                 </section>
 
+                {{-- Section: SEO & Metadata --}}
+                <section id="seo">
+                    <h2 class="text-2xl font-bold text-gray-900 mb-4">SEO & Metadata</h2>
+                    <p class="text-gray-700 mb-6">Lazy CMS provides a built-in SEO engine that handles meta tags, social sharing (OpenGraph/X), and JSON-LD schema markup automatically.</p>
+
+                    <div class="space-y-8">
+                        {{-- Method 1: Automatic --}}
+                        <div class="bg-white border border-gray-200 rounded-xl p-6 shadow-sm">
+                            <h3 class="text-lg font-bold text-blue-600 mb-3">1. The Automatic Component (Best)</h3>
+                            <p class="text-sm text-gray-600 mb-4">Add this single line inside your <code>&lt;head&gt;</code> tag. It will handle everything based on the current post or page.</p>
+                            <div class="bg-gray-900 rounded-lg p-4 text-gray-300 font-mono text-xs overflow-x-auto">
+                                <pre><code>@verbatim&lt;!-- Inside layout/app.blade.php head section --&gt;
+&lt;x-cms-dashboard::frontend.seo-meta :post="$post ?? null" :title="$title ?? null" /&gt;@endverbatim</code></pre>
+                            </div>
+                        </div>
+
+                        {{-- Method 2: Manual Access --}}
+                        <div class="bg-white border border-gray-200 rounded-xl p-6 shadow-sm">
+                            <h3 class="text-lg font-bold text-blue-600 mb-3">2. Manual Value Access</h3>
+                            <p class="text-sm text-gray-600 mb-4">If you want to access specific SEO values manually, use the <code>seo_meta</code> array on the post object.</p>
+                            <div class="bg-gray-900 rounded-lg p-4 text-gray-300 font-mono text-xs space-y-4">
+                                <pre><code>@verbatim@php $seo = $post->seo_meta; @endphp
+
+&lt;!-- Get Meta Title --&gt;
+{{ $seo['title'] ?? $post->title }}
+
+&lt;!-- Get OpenGraph Image --&gt;
+@if(!empty($seo['og_image']))
+    &lt;meta property="og:image" content="{{ asset('storage/' . $seo['og_image']) }}"&gt;
+@endif@endverbatim</code></pre>
+                            </div>
+                        </div>
+
+                        {{-- Section: Sitemap & Robots --}}
+                        <div class="bg-blue-50 border border-blue-100 rounded-xl p-6">
+                            <h3 class="text-lg font-bold text-blue-700 mb-2">Sitemap & Robots.txt</h3>
+                            <p class="text-sm text-blue-600">These files are served dynamically at the root of your site:</p>
+                            <ul class="mt-3 list-disc list-inside text-sm text-blue-600 space-y-1">
+                                <li><code>your-site.com/sitemap.xml</code></li>
+                                <li><code>your-site.com/robots.txt</code></li>
+                            </ul>
+                        </div>
+                    </div>
+                </section>
+
                 {{-- Section: Templates --}}
                 <section id="templates">
                     <h2 class="text-2xl font-bold text-gray-900 mb-4">Custom Templates</h2>
@@ -217,6 +265,117 @@ Route::get('/blogs', function () {
                     </ul>
                 </section>
 
+                {{-- Section: Custom Widgets --}}
+                <section id="custom-widgets">
+                    <h2 class="text-2xl font-bold text-gray-900 mb-4">Custom Widgets</h2>
+                    <p class="text-gray-700 mb-6">Master the widget system by creating your own custom widgets within your theme. The system automatically detects any blade file in your theme's widget directory.</p>
+
+                    <div class="space-y-8">
+                        {{-- Step 1: Create File --}}
+                        <div class="bg-white border border-gray-200 rounded-xl p-6 shadow-sm">
+                            <h3 class="text-lg font-bold text-blue-600 mb-3">1. Create Widget File</h3>
+                            <p class="text-sm text-gray-600 mb-4">Create a new Blade file in your active theme's widget folder:</p>
+                            <code class="block bg-gray-50 p-3 rounded text-sm mb-4">/resources/views/themes/lazy-theme/widgets/about-author.blade.php</code>
+                            <p class="text-sm text-gray-600 mb-4">Once created, it will automatically appear in <b>Appearance > Widgets</b> as "About Author".</p>
+                        </div>
+
+                        {{-- Step 2: Example Code --}}
+                        <div class="bg-white border border-gray-200 rounded-xl p-6 shadow-sm">
+                            <h3 class="text-lg font-bold text-blue-600 mb-3">2. Example Widget Code</h3>
+                            <p class="text-sm text-gray-600 mb-4">Use the <code>$widget</code> variable to access settings and title.</p>
+                            <div class="bg-gray-900 rounded-lg p-4 text-gray-300 font-mono text-xs overflow-x-auto">
+                                <pre><code>@verbatim&lt;!-- about-author.blade.php --&gt;
+&lt;div class="widget mb-10 p-6 bg-gray-50 rounded-xl"&gt;
+    @if($widget->title)
+        &lt;h4 class="widget-title text-xl font-bold mb-4"&gt;{{ $widget->title }}&lt;/h4&gt;
+    @endif
+    
+    &lt;div class="author-box flex items-center gap-4"&gt;
+        &lt;img src="{{ asset('theme/images/avatar.jpg') }}" class="w-16 h-16 rounded-full"&gt;
+        &lt;div&gt;
+            &lt;p class="text-gray-600 text-sm"&gt;Hello, I'm a passionate developer building amazing things with Lazy CMS.&lt;/p&gt;
+        &lt;/div&gt;
+    &lt;/div&gt;
+&lt;/div&gt;@endverbatim</code></pre>
+                            </div>
+                        </div>
+
+                        {{-- Step 3: Registering in Theme --}}
+                        <div class="bg-white border border-gray-200 rounded-xl p-6 shadow-sm">
+                            <h3 class="text-lg font-bold text-blue-600 mb-3">3. Rendering Widgets</h3>
+                            <p class="text-sm text-gray-600 mb-4">To display a widget area (like a sidebar) in your theme, use the global helper:</p>
+                            <div class="bg-gray-900 rounded-lg p-4 text-gray-300 font-mono text-xs">
+                                <pre><code>@verbatim&lt;!-- In your sidebar.blade.php --&gt;
+{!! render_lazy_widgets('primary-sidebar') !!}@endverbatim</code></pre>
+                            </div>
+                        </div>
+                    </div>
+                </section>
+
+                {{-- Section: Hooks System --}}
+                <section id="hooks">
+                    <h2 class="text-2xl font-bold text-gray-900 mb-4">Hooks System (Actions & Filters)</h2>
+                    <p class="text-gray-700 mb-6">Lazy CMS features a powerful hook architecture similar to WordPress, allowing you to extend the core functionality without modifying package files.</p>
+
+                    {{-- Theme Functions.php --}}
+                    <div class="bg-blue-50 border border-blue-100 rounded-xl p-6 mb-8">
+                        <h3 class="text-lg font-bold text-blue-700 mb-2">Theme Functions File</h3>
+                        <p class="text-sm text-blue-600 mb-4">Just like WordPress, you can create a <code>functions.php</code> file inside your theme folder to register hooks, add custom logic, or include scripts.</p>
+                        <code class="block bg-white/50 p-2 rounded text-xs border border-blue-200">/resources/views/themes/lazy-theme/functions.php</code>
+                    </div>
+
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-8">
+                        {{-- Actions --}}
+                        <div class="space-y-4">
+                            <h3 class="text-lg font-bold text-gray-800 flex items-center gap-2">
+                                <span class="w-2 h-2 bg-blue-600 rounded-full"></span>
+                                Action Hooks
+                            </h3>
+                            <p class="text-sm text-gray-600">Actions allow you to "do something" at specific points in the page lifecycle.</p>
+                            
+                            <div class="bg-gray-50 border border-gray-200 rounded-lg p-4">
+                                <h4 class="text-xs font-bold text-gray-400 uppercase mb-2">Available Actions</h4>
+                                <ul class="text-xs space-y-2 text-gray-700">
+                                    <li><code>lazy_head</code> - Inside &lt;head&gt; tag</li>
+                                    <li><code>lazy_footer</code> - Before &lt;/body&gt; tag</li>
+                                    <li><code>lazy_before_content</code> - Above post body</li>
+                                    <li><code>lazy_after_content</code> - Below post body</li>
+                                </ul>
+                            </div>
+
+                            <div class="bg-gray-900 rounded-lg p-4 text-gray-300 font-mono text-xs">
+                                <pre><code>@verbatim// Example: Add Analytics
+add_lazy_action('lazy_head', function() {
+    echo "&lt;script&gt;console.log('Lazy CMS Loaded');&lt;/script&gt;";
+});@endverbatim</code></pre>
+                            </div>
+                        </div>
+
+                        {{-- Filters --}}
+                        <div class="space-y-4">
+                            <h3 class="text-lg font-bold text-gray-800 flex items-center gap-2">
+                                <span class="w-2 h-2 bg-green-600 rounded-full"></span>
+                                Filter Hooks
+                            </h3>
+                            <p class="text-sm text-gray-600">Filters allow you to modify data before it is rendered or saved.</p>
+
+                            <div class="bg-gray-50 border border-gray-200 rounded-lg p-4">
+                                <h4 class="text-xs font-bold text-gray-400 uppercase mb-2">Available Filters</h4>
+                                <ul class="text-xs space-y-2 text-gray-700">
+                                    <li><code>lazy_the_content</code> - Filters post body HTML</li>
+                                    <li><code>lazy_post_title</code> - Filters post title</li>
+                                </ul>
+                            </div>
+
+                            <div class="bg-gray-900 rounded-lg p-4 text-gray-300 font-mono text-xs">
+                                <pre><code>@verbatim// Example: Modify Content
+add_lazy_filter('lazy_the_content', function($content) {
+    return str_replace('Lazy', '<b>Lazy</b>', $content);
+});@endverbatim</code></pre>
+                            </div>
+                        </div>
+                    </div>
+                </section>
             </div>
         </div>
     </div>

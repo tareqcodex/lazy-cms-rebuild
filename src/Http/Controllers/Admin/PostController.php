@@ -25,6 +25,8 @@ class PostController extends Controller
             'editor_type' => 'builder'
         ]);
 
+        clear_page_cache();
+
         return response()->json(['success' => true, 'message' => 'Page layout saved successfully.']);
     }
 
@@ -268,10 +270,14 @@ class PostController extends Controller
             }
         }
 
+        lazy_log_activity('created', "Created a new {$validated['type']}: {$post->title}", $post);
+
         if ($request->has('redirect_to_builder')) {
+            clear_page_cache();
             return redirect()->route('admin.lazy-builder', $post->id)->with('success', ucfirst($validated['type']) . ' created successfully.');
         }
 
+        clear_page_cache();
         return redirect()->route('admin.posts.edit', $post)->with('success', ucfirst($validated['type']) . ' created successfully.');
     }
 
@@ -387,7 +393,23 @@ class PostController extends Controller
                 ->toArray();
         }
 
+        $oldSlug = $post->getOriginal('slug');
+        $prefix = ($post->type === 'post' || $post->type === 'page') ? '' : $post->type . '/';
+        $oldUrl = '/' . ltrim($prefix . $oldSlug, '/');
+
         $post->update($validated);
+
+        // Automatic Redirection Logic
+        if ($oldSlug !== $post->slug) {
+            $newUrl = '/' . ltrim($prefix . $post->slug, '/');
+
+            if ($oldUrl !== $newUrl) {
+                \Acme\CmsDashboard\Models\Redirect::updateOrCreate(
+                    ['old_url' => $oldUrl],
+                    ['new_url' => $newUrl, 'status_code' => 301]
+                );
+            }
+        }
 
         // Sync Built-in Categories
         if ($request->has('categories')) {
@@ -429,7 +451,11 @@ class PostController extends Controller
                     ]
                 );
             }
-        }
+        DB::commit();
+
+        lazy_log_activity('updated', "Updated {$post->type}: {$post->title}", $post);
+
+        clear_page_cache();
         
         return redirect()->back()->with('success', ucfirst($post->type) . ' updated successfully.');
     }
@@ -442,7 +468,10 @@ class PostController extends Controller
             abort(403, "You do not have permission to delete {$post->type}s.");
         }
         $type = $post->type;
+        $title = $post->title;
         $post->delete();
+        lazy_log_activity('deleted', "Moved {$type} to trash: {$title}", $post);
+        clear_page_cache();
         return redirect()->route('admin.posts.index', ['type' => $type])->with('success', 'Moved to trash.');
     }
 
@@ -450,6 +479,7 @@ class PostController extends Controller
     {
         $post = Post::onlyTrashed()->findOrFail($id);
         $post->restore();
+        clear_page_cache();
         return redirect()->back()->with('success', 'Restored successfully.');
     }
 
@@ -458,6 +488,7 @@ class PostController extends Controller
         $post = Post::onlyTrashed()->findOrFail($id);
         
         $post->forceDelete();
+        clear_page_cache();
         return redirect()->back()->with('success', 'Deleted permanently.');
     }
 
@@ -491,6 +522,7 @@ class PostController extends Controller
             return redirect()->back()->with('success', 'Selected items updated.');
         }
 
+        clear_page_cache();
         return redirect()->back();
     }
 

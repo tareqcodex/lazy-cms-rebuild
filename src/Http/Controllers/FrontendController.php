@@ -46,7 +46,12 @@ class FrontendController extends Controller
             $title = 'Tag: ' . $tag->name;
         }
 
-        return view('cms-dashboard::themes.lazy-theme.archive', compact('items', 'title'));
+        $type = ($routeName === 'frontend.category') ? 'Category' : 'Tag';
+        return view('cms-dashboard::themes.lazy-theme.archive', [
+            'posts' => $items,
+            'title' => $title,
+            'type' => $type
+        ]);
     }
 
     public function show($typeOrSlug, $slug = null)
@@ -66,13 +71,14 @@ class FrontendController extends Controller
                     ->where('slug', $lastSlug)
                     ->firstOrFail();
                 
-                $items = $term->posts()->where('status', 'published')->latest()->paginate(12);
+                $posts = $term->posts()->where('status', 'published')->latest()->paginate(12);
                 $title = $customTaxonomy->name . ': ' . $term->name;
-                return view('cms-dashboard::themes.lazy-theme.archive', compact('items', 'title'));
+                $type = $customTaxonomy->name;
+                return view('cms-dashboard::themes.lazy-theme.archive', compact('posts', 'title', 'type'));
             }
 
             $postType = PostType::where('slug', $type)->first();
-            if (!$postType || !$postType->is_public) {
+            if (!$postType || !$postType->is_active || !$postType->is_public) {
                 abort(404);
             }
             
@@ -83,6 +89,16 @@ class FrontendController extends Controller
         } else {
             $postSlug = $typeOrSlug;
             
+            // 1. Check if it's a CPT archive first (e.g. /dramas) - Priority for single segment URLs
+            $postType = PostType::where('slug', $typeOrSlug)->first();
+            if ($postType && $postType->is_active && $postType->is_public) {
+                $posts = Post::where('type', $postType->slug)->where('status', 'published')->latest()->paginate(12);
+                $title = $postType->name;
+                $type = $postType->name;
+                return view('cms-dashboard::themes.lazy-theme.archive', compact('posts', 'title', 'type'));
+            }
+
+            // 2. If not a CPT archive, check if it's a single post or page
             $post = Post::where('slug', $postSlug)
                 ->where('status', 'published')
                 ->first();
@@ -90,9 +106,8 @@ class FrontendController extends Controller
             if (!$post) {
                 abort(404);
             }
-            
             $postType = $post->postTypeDefinition;
-            if ($postType && !$postType->is_public) {
+            if ($postType && (!$postType->is_active || !$postType->is_public)) {
                  abort(404);
             }
         }
@@ -117,12 +132,13 @@ class FrontendController extends Controller
         $query = $request->input('q');
         $title = 'Search results for: ' . $query;
         
-        $items = Post::where('status', 'published')
+        $posts = Post::where('status', 'published')
             ->where('title', 'like', "%{$query}%")
             ->latest()
             ->paginate(12);
             
-        return view('cms-dashboard::themes.lazy-theme.archive', compact('items', 'title'));
+        $type = 'Search';
+        return view('cms-dashboard::themes.lazy-theme.archive', compact('posts', 'title', 'type'));
     }
 
     public function storeComment(Request $request)
@@ -161,5 +177,15 @@ class FrontendController extends Controller
 
         $message = $isApproved ? 'Comment posted successfully.' : 'Your comment is awaiting moderation.';
         return back()->with('success', $message);
+    }
+    public function robots()
+    {
+        $content = get_cms_option('robots_txt');
+        
+        if (!$content) {
+            $content = "User-agent: *\nDisallow: /admin/\nAllow: /\n\nSitemap: " . url('/sitemap.xml');
+        }
+
+        return response($content, 200)->header('Content-Type', 'text/plain');
     }
 }

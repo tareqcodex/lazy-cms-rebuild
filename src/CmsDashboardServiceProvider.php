@@ -13,6 +13,9 @@ class CmsDashboardServiceProvider extends ServiceProvider
             return $user->role && $user->role->slug === 'super-admin' ? true : null;
         });
 
+        // Register Redirection Middleware (Prepend to ensure it runs first)
+        $this->app['router']->prependMiddlewareToGroup('web', \Acme\CmsDashboard\Http\Middleware\RedirectMiddleware::class);
+
         $this->app->booted(function () {
             $this->loadRoutesFrom(__DIR__ . '/../routes/web.php');
         });
@@ -40,6 +43,7 @@ class CmsDashboardServiceProvider extends ServiceProvider
         });
 
         Blade::componentNamespace('Acme\\CmsDashboard\\View\\Components', 'cms-dashboard');
+        Blade::component('cms-dashboard::components.frontend.breadcrumbs', 'cms-breadcrumbs');
 
         if ($this->app->runningInConsole()) {
             $this->publishes([
@@ -62,10 +66,27 @@ class CmsDashboardServiceProvider extends ServiceProvider
         require_once __DIR__ . '/helpers.php';
         $this->mergeConfigFrom(__DIR__ . '/../config/lazy-options.php', 'lazy-options');
 
-        // Load active theme options/functions
-        $themeOptions = __DIR__ . '/../resources/views/themes/lazy-theme/options.php';
-        if (file_exists($themeOptions)) {
-            require_once $themeOptions;
+        // 1. Get Active Theme
+        // We use a simple way to get it since DB might not be ready in early register
+        $activeTheme = 'lazy-theme';
+        try {
+            // Check if we are running in web context and can access DB
+            if (!$this->app->runningInConsole()) {
+                $setting = \Illuminate\Support\Facades\DB::table('cms_settings')->where('key', 'active_theme')->first();
+                if ($setting) $activeTheme = $setting->value;
+            }
+        } catch (\Exception $e) {}
+
+        // 2. Load theme-specific functions.php (For Hooks/Logic)
+        $functionsFile = __DIR__ . "/../resources/views/themes/{$activeTheme}/functions.php";
+        if (file_exists($functionsFile)) {
+            require_once $functionsFile;
+        }
+
+        // 3. Load theme-specific options.php (For Admin UI Config)
+        $optionsFile = __DIR__ . "/../resources/views/themes/{$activeTheme}/options.php";
+        if (file_exists($optionsFile)) {
+            require_once $optionsFile;
         }
     }
 }

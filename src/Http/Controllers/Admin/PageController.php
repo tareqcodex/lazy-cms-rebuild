@@ -197,7 +197,21 @@ class PageController extends Controller
             $validated['template'] = 'site-width';
         }
 
+        $oldSlug = $page->getOriginal('slug');
         $page->update($validated);
+
+        // Automatic Redirection Logic
+        if ($oldSlug !== $page->slug) {
+            $oldUrl = '/' . ltrim($oldSlug, '/');
+            $newUrl = '/' . ltrim($page->slug, '/');
+
+            if ($oldUrl !== $newUrl) {
+                \Acme\CmsDashboard\Models\Redirect::updateOrCreate(
+                    ['old_url' => $oldUrl],
+                    ['new_url' => $newUrl, 'status_code' => 301]
+                );
+            }
+        }
 
         // Update Custom Fields
         if ($request->has('custom_fields')) {

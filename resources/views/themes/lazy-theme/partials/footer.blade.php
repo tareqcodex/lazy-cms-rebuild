@@ -1,57 +1,74 @@
-<footer class="bg-secondary text-white pt-16 pb-8">
-    <div class="site-container">
-        <div class="grid grid-cols-1 md:grid-cols-4 gap-12 mb-16">
-            <!-- About -->
-            <div class="col-span-1 md:col-span-2">
-                <a href="{{ url('/') }}" class="text-2xl font-black tracking-tighter text-white mb-6 block">
-                    {{ strtoupper(get_cms_option('site_title', 'LAZY')) }}<span class="text-primary">THEME</span>
+<footer class="bg-white border-t border-slate-100 pt-20 pb-10">
+    <div class="container-custom">
+        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-12 mb-16">
+            <!-- Brand & About -->
+            <div class="col-span-1 lg:col-span-1">
+                <a href="{{ url('/') }}" class="flex items-center gap-2 mb-6">
+                    <span class="text-xl font-black tracking-tighter text-slate-900">
+                        LAZY<span class="text-primary">.</span>
+                    </span>
                 </a>
-                <p class="text-gray-400 max-w-md leading-relaxed">
-                    {{ get_cms_option('site_description', 'Building the next generation of content management experiences. Lazy CMS allows you to create, manage, and scale your digital presence with ease and speed.') }}
+                <p class="text-slate-500 text-[14px] leading-relaxed mb-8">
+                    A minimalist, Astra-inspired theme for Lazy CMS. Clean, fast, and professional design focusing on readability and content delivery.
                 </p>
-                <div class="flex space-x-4 mt-8">
-                    @if(get_cms_option('facebook_url'))
-                        <a href="{{ get_cms_option('facebook_url') }}" target="_blank" class="w-10 h-10 rounded-full bg-gray-800 flex items-center justify-center hover:bg-primary transition"><i data-lucide="facebook" class="w-5 h-5"></i></a>
-                    @endif
-                    @if(get_cms_option('twitter_url'))
-                        <a href="{{ get_cms_option('twitter_url') }}" target="_blank" class="w-10 h-10 rounded-full bg-gray-800 flex items-center justify-center hover:bg-primary transition"><i data-lucide="twitter" class="w-5 h-5"></i></a>
-                    @endif
-                    @if(get_cms_option('instagram_url'))
-                        <a href="{{ get_cms_option('instagram_url') }}" target="_blank" class="w-10 h-10 rounded-full bg-gray-800 flex items-center justify-center hover:bg-primary transition"><i data-lucide="instagram" class="w-5 h-5"></i></a>
-                    @endif
+                <div class="flex items-center gap-4">
+                    <a href="#" class="w-8 h-8 rounded-full bg-slate-50 flex items-center justify-center text-slate-400 hover:bg-primary hover:text-white transition-all">
+                        <i data-lucide="facebook" class="w-4 h-4"></i>
+                    </a>
+                    <a href="#" class="w-8 h-8 rounded-full bg-slate-50 flex items-center justify-center text-slate-400 hover:bg-primary hover:text-white transition-all">
+                        <i data-lucide="twitter" class="w-4 h-4"></i>
+                    </a>
+                    <a href="#" class="w-8 h-8 rounded-full bg-slate-50 flex items-center justify-center text-slate-400 hover:bg-primary hover:text-white transition-all">
+                        <i data-lucide="instagram" class="w-4 h-4"></i>
+                    </a>
                 </div>
             </div>
 
-            <!-- Quick Links -->
-            <div>
-                <h4 class="text-lg font-bold mb-6">Quick Links</h4>
-                <ul class="space-y-4 text-gray-400">
-                    @foreach(get_lazy_menu('footer') as $item)
-                        <li><a href="{{ $item->url }}" class="hover:text-white transition">{{ $item->title }}</a></li>
-                    @endforeach
-                </ul>
+            <!-- Navigation -->
+            <div class="col-span-1">
+                <h4 class="text-slate-900 font-bold mb-6">Quick Links</h4>
+                <nav class="flex flex-col gap-3">
+                    @php $footerMenu = get_lazy_menu('footer'); @endphp
+                    @forelse($footerMenu as $item)
+                        <a href="{{ $item->url }}" class="text-[14px] text-slate-500 hover:text-primary transition-colors">{{ $item->title }}</a>
+                    @empty
+                        <a href="{{ url('/') }}" class="text-[14px] text-slate-500 hover:text-primary transition-colors">Home</a>
+                    @endforelse
+                </nav>
             </div>
 
-            <!-- Contact -->
-            <div>
-                <h4 class="text-lg font-bold mb-6">Contact</h4>
-                <ul class="space-y-4 text-gray-400">
-                    <li class="flex items-center space-x-3">
-                        <i data-lucide="mail" class="w-5 h-5 text-primary"></i>
-                        <span>{{ get_cms_option('contact_email', 'hello@lazytheme.com') }}</span>
-                    </li>
-                    <li class="flex items-center space-x-3">
-                        <i data-lucide="map-pin" class="w-5 h-5 text-primary"></i>
-                        <span>{{ get_cms_option('contact_address', 'Dhaka, Bangladesh') }}</span>
-                    </li>
-                </ul>
+            <!-- Contact Info -->
+            <div class="col-span-1">
+                <h4 class="text-slate-900 font-bold mb-6">Contact Us</h4>
+                <div class="space-y-4">
+                    <div class="flex items-start gap-3">
+                        <i data-lucide="mail" class="w-4 h-4 text-primary mt-1"></i>
+                        <span class="text-[14px] text-slate-500">hello@lazypanda.com</span>
+                    </div>
+                    <div class="flex items-start gap-3">
+                        <i data-lucide="map-pin" class="w-4 h-4 text-primary mt-1"></i>
+                        <span class="text-[14px] text-slate-500">123 CMS Street, Web City, WP 101</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Newsletter -->
+            <div class="col-span-1">
+                <h4 class="text-slate-900 font-bold mb-6">Newsletter</h4>
+                <p class="text-[13px] text-slate-500 mb-4">Subscribe to get latest updates and news.</p>
+                <div class="relative">
+                    <input type="email" placeholder="Your email..." class="w-full bg-slate-50 border-none rounded px-4 py-2.5 text-sm focus:ring-1 focus:ring-primary">
+                    <button class="absolute right-1 top-1 bottom-1 px-3 bg-primary text-white rounded text-xs font-bold">JOIN</button>
+                </div>
             </div>
         </div>
 
-        <!-- Copyright -->
-        <div class="border-t border-gray-800 pt-8 flex flex-col md:flex-row justify-between items-center text-sm text-gray-500">
-            <p>&copy; {{ date('Y') }} {{ get_cms_option('site_title', 'Lazy Theme') }}. All rights reserved.</p>
-            <p>Designed with ❤️ using Lazy CMS</p>
+        <div class="pt-8 border-t border-slate-50 flex flex-col md:flex-row items-center justify-between gap-4">
+            <p class="text-[13px] text-slate-400">© 2024 Lazy Panda. All rights reserved.</p>
+            <div class="flex items-center gap-6">
+                <a href="#" class="text-[12px] text-slate-400 hover:text-primary transition-colors">Privacy Policy</a>
+                <a href="#" class="text-[12px] text-slate-400 hover:text-primary transition-colors">Terms of Service</a>
+            </div>
         </div>
     </div>
 </footer>

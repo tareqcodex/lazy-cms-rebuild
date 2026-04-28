@@ -219,3 +219,95 @@ if (!function_exists('get_lazy_permalink')) {
         return route('frontend.show', ['typeOrSlug' => $post->type, 'slug' => $post->slug]);
     }
 }
+
+if (!function_exists('clear_page_cache')) {
+    function clear_page_cache() {
+        try {
+            \Illuminate\Support\Facades\Artisan::call('cache:clear');
+            return true;
+        } catch (\Exception $e) {
+            return false;
+        }
+    }
+}
+
+if (!function_exists('lazy_log_activity')) {
+    function lazy_log_activity($action, $description, $model = null, $properties = []) {
+        try {
+            return \Acme\CmsDashboard\Models\ActivityLog::create([
+                'user_id' => auth()->id(),
+                'action' => $action,
+                'model_type' => $model ? get_class($model) : null,
+                'model_id' => $model ? $model->id : null,
+                'description' => $description,
+                'properties' => $properties,
+                'ip_address' => request()->ip(),
+                'user_agent' => request()->userAgent()
+            ]);
+        } catch (\Exception $e) {
+            return null;
+        }
+    }
+}
+
+if (!function_exists('render_lazy_widgets')) {
+    function render_lazy_widgets($area) {
+        $widgets = \Acme\CmsDashboard\Models\Widget::forArea($area)->get();
+        $output = '';
+        foreach ($widgets as $widget) {
+            // 1. Try Theme Specific Widget first: themes/lazy-theme/widgets/name.blade.php
+            $activeTheme = get_cms_option('active_theme', 'lazy-theme');
+            $themeWidget = "cms-dashboard::themes.{$activeTheme}.widgets.{$widget->type}";
+            
+            // 2. Try Package Default Widget: frontend.widgets.name
+            $defaultWidget = "cms-dashboard::frontend.widgets.{$widget->type}";
+
+            if (view()->exists($themeWidget)) {
+                $output .= view($themeWidget, ['widget' => $widget])->render();
+            } elseif (view()->exists($defaultWidget)) {
+                $output .= view($defaultWidget, ['widget' => $widget])->render();
+            } else {
+                // Fallback for custom HTML or simple text
+                if ($widget->type === 'custom_html') {
+                    $content = $widget->settings['content'] ?? '';
+                    // Process Shortcodes if any system exists (placeholder for now)
+                    $content = \Illuminate\Support\Str::of($content)->replaceMatches('/\[(.*?)\]/', function ($match) {
+                        return ""; // Logic for actual shortcode processing could go here
+                    });
+
+                    $output .= '<div class="widget mb-12">';
+                    if ($widget->title) $output .= '<h4 class="widget-title">' . e($widget->title) . '</h4>';
+                    $output .= $content;
+                    $output .= '</div>';
+                }
+            }
+        }
+        return $output;
+    }
+}
+
+// --- Hook System Helpers ---
+
+if (!function_exists('add_lazy_action')) {
+    function add_lazy_action($tag, $callback, $priority = 10) {
+        \Acme\CmsDashboard\Core\HookManager::getInstance()->addAction($tag, $callback, $priority);
+    }
+}
+
+if (!function_exists('do_lazy_action')) {
+    function do_lazy_action($tag, ...$args) {
+        \Acme\CmsDashboard\Core\HookManager::getInstance()->doAction($tag, ...$args);
+    }
+}
+
+if (!function_exists('add_lazy_filter')) {
+    function add_lazy_filter($tag, $callback, $priority = 10) {
+        \Acme\CmsDashboard\Core\HookManager::getInstance()->addFilter($tag, $callback, $priority);
+    }
+}
+
+if (!function_exists('apply_lazy_filters')) {
+    function apply_lazy_filters($tag, $value, ...$args) {
+        return \Acme\CmsDashboard\Core\HookManager::getInstance()->applyFilters($tag, $value, ...$args);
+    }
+}

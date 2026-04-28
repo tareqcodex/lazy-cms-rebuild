@@ -683,12 +683,7 @@
             inputEl.value = '';
         }
 
-        document.addEventListener('keydown', function(e) {
-            if (e.target.classList.contains('cpt-tag-input') && (e.key === ',' || e.key === 'Enter')) {
-                if (e.key === 'Enter') e.preventDefault();
-                addCPTTag(e.target);
-            }
-        });
+        // CPT Tags: Keydown listener removed as per request (only Add button allowed)
 
         document.addEventListener('click', function(e) {
             if (e.target.classList.contains('add-cpt-tag-btn')) {
@@ -742,12 +737,7 @@
         }
 
         addTagBtn?.addEventListener('click', addTagsFromInput);
-        tagInput?.addEventListener('keydown', function(e) {
-            if (e.key === 'Enter') {
-                e.preventDefault();
-                addTagsFromInput();
-            }
-        });
+        // Standard Tags: Keydown listener removed as per request (only Add button allowed)
 
         // Editor Toggle Logic
         const richEditorBtn = document.getElementById('editor-mode-rich');

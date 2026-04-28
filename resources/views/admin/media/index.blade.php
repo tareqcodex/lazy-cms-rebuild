@@ -204,9 +204,6 @@
                 <!-- Large Image View -->
                 <div class="flex-grow bg-[#f0f0f1] flex items-center justify-center p-8 overflow-auto relative">
                     <img id="modal-detail-img" src="" class="max-w-full max-h-full shadow-lg">
-                    <div class="absolute bottom-4 left-1/2 -translate-x-1/2">
-                         <button class="wp-btn-secondary h-7">Edit Image</button>
-                    </div>
                 </div>
 
                 <!-- Sidebar Details -->
@@ -215,6 +212,7 @@
                         <div><strong>Uploaded on:</strong> <span id="modal-detail-date" class="text-[#646970]"></span></div>
                         <div class="truncate"><strong>File name:</strong> <span id="modal-detail-filename" class="text-[#646970]"></span></div>
                         <div><strong>File type:</strong> <span id="modal-detail-mime" class="text-[#646970]"></span></div>
+                        <div><strong>Dimensions:</strong> <span id="modal-detail-dimensions" class="text-[#646970]"></span></div>
                         <div class="pt-2 border-t border-[#f0f0f1] mt-2">
                             <div><strong>Main File size:</strong> <span id="modal-detail-orig-size" class="text-[#646970]"></span></div>
                             <div><strong>Compression Size:</strong> <span id="modal-detail-comp-size" class="text-[#646970]"></span></div>
@@ -281,6 +279,7 @@
                 document.getElementById('modal-detail-img').src = `/storage/${item.path}`;
                 document.getElementById('modal-detail-filename').innerText = item.filename;
                 document.getElementById('modal-detail-mime').innerText = item.mime_type;
+                document.getElementById('modal-detail-dimensions').innerText = (item.width && item.height) ? `Width: ${item.width}px by Height: ${item.height}px` : 'N/A';
                 document.getElementById('modal-detail-date').innerText = new Date(item.created_at).toLocaleDateString('en-US', {month:'long', day:'numeric', year:'numeric'});
                 
                 const orig = item.original_size || 0;

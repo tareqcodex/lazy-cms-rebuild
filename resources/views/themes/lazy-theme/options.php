@@ -9,29 +9,6 @@
 config([
     'lazy-options' => [
         /*
-        | 1. hooks (Inject into Existing Pages):
-        |    Define fields here to inject them into standard CMS pages.
-        |    Supported Keys (Hooks):
-        |    - 'users-edit'       : User Edit Page
-        |    - 'general-settings' : Main Settings Page
-        */
-        // 'hooks' => [
-        //     'general-settings' => [
-        //         'fields' => [
-        //             'languages' => [
-        //                 'type' => 'select',
-        //                 'label' => 'Languages',
-        //                 'options' => [
-        //                     'en' => 'English',
-        //                     'bn' => 'Bangla',
-        //                 ],
-        //                 'default' => 'en'
-        //             ]
-        //         ]
-        //     ],
-        // ],
-
-        /*
         | 2. pages (Create New Standalone Pages):
         |    Define new administrative pages here. They will appear in the sidebar.
         */
@@ -72,5 +49,3 @@ config([
         ]
     ]
 ]);
-
-// Add your custom theme logic/functions below

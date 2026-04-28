@@ -112,12 +112,17 @@ class MenuSeeder extends Seeder
         ]);
 
         // 9. Settings
-        Menu::create([
+        $settingsMenu = Menu::create([
             'title' => 'Settings',
             'route' => 'admin.settings.index',
             'icon'  => 'settings',
             'group' => 'System',
             'order' => 90,
+        ]);
+        $settingsMenu->children()->createMany([
+            ['title' => 'General',   'route' => 'admin.settings.index', 'order' => 1],
+            ['title' => 'SEO',       'route' => 'admin.settings.seo',   'order' => 2],
+            ['title' => 'Redirects', 'route' => 'admin.redirects.index', 'order' => 3],
         ]);
 
         // Dynamic CPTs

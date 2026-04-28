@@ -1,89 +1,122 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="{{ str_replace('_', '-', app()->getLocale()) }}">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    @php
-        $seo_meta = isset($post) && is_array($post->seo_meta) ? $post->seo_meta : [];
-    @endphp
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
     <title>@yield('title', get_cms_option('site_title', 'Lazy CMS'))</title>
-    @if(!empty($seo_meta['title']))
-        <meta name="title" content="{{ $seo_meta['title'] }}">
-    @endif
-    <meta name="description" content="@yield('meta_description', !empty($seo_meta['description']) ? $seo_meta['description'] : get_cms_option('site_description', ''))">
-    @if(!empty($seo_meta['keywords']))
-        <meta name="keywords" content="{{ $seo_meta['keywords'] }}">
-    @endif
-    @if(!empty($seo_meta['og_image']))
-        <meta property="og:image" content="{{ asset('storage/' . $seo_meta['og_image']) }}">
-        <meta property="og:title" content="{{ !empty($seo_meta['title']) ? $seo_meta['title'] : (isset($post) ? $post->title : get_cms_option('site_title')) }}">
-    @endif
     
-    <!-- Google Fonts -->
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;700;800&display=swap" rel="stylesheet">
+    <!-- Meta SEO -->
+    @yield('seo')
+
+    <!-- Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
     
-    <!-- Tailwind CSS -->
+    <!-- Tailwind -->
     <script src="https://cdn.tailwindcss.com"></script>
-    
     <script>
         tailwind.config = {
             theme: {
                 extend: {
+                    colors: {
+                        primary: '#0274be',
+                        'primary-hover': '#015a94',
+                    },
                     fontFamily: {
                         sans: ['Inter', 'sans-serif'],
                     },
-                    colors: {
-                        primary: '#3b82f6',
-                        secondary: '#1e293b',
-                    }
                 }
             }
         }
     </script>
 
-    @php
-        $siteWidth = '1460px';
-        $pageContentWidth = $siteWidth;
-        if (isset($post)) {
-            if ($post->type === 'page') {
-                $template = $post->template ?? 'site-width';
-                if ($template === 'full-width') {
-                    $pageContentWidth = '100%';
-                }
-            }
-        }
-    @endphp
-
     <style>
-        .glass-nav {
-            background: rgba(255, 255, 255, 0.8);
-            backdrop-filter: blur(12px);
-            -webkit-backdrop-filter: blur(12px);
-            border-bottom: 1px solid rgba(255, 255, 255, 0.3);
+        :root {
+            --primary: #0274be;
+            --primary-hover: #015a94;
+            --text-main: #3a3a3a;
+            --text-heading: #191919;
+            --text-muted: #666666;
+            --bg-body: #ffffff;
+            --bg-alt: #f5f7f9;
+            --border-color: #e8e8e8;
         }
+
         body {
-            background-color: #f8fafc;
+            background-color: var(--bg-body);
+            color: var(--text-main);
+            font-family: 'Inter', sans-serif;
         }
-        .site-container {
-            width: 100%;
+
+        /* Astra-style Header */
+        .main-header {
+            background: #ffffff;
+            border-bottom: 1px solid var(--border-color);
+        }
+
+        /* Typography */
+        h1, h2, h3, h4, h5, h6 {
+            color: var(--text-heading);
+            font-weight: 700;
+            line-height: 1.3;
+        }
+
+        /* Card Simplification */
+        .post-card {
+            background: #fff;
+            border: 1px solid var(--border-color);
+            transition: all 0.3s ease;
+        }
+        .post-card:hover {
+            box-shadow: 0 10px 30px rgba(0,0,0,0.05);
+        }
+
+        /* Sidebar Widgets */
+        .widget-title {
+            position: relative;
+            padding-bottom: 15px;
+            margin-bottom: 20px;
+            border-bottom: 2px solid var(--border-color);
+            font-size: 1.2rem;
+        }
+        .widget-title::after {
+            content: '';
+            position: absolute;
+            bottom: -2px;
+            left: 0;
+            width: 50px;
+            height: 2px;
+            background: var(--primary);
+        }
+
+        .container-custom {
+            max-width: @yield('content-width', '1200px');
             margin-left: auto;
             margin-right: auto;
-            max-width: {{ $siteWidth }};
-            padding-left: 1rem;
-            padding-right: 1rem;
+            padding-left: 20px;
+            padding-right: 20px;
         }
-        .page-container {
-            width: 100%;
-            margin-left: auto;
-            margin-right: auto;
-            max-width: {{ $pageContentWidth }};
-            padding-left: 1rem;
-            padding-right: 1rem;
+
+        .btn-premium {
+            display: inline-block;
+            padding: 12px 32px;
+            background-color: var(--primary);
+            color: white;
+            font-weight: 700;
+            border-radius: 4px;
+            transition: all 0.3s ease;
+        }
+        .btn-premium:hover {
+            background-color: var(--primary-hover);
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(2, 116, 190, 0.2);
         }
     </style>
     @yield('styles')
+    {!! do_lazy_action('lazy_head') !!}
 </head>
-<body class="font-sans antialiased text-gray-900">
+<body class="antialiased selection:bg-primary selection:text-white">
 
     @include('cms-dashboard::themes.lazy-theme.partials.header')
 
@@ -96,8 +129,9 @@
     <!-- Scripts -->
     <script src="https://unpkg.com/lucide@latest"></script>
     <script>
-      lucide.createIcons();
+        lucide.createIcons();
     </script>
-    @yield('scripts')
+    @stack('scripts')
+    {!! do_lazy_action('lazy_footer') !!}
 </body>
 </html>

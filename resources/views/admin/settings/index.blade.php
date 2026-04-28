@@ -196,8 +196,66 @@
 
             @include('cms-dashboard::components.admin.dynamic-fields')
 
-            <div class="mt-8 pt-6 border-t border-[#c3c4c7]">
-                <button type="submit" class="wp-btn-primary h-[32px] px-4 font-semibold">Save Changes</button>
+            <div class="pt-8 border-t border-gray-100 mt-8">
+                <h3 class="text-[18px] font-medium text-[#1d2327] mb-6">Media & Image Optimization</h3>
+                
+                <table class="w-full border-separate border-spacing-y-6">
+                    <!-- Page Cache -->
+                    <tr>
+                        <th scope="row" class="w-[200px] text-left align-top pt-2">
+                            <label class="text-[14px] font-semibold text-[#1d2327]">Static Caching</label>
+                        </th>
+                        <td>
+                            <label class="inline-flex items-center cursor-pointer">
+                                <input type="checkbox" name="enable_page_cache" value="1" {{ ($settings['enable_page_cache'] ?? '0') == '1' ? 'checked' : '' }} class="w-4 h-4 mr-2">
+                                <span class="text-[14px] text-[#1d2327]">Enable response caching for frontend</span>
+                            </label>
+                            <p class="text-[12px] text-[#646970] mt-1">Drastically improves speed by caching HTML output. Cache is cleared when you save settings or update content.</p>
+                        </td>
+                    </tr>
+
+                    <!-- Auto WebP -->
+                    <tr>
+                        <th scope="row" class="w-[200px] text-left align-top pt-2">
+                            <label class="text-[14px] font-semibold text-[#1d2327]">WebP Conversion</label>
+                        </th>
+                        <td>
+                            <label class="inline-flex items-center cursor-pointer">
+                                <input type="checkbox" name="image_auto_webp" value="1" {{ ($settings['image_auto_webp'] ?? '1') == '1' ? 'checked' : '' }} class="w-4 h-4 mr-2">
+                                <span class="text-[14px] text-[#1d2327]">Auto convert uploaded images to WebP</span>
+                            </label>
+                            <p class="text-[12px] text-[#646970] mt-1">Recommended for better performance and smaller file sizes.</p>
+                        </td>
+                    </tr>
+
+                    <!-- Image Quality -->
+                    <tr>
+                        <th scope="row" class="w-[200px] text-left align-top pt-2">
+                            <label for="image_quality" class="text-[14px] font-semibold text-[#1d2327]">Image Quality</label>
+                        </th>
+                        <td>
+                            <input type="number" name="image_quality" id="image_quality" value="{{ $settings['image_quality'] ?? '80' }}" class="wp-input w-[100px] h-8 shadow-sm" min="1" max="100">
+                            <span class="text-[12px] text-[#646970] ml-2">(0-100) Lower quality means smaller file sizes. 80 is recommended.</span>
+                        </td>
+                    </tr>
+
+                    <!-- Max Width -->
+                    <tr>
+                        <th scope="row" class="w-[200px] text-left align-top pt-2">
+                            <label for="image_max_width" class="text-[14px] font-semibold text-[#1d2327]">Max Image Width</label>
+                        </th>
+                        <td>
+                            <div class="flex items-center gap-2">
+                                <input type="number" name="image_max_width" id="image_max_width" value="{{ $settings['image_max_width'] ?? '1920' }}" class="wp-input w-[100px] h-8 shadow-sm">
+                                <span class="text-[12px] text-[#646970]">Pixels. Images wider than this will be automatically resized. 1920 is default.</span>
+                            </div>
+                        </td>
+                    </tr>
+                </table>
+            </div>
+
+            <div class="pt-6 border-t border-gray-100 mt-6">
+                <button type="submit" class="wp-btn-primary px-4 h-8 font-semibold">Save Changes</button>
             </div>
         </form>
     </div>

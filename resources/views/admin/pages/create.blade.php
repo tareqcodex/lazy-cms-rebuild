@@ -29,17 +29,17 @@
                            class="w-full text-[1.7em] leading-normal border border-[#8c8f94] rounded-sm py-[3px] px-[8px] focus:ring-[#2271b1] focus:border-[#2271b1] shadow-none m-0 bg-white" 
                            placeholder="Add title" required>
                     
-                    <div id="permalink-container" class="mt-2 text-[13px] {{ old('title') ? 'flex' : 'hidden' }} items-center">
-                        <strong class="text-[#646970] mr-1">Permalink:</strong>
+                    <div id="permalink-container" class="mt-2 text-[13px] {{ old('title') ? 'flex' : 'hidden' }} items-center font-medium">
+                        <span class="text-[#646970] mr-1">Permalink:</span>
                         <span id="permalink-view">
-                            <a id="permalink-full-link" href="#" target="_blank" class="text-[#2271b1] hover:underline">{{ url('/') }}/<span id="permalink-slug-display" class="font-medium text-black">{{ old('slug') }}</span>/</a>
-                            <button type="button" id="edit-slug-btn" class="wp-btn-secondary bg-[#f6f7f7] text-[12px] h-[24px] ml-1">Edit</button>
+                            <a id="permalink-full-link" href="#" target="_blank" class="text-[#2271b1] underline font-medium">{{ url('/') }}/<span id="permalink-slug-display" class="text-[#2271b1]">{{ old('slug') }}</span>/</a>
+                            <button type="button" id="edit-slug-btn" class="wp-btn-secondary bg-[#f6f7f7] text-[12px] h-[24px] ml-1 font-medium">Edit</button>
                         </span>
                         <span id="permalink-edit" class="hidden items-center">
-                            <span class="text-[#646970]">{{ url('/') }}/</span>
-                            <input type="text" name="slug" id="slug-input" value="{{ old('slug') }}" class="wp-input text-[13px] h-[24px] px-1 mx-1" style="width: 150px;">/
-                            <button type="button" id="ok-slug-btn" class="wp-btn-secondary bg-[#f6f7f7] text-[12px] h-[24px] mx-1">OK</button>
-                            <a href="#" id="cancel-slug-btn" class="text-[#2271b1] hover:underline ml-1">Cancel</a>
+                            <span class="text-[#646970] font-medium">{{ url('/') }}/</span>
+                            <input type="text" name="slug" id="slug-input" value="{{ old('slug') }}" class="wp-input text-[13px] h-[24px] px-1 mx-1 font-medium" style="width: 150px;">/
+                            <button type="button" id="ok-slug-btn" class="wp-btn-secondary bg-[#f6f7f7] text-[12px] h-[24px] mx-1 font-medium">OK</button>
+                            <a href="#" id="cancel-slug-btn" class="text-[#2271b1] underline ml-1 font-medium">Cancel</a>
                         </span>
                     </div>
                 </div>
@@ -271,14 +271,16 @@
                 return text.toString().toLowerCase().replace(/\s+/g, '-').replace(/[^\w\-]+/g, '').replace(/\-\-+/g, '-').replace(/^-+/, '').replace(/-+$/, '');
             }
 
-            titleInput?.addEventListener('blur', function() {
-                if (!slugInput.value && this.value) {
+            titleInput?.addEventListener('input', function() {
+                if (!slugInput.value || slugInput.value === generateSlug(this.value.substring(0, this.value.length - 1))) {
                     let newSlug = generateSlug(this.value);
                     slugInput.value = newSlug;
-                    slugDisplay.innerText = newSlug;
+                    if (slugDisplay) slugDisplay.innerText = newSlug;
                     originalSlug = newSlug;
-                    permalinkContainer?.classList.remove('hidden');
-                    permalinkContainer?.classList.add('flex');
+                    if (this.value) {
+                        permalinkContainer?.classList.remove('hidden');
+                        permalinkContainer?.classList.add('flex');
+                    }
                 }
             });
 

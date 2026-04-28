@@ -85,27 +85,63 @@ class MediaController extends Controller
         $filename = Str::slug($originalName) . '-' . time();
         $isImage = strpos($mimeType, 'image/') === 0;
 
+        $width = null;
+        $height = null;
+
         if ($isImage) {
-            $filename = $filename . '.webp';
+            $quality = (int)get_cms_option('image_quality', 80);
+            $maxWidth = (int)get_cms_option('image_max_width', 1920);
+            $autoWebp = get_cms_option('image_auto_webp', '1') == '1';
+
+            if ($autoWebp) {
+                $filename = $filename . '.webp';
+                $mimeType = 'image/webp';
+            } else {
+                $filename = $filename . '.' . $extension;
+            }
+            
             $path = 'media/' . $filename;
             
             $img = null;
-            if ($mimeType === 'image/jpeg' || $mimeType === 'image/jpg') $img = @imagecreatefromjpeg($file->getRealPath());
-            elseif ($mimeType === 'image/png') $img = @imagecreatefrompng($file->getRealPath());
-            elseif ($mimeType === 'image/webp') $img = @imagecreatefromwebp($file->getRealPath());
+            $sourceMime = $file->getMimeType();
+            if ($sourceMime === 'image/jpeg' || $sourceMime === 'image/jpg') $img = @imagecreatefromjpeg($file->getRealPath());
+            elseif ($sourceMime === 'image/png') $img = @imagecreatefrompng($file->getRealPath());
+            elseif ($sourceMime === 'image/webp') $img = @imagecreatefromwebp($file->getRealPath());
 
             if ($img) {
-                if ($mimeType === 'image/png') {
+                // Resize if needed
+                $width = imagesx($img);
+                $height = imagesy($img);
+                if ($width > $maxWidth) {
+                    $newWidth = $maxWidth;
+                    $newHeight = (int)floor($height * ($maxWidth / $width));
+                    $tmp = imagecreatetruecolor($newWidth, $newHeight);
+                    
+                    // Handle transparency for PNG/WebP
+                    imagealphablending($tmp, false);
+                    imagesavealpha($tmp, true);
+                    
+                    imagecopyresampled($tmp, $img, 0, 0, 0, 0, $newWidth, $newHeight, $width, $height);
+                    imagedestroy($img);
+                    $img = $tmp;
+                    $width = $newWidth;
+                    $height = $newHeight;
+                }
+
+                ob_start();
+                if ($autoWebp) {
                     imagepalettetotruecolor($img);
                     imagealphablending($img, true);
                     imagesavealpha($img, true);
+                    imagewebp($img, null, $quality);
+                } else {
+                    if ($sourceMime === 'image/jpeg' || $sourceMime === 'image/jpg') imagejpeg($img, null, $quality);
+                    elseif ($sourceMime === 'image/png') imagepng($img, null, (int)round(9 * (100 - $quality) / 100));
+                    else imagewebp($img, null, $quality);
                 }
-                ob_start();
-                imagewebp($img, null, 80);
-                $webpData = ob_get_clean();
-                Storage::disk('public')->put($path, $webpData);
+                $imageData = ob_get_clean();
+                Storage::disk('public')->put($path, $imageData);
                 imagedestroy($img);
-                $mimeType = 'image/webp';
             } else {
                 $path = $file->storeAs('media', $filename, 'public');
             }
@@ -119,6 +155,8 @@ class MediaController extends Controller
             'filename' => $filename,
             'path' => $path,
             'mime_type' => $mimeType,
+            'width' => $width,
+            'height' => $height,
             'original_size' => $file->getSize(),
             'compressed_size' => Storage::disk('public')->size($path),
             'user_id' => auth()->id(),

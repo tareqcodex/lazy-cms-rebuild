@@ -87,6 +87,8 @@ class DashboardController extends Controller
         
         // Handle Checkboxes
         $data['users_can_register'] = $request->has('users_can_register') ? '1' : '0';
+        $data['image_auto_webp'] = $request->has('image_auto_webp') ? '1' : '0';
+        $data['enable_page_cache'] = $request->has('enable_page_cache') ? '1' : '0';
 
         // Sanitize Slugs
         if (isset($data['login_url'])) $data['login_url'] = Str::slug($data['login_url']);
@@ -99,12 +101,96 @@ class DashboardController extends Controller
             );
         }
 
-        try {
-            Artisan::call('route:clear');
-            Artisan::call('config:clear');
-        } catch (\Exception $e) { }
+        lazy_log_activity('settings_updated', "Updated CMS settings");
 
         return redirect()->back()->with('success', 'Settings updated successfully!');
+    }
+
+    public function seoSettings()
+    {
+        if (!auth()->user()->hasPermission('manage_settings')) {
+            abort(403);
+        }
+        
+        $settings = DB::table('cms_settings')->pluck('value', 'key')->toArray();
+        return view('cms-dashboard::admin.settings.seo', compact('settings'));
+    }
+
+    public function updateSeoSettings(Request $request)
+    {
+        if (!auth()->user()->hasPermission('manage_settings')) {
+            abort(403);
+        }
+        
+        $data = $request->except('_token');
+        
+        // Handle Sitemap Checkboxes
+        $checkboxes = ['sitemap_include_posts', 'sitemap_include_pages', 'sitemap_include_categories', 'sitemap_include_tags', 'noindex', 'nofollow'];
+        
+        // Dynamic CPT sitemap checkboxes
+        try {
+            $cpts = \Acme\CmsDashboard\Models\PostType::where('is_builtin', false)->pluck('slug');
+            foreach ($cpts as $slug) {
+                $checkboxes[] = 'sitemap_include_cpt_' . $slug;
+            }
+        } catch (\Exception $e) {}
+
+        foreach ($checkboxes as $box) {
+            $data[$box] = $request->has($box) ? '1' : '0';
+        }
+        
+        foreach ($data as $key => $value) {
+            DB::table('cms_settings')->updateOrInsert(
+                ['key' => $key],
+                ['value' => $value, 'updated_at' => now()]
+            );
+        }
+
+        return redirect()->back()->with('success', 'SEO Settings updated successfully!');
+    }
+
+    public function getRelatedPosts(Request $request)
+    {
+        $search = $request->query('s');
+        $excludeId = $request->query('exclude');
+        
+        if (!$search) return response()->json([]);
+
+        $posts = \Acme\CmsDashboard\Models\Post::where('status', 'published')
+            ->where('id', '!=', $excludeId)
+            ->where('title', 'like', '%' . $search . '%')
+            ->limit(5)
+            ->get(['id', 'title', 'slug', 'type']);
+
+        $posts->map(function($post) {
+            $prefix = ($post->type === 'post' || $post->type === 'page') ? '' : $post->type . '/';
+            $post->url = url('/' . $prefix . $post->slug);
+            return $post;
+        });
+
+        return response()->json($posts);
+    }
+
+    public function activityLogs(Request $request)
+    {
+        if (!auth()->user()->hasPermission('manage_settings')) {
+            abort(403);
+        }
+
+        $query = \Acme\CmsDashboard\Models\ActivityLog::with('user')->latest();
+
+        if ($request->filled('user_id')) {
+            $query->where('user_id', $request->user_id);
+        }
+
+        if ($request->filled('action')) {
+            $query->where('action', $request->action);
+        }
+
+        $logs = $query->paginate(20);
+        $users = User::all();
+
+        return view('cms-dashboard::admin.settings.activity-logs', compact('logs', 'users'));
     }
 
     public function documentation()

@@ -13,6 +13,7 @@ use Acme\CmsDashboard\Http\Controllers\Admin\RoleController;
 use Acme\CmsDashboard\Http\Controllers\Admin\AcptCptController;
 use Acme\CmsDashboard\Http\Controllers\Admin\AcptTaxonomyController;
 use Acme\CmsDashboard\Http\Controllers\Admin\AcptTermController;
+use Acme\CmsDashboard\Http\Controllers\Admin\WidgetController;
 use Acme\CmsDashboard\Http\Controllers\FrontendController;
 
 // 1. Dynamic Login & Registration URLs (Highest Priority - Outside any group)
@@ -140,7 +141,17 @@ Route::prefix('admin')->name('admin.')->middleware(['web', \Acme\CmsDashboard\Ht
     // Settings
     Route::get('settings', [DashboardController::class, 'settings'])->name('settings.index');
     Route::post('settings', [DashboardController::class, 'updateSettings'])->name('settings.update');
- 
+    Route::get('settings/seo', [DashboardController::class, 'seoSettings'])->name('settings.seo');
+    Route::post('settings/seo', [DashboardController::class, 'updateSeoSettings'])->name('settings.seo.update');
+    Route::get('settings/activity-logs', [DashboardController::class, 'activityLogs'])->name('settings.activity-logs');
+    
+    // Redirection Manager
+    Route::get('seo/redirects', [\Acme\CmsDashboard\Http\Controllers\Admin\RedirectController::class, 'index'])->name('redirects.index');
+    Route::post('seo/redirects', [\Acme\CmsDashboard\Http\Controllers\Admin\RedirectController::class, 'store'])->name('redirects.store');
+    Route::delete('seo/redirects/{redirect}', [\Acme\CmsDashboard\Http\Controllers\Admin\RedirectController::class, 'destroy'])->name('redirects.destroy');
+    Route::post('seo/redirects/bulk', [\Acme\CmsDashboard\Http\Controllers\Admin\RedirectController::class, 'bulk'])->name('redirects.bulk');
+    Route::get('seo/related-posts', [DashboardController::class, 'getRelatedPosts'])->name('seo.related-posts');
+
     Route::get('documentation', [DashboardController::class, 'documentation'])->name('documentation');
  
     // Comments Management
@@ -154,16 +165,25 @@ Route::prefix('admin')->name('admin.')->middleware(['web', \Acme\CmsDashboard\Ht
     Route::post('admin/login/check', [LoginController::class, 'checkCredentials'])->name('admin.login.check');
     Route::post('email/check', [RegisterController::class, 'checkEmail'])->name('email.check');
     Route::post('admin/email/check', [RegisterController::class, 'checkEmail'])->name('admin.email.check');
+
+    // Widgets
+    Route::get('/widgets', [WidgetController::class, 'index'])->name('widgets.index');
+    Route::post('/widgets', [WidgetController::class, 'store'])->name('widgets.store');
+    Route::put('/widgets/{widget}', [WidgetController::class, 'update'])->name('widgets.update');
+    Route::delete('/widgets/{widget}', [WidgetController::class, 'destroy'])->name('widgets.destroy');
+    Route::post('/widgets/order', [WidgetController::class, 'updateOrder'])->name('widgets.update-order');
  
  
 });
  
 // 3. Frontend Routes (Catch-all for posts/pages) - Outside Admin Group
-Route::middleware(['web'])->group(function() {
+Route::middleware(['web', \Acme\CmsDashboard\Http\Middleware\PageCacheMiddleware::class])->group(function() {
     Route::get('/', [FrontendController::class, 'index'])->name('frontend.index');
     Route::get('/category/{slug}', [FrontendController::class, 'archive'])->name('frontend.category')->where('slug', '.*');
     Route::get('/tag/{slug}', [FrontendController::class, 'archive'])->name('frontend.tag')->where('slug', '.*');
     Route::get('/search', [FrontendController::class, 'search'])->name('frontend.search');
     Route::post('/comment', [FrontendController::class, 'storeComment'])->name('frontend.comment.store');
+    Route::get('/robots.txt', [FrontendController::class, 'robots'])->name('frontend.robots');
+    Route::get('/sitemap.xml', [\Acme\CmsDashboard\Http\Controllers\SitemapController::class, 'index'])->name('frontend.sitemap');
     Route::get('/{typeOrSlug}/{slug?}', [FrontendController::class, 'show'])->name('frontend.show')->where('slug', '.*');
 });
