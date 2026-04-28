@@ -17,9 +17,9 @@
                     {{ substr($comment->name, 0, 1) }}
                 </div>
                 <div class="flex-grow">
-                    <div class="flex items-center justify-between mb-2">
-                        <h4 class="font-bold text-gray-900">{{ $comment->name }}</h4>
-                        <span class="text-xs text-gray-400 font-medium">{{ $comment->created_at->diffForHumans() }}</span>
+                    <div class="flex items-center gap-3 mb-2">
+                        <h4 class="font-bold text-gray-900 leading-none">{{ $comment->name }}</h4>
+                        <span class="text-xs text-gray-400 font-medium leading-none">{{ $comment->created_at->diffForHumans() }}</span>
                     </div>
                     <p class="text-gray-600 leading-relaxed mb-2">
                         {{ $comment->comment }}
@@ -58,9 +58,9 @@
                                 {{ substr($reply->name, 0, 1) }}
                             </div>
                             <div>
-                                <div class="flex items-center justify-between mb-2">
-                                    <h4 class="font-bold text-gray-900">{{ $reply->name }}</h4>
-                                    <span class="text-xs text-gray-400 font-medium">{{ $reply->created_at->diffForHumans() }}</span>
+                                <div class="flex items-center gap-3 mb-2">
+                                    <h4 class="font-bold text-gray-900 leading-none">{{ $reply->name }}</h4>
+                                    <span class="text-xs text-gray-400 font-medium leading-none">{{ $reply->created_at->diffForHumans() }}</span>
                                 </div>
                                 <p class="text-gray-600 leading-relaxed mb-2">
                                     {{ $reply->comment }}
