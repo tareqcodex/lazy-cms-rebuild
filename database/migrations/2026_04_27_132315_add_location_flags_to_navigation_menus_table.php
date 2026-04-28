@@ -11,10 +11,17 @@ return new class extends Migration
      */
     public function up(): void
     {
-        Schema::table('navigation_menus', function (Blueprint $table) {
-            $table->boolean('is_header')->default(false)->after('slug');
-            $table->boolean('is_footer')->default(false)->after('is_header');
-        });
+        if (Schema::hasTable('navigation_menus') && !Schema::hasColumn('navigation_menus', 'is_header')) {
+            Schema::table('navigation_menus', function (Blueprint $table) {
+                $table->boolean('is_header')->default(false)->after('slug');
+            });
+        }
+        
+        if (Schema::hasTable('navigation_menus') && !Schema::hasColumn('navigation_menus', 'is_footer')) {
+            Schema::table('navigation_menus', function (Blueprint $table) {
+                $table->boolean('is_footer')->default(false)->after('is_header');
+            });
+        }
     }
 
     /**

@@ -8,9 +8,11 @@ return new class extends Migration
 {
     public function up(): void
     {
-        Schema::table('posts', function (Blueprint $table) {
-            $table->json('seo_meta')->nullable()->after('status');
-        });
+        if (Schema::hasTable('posts') && !Schema::hasColumn('posts', 'seo_meta')) {
+            Schema::table('posts', function (Blueprint $table) {
+                $table->json('seo_meta')->nullable()->after('status');
+            });
+        }
     }
 
     public function down(): void
