@@ -72,13 +72,17 @@ class MenuSeeder extends Seeder
             'order' => 50,
         ]);
 
-        // 6. Navigation
-        Menu::create([
-            'title' => 'Menu',
-            'route' => 'admin.menus.index',
-            'icon'  => 'menu',
+        // 6. Appearance
+        $appearanceMenu = Menu::create([
+            'title' => 'Appearance',
+            'route' => '#',
+            'icon'  => 'palette',
             'group' => 'Main',
-            'order' => 60,
+            'order' => 40,
+        ]);
+        $appearanceMenu->children()->createMany([
+            ['title' => 'Menus',   'route' => 'admin.menus.index',   'order' => 1],
+            ['title' => 'Widgets', 'route' => 'admin.widgets.index', 'order' => 2],
         ]);
 
         // 7. ACPT
