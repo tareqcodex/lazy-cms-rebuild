@@ -184,7 +184,7 @@
                 <div id="acc-custom" class="hidden wp-metabox-content p-3 space-y-3 text-[13px]">
                     <div>
                         <label class="block text-[12px] text-[#646970] mb-1">URL</label>
-                        <input id="cl-url" class="wp-input w-full h-7" placeholder="https://" value="https://">
+                        <input id="cl-url" class="wp-input w-full h-7" placeholder="https:// or #" value="#">
                     </div>
                     <div>
                         <label class="block text-[12px] text-[#646970] mb-1">Link Text</label>
@@ -346,7 +346,7 @@
         if (!title) { alert('Please enter link text.'); return; }
         items.push({ id: newId(), title, url, type: 'custom', depth: 0 });
         document.getElementById('cl-title').value = '';
-        document.getElementById('cl-url').value   = 'https://';
+        document.getElementById('cl-url').value   = '#';
         render();
     }
 
