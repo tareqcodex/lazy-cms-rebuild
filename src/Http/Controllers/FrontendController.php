@@ -142,9 +142,9 @@ class FrontendController extends Controller
             'email' => auth()->check() ? auth()->user()->email : ($validated['email'] ?? null),
             'comment' => $validated['comment'],
             'parent_id' => $validated['parent_id'] ?? null,
-            'is_approved' => true // Auto-approve for now as requested or common practice in simple CMS
+            'is_approved' => false // Pending by default, requires admin approval
         ]);
 
-        return back()->with('success', 'Comment posted successfully.');
+        return back()->with('success', 'Your comment is awaiting moderation.');
     }
 }
