@@ -129,18 +129,29 @@ class MediaController extends Controller
                 }
 
                 ob_start();
-                if ($autoWebp) {
+                $outputSuccess = false;
+                if ($autoWebp && function_exists('imagewebp')) {
                     imagepalettetotruecolor($img);
                     imagealphablending($img, true);
                     imagesavealpha($img, true);
-                    imagewebp($img, null, $quality);
+                    $outputSuccess = imagewebp($img, null, $quality);
                 } else {
-                    if ($sourceMime === 'image/jpeg' || $sourceMime === 'image/jpg') imagejpeg($img, null, $quality);
-                    elseif ($sourceMime === 'image/png') imagepng($img, null, (int)round(9 * (100 - $quality) / 100));
-                    else imagewebp($img, null, $quality);
+                    if (($sourceMime === 'image/jpeg' || $sourceMime === 'image/jpg') && function_exists('imagejpeg')) {
+                        $outputSuccess = imagejpeg($img, null, $quality);
+                    } elseif ($sourceMime === 'image/png' && function_exists('imagepng')) {
+                        $outputSuccess = imagepng($img, null, (int)round(9 * (100 - $quality) / 100));
+                    } elseif (function_exists('imagewebp')) {
+                        $outputSuccess = imagewebp($img, null, $quality);
+                    }
                 }
                 $imageData = ob_get_clean();
-                Storage::disk('public')->put($path, $imageData);
+
+                if ($outputSuccess && $imageData) {
+                    Storage::disk('public')->put($path, $imageData);
+                } else {
+                    // Fallback to original file
+                    $path = $file->storeAs('media', $filename, 'public');
+                }
                 imagedestroy($img);
             } else {
                 $path = $file->storeAs('media', $filename, 'public');
