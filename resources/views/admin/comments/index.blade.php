@@ -73,17 +73,11 @@
                             {{ $comment->comment }}
                         </div>
                         <div class="invisible group-hover:visible text-[13px] space-x-1">
-                            <form action="{{ route('admin.comments.toggle-approve', $comment) }}" method="POST" class="inline">
-                                @csrf
-                                <button type="submit" class="{{ $comment->is_approved ? 'text-[#dba617]' : 'text-[#00a32a]' }} hover:underline cursor-pointer">
-                                    {{ $comment->is_approved ? 'Unapprove' : 'Approve' }}
-                                </button>
-                            </form>
+                            <button form="toggle-approve-form-{{ $comment->id }}" type="submit" class="{{ $comment->is_approved ? 'text-[#dba617]' : 'text-[#00a32a]' }} hover:underline cursor-pointer">
+                                {{ $comment->is_approved ? 'Unapprove' : 'Approve' }}
+                            </button>
                             <span class="text-[#c3c4c7]">|</span>
-                            <form action="{{ route('admin.comments.destroy', $comment) }}" method="POST" class="inline" onsubmit="return confirm('Are you sure?')">
-                                @csrf @method('DELETE')
-                                <button type="submit" class="text-[#b32d2e] hover:underline cursor-pointer">Trash</button>
-                            </form>
+                            <button form="delete-form-{{ $comment->id }}" type="submit" class="text-[#b32d2e] hover:underline cursor-pointer" onclick="return confirm('Are you sure you want to trash this comment?')">Trash</button>
                         </div>
                     </td>
                     <td class="wp-table-cell align-top text-[14px] text-left w-48">
@@ -120,6 +114,15 @@
         <x-cms-dashboard::admin.pagination :paginator="$comments" />
     </div>
     </form>
+
+    @foreach($comments as $comment)
+        <form id="toggle-approve-form-{{ $comment->id }}" action="{{ route('admin.comments.toggle-approve', $comment) }}" method="POST" class="hidden">
+            @csrf
+        </form>
+        <form id="delete-form-{{ $comment->id }}" action="{{ route('admin.comments.destroy', $comment) }}" method="POST" class="hidden">
+            @csrf @method('DELETE')
+        </form>
+    @endforeach
 
     <script>
         document.getElementById('cb-select-all-1')?.addEventListener('change', function() {
