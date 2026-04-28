@@ -66,7 +66,7 @@ class MenuSeeder extends Seeder
         // 5. Comments
         Menu::create([
             'title' => 'Comments',
-            'route' => '#',
+            'route' => 'admin.comments.index',
             'icon'  => 'chat_bubble',
             'group' => 'Main',
             'order' => 50,
