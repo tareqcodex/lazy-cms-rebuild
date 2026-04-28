@@ -30,7 +30,7 @@ class CommentController extends Controller
             });
         }
 
-        $comments = $query->paginate(20)->withQueryString();
+        $comments = $query->paginate(10)->withQueryString();
         
         $allCount = Comment::count();
         $pendingCount = Comment::where('is_approved', false)->count();

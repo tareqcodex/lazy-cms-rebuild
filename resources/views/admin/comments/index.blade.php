@@ -109,6 +109,15 @@
                 </tr>
             @endforelse
         </tbody>
+        <tfoot>
+            <tr>
+                <th class="wp-table-header w-8 text-center pb-0 border-t"><input type="checkbox" id="cb-select-all-2" class="rounded-sm border-[#8c8f94] text-[#2271b1] focus:ring-[#2271b1]"></th>
+                <th class="wp-table-header text-left border-t">Author</th>
+                <th class="wp-table-header text-left border-t">Comment</th>
+                <th class="wp-table-header text-left border-t">In Response To</th>
+                <th class="wp-table-header text-left border-t">Submitted On</th>
+            </tr>
+        </tfoot>
     </table>
     
     <div class="flex flex-col md:flex-row justify-between items-start md:items-center mb-6 gap-2">
@@ -136,10 +145,14 @@
     @endforeach
 
     <script>
-        document.getElementById('cb-select-all-1')?.addEventListener('change', function() {
-            let isChecked = this.checked;
-            document.querySelectorAll('.cb-select-item').forEach(function(item) {
-                item.checked = isChecked;
+        document.querySelectorAll('#cb-select-all-1, #cb-select-all-2').forEach(function(master) {
+            master.addEventListener('change', function() {
+                let isChecked = this.checked;
+                document.querySelectorAll('.cb-select-item').forEach(function(item) {
+                    item.checked = isChecked;
+                });
+                document.getElementById('cb-select-all-1').checked = isChecked;
+                document.getElementById('cb-select-all-2').checked = isChecked;
             });
         });
     </script>
