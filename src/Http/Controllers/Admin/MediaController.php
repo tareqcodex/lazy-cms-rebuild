@@ -73,113 +73,25 @@ class MediaController extends Controller
 
     public function store(Request $request)
     {
-        $request->validate([
-            'file' => 'required|file|max:51200', // 50MB max
-        ]);
+        try {
+            $request->validate([
+                'file' => 'required|file|max:51200',
+            ]);
 
-        $file = $request->file('file');
-        $originalName = pathinfo($file->getClientOriginalName(), PATHINFO_FILENAME);
-        $extension = $file->getClientOriginalExtension();
-        $mimeType = $file->getMimeType();
-        
-        $filename = Str::slug($originalName) . '-' . time();
-        $isImage = strpos($mimeType, 'image/') === 0;
-
-        $width = null;
-        $height = null;
-
-        if ($isImage) {
-            $quality = (int)get_cms_option('image_quality', 80);
-            $maxWidth = (int)get_cms_option('image_max_width', 1920);
-            $autoWebp = get_cms_option('image_auto_webp', '1') == '1';
-
-            if ($autoWebp) {
-                $filename = $filename . '.webp';
-                $mimeType = 'image/webp';
-            } else {
-                $filename = $filename . '.' . $extension;
-            }
+            $file = $request->file('file');
+            $originalName = pathinfo($file->getClientOriginalName(), PATHINFO_FILENAME);
+            $extension = $file->getClientOriginalExtension();
             
-            $path = 'media/' . $filename;
-            
-            $img = null;
-            $sourceMime = $file->getMimeType();
-            if ($sourceMime === 'image/jpeg' || $sourceMime === 'image/jpg') $img = @imagecreatefromjpeg($file->getRealPath());
-            elseif ($sourceMime === 'image/png') $img = @imagecreatefrompng($file->getRealPath());
-            elseif ($sourceMime === 'image/webp') $img = @imagecreatefromwebp($file->getRealPath());
-
-            if ($img) {
-                // Resize if needed
-                $width = imagesx($img);
-                $height = imagesy($img);
-                if ($width > $maxWidth) {
-                    $newWidth = $maxWidth;
-                    $newHeight = (int)floor($height * ($maxWidth / $width));
-                    $tmp = imagecreatetruecolor($newWidth, $newHeight);
-                    
-                    // Handle transparency for PNG/WebP
-                    imagealphablending($tmp, false);
-                    imagesavealpha($tmp, true);
-                    
-                    imagecopyresampled($tmp, $img, 0, 0, 0, 0, $newWidth, $newHeight, $width, $height);
-                    imagedestroy($img);
-                    $img = $tmp;
-                    $width = $newWidth;
-                    $height = $newHeight;
-                }
-
-                ob_start();
-                $outputSuccess = false;
-                if ($autoWebp && function_exists('imagewebp')) {
-                    imagepalettetotruecolor($img);
-                    imagealphablending($img, true);
-                    imagesavealpha($img, true);
-                    $outputSuccess = imagewebp($img, null, $quality);
-                } else {
-                    if (($sourceMime === 'image/jpeg' || $sourceMime === 'image/jpg') && function_exists('imagejpeg')) {
-                        $outputSuccess = imagejpeg($img, null, $quality);
-                    } elseif ($sourceMime === 'image/png' && function_exists('imagepng')) {
-                        $outputSuccess = imagepng($img, null, (int)round(9 * (100 - $quality) / 100));
-                    } elseif (function_exists('imagewebp')) {
-                        $outputSuccess = imagewebp($img, null, $quality);
-                    }
-                }
-                $imageData = ob_get_clean();
-
-                if ($outputSuccess && $imageData) {
-                    Storage::disk('public')->put($path, $imageData);
-                } else {
-                    // Fallback to original file
-                    $path = $file->storeAs('media', $filename, 'public');
-                }
-                imagedestroy($img);
-            } else {
-                $path = $file->storeAs('media', $filename, 'public');
-            }
-        } else {
-            $filename = $filename . '.' . $extension;
+            $filename = Str::slug($originalName) . '-' . time() . '.' . $extension;
             $path = $file->storeAs('media', $filename, 'public');
-        }
 
-        $compressedSize = 0;
-        try {
-            if (Storage::disk('public')->exists($path)) {
-                $compressedSize = Storage::disk('public')->size($path);
-            }
-        } catch (\Exception $e) {
-            $compressedSize = $file->getSize();
-        }
-
-        try {
             $media = Media::create([
                 'title' => $originalName,
                 'filename' => $filename,
                 'path' => $path,
-                'mime_type' => $mimeType,
-                'width' => $width,
-                'height' => $height,
+                'mime_type' => $file->getMimeType(),
                 'original_size' => $file->getSize(),
-                'compressed_size' => $compressedSize,
+                'compressed_size' => $file->getSize(),
                 'user_id' => auth()->id(),
             ]);
 
@@ -190,7 +102,8 @@ class MediaController extends Controller
         } catch (\Exception $e) {
             return response()->json([
                 'success' => false,
-                'message' => $e->getMessage()
+                'message' => $e->getMessage(),
+                'trace' => $e->getTraceAsString()
             ], 500);
         }
     }
