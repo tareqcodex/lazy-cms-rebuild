@@ -148,9 +148,9 @@ if (!function_exists('get_lazy_menu')) {
         $query = \Acme\CmsDashboard\Models\NavigationMenu::query();
         
         if ($slugOrLocation === 'header') {
-            $query->where('location', 'header');
+            $query->where('is_header', true);
         } elseif ($slugOrLocation === 'footer') {
-            $query->where('location', 'footer');
+            $query->where('is_footer', true);
         } else {
             $query->where('slug', $slugOrLocation);
         }
