@@ -452,8 +452,7 @@ class PostController extends Controller
                 );
             }
         }
-        DB::commit();
-
+        
         lazy_log_activity('updated', "Updated {$post->type}: {$post->title}", $post);
 
         clear_page_cache();

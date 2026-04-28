@@ -150,6 +150,15 @@ class MediaController extends Controller
             $path = $file->storeAs('media', $filename, 'public');
         }
 
+        $compressedSize = 0;
+        try {
+            if (Storage::disk('public')->exists($path)) {
+                $compressedSize = Storage::disk('public')->size($path);
+            }
+        } catch (\Exception $e) {
+            $compressedSize = $file->getSize();
+        }
+
         $media = Media::create([
             'title' => $originalName,
             'filename' => $filename,
@@ -158,7 +167,7 @@ class MediaController extends Controller
             'width' => $width,
             'height' => $height,
             'original_size' => $file->getSize(),
-            'compressed_size' => Storage::disk('public')->size($path),
+            'compressed_size' => $compressedSize,
             'user_id' => auth()->id(),
         ]);
 
