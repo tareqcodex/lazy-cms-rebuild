@@ -10,6 +10,9 @@ class CommentController extends Controller
 {
     public function index(Request $request)
     {
+        // Mark all unread comments as read since the admin is viewing the page
+        Comment::where('is_read', false)->update(['is_read' => true]);
+
         $status = $request->query('status');
         $query = Comment::with('post', 'user')->latest();
 

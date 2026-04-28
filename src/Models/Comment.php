@@ -15,6 +15,7 @@ class Comment extends Model
         'email',
         'comment',
         'is_approved',
+        'is_read',
         'parent_id'
     ];
 

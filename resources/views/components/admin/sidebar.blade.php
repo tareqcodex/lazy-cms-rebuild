@@ -49,9 +49,9 @@
                         <span class="text-[14px] leading-none {{ $isActive ? 'font-semibold' : '' }} flex items-center gap-2">
                             {{ $menu->title }}
                             @if($isComments)
-                                @php $pendingComments = \Acme\CmsDashboard\Models\Comment::where('is_approved', false)->count(); @endphp
-                                @if($pendingComments > 0)
-                                    <span class="bg-[#d63638] text-white text-[10px] font-bold px-1.5 py-0.5 rounded-full min-w-[16px] text-center">{{ $pendingComments }}</span>
+                                @php $unreadComments = \Acme\CmsDashboard\Models\Comment::where('is_read', false)->count(); @endphp
+                                @if($unreadComments > 0)
+                                    <span class="bg-[#d63638] text-white text-[10px] font-bold px-1.5 py-0.5 rounded-full min-w-[16px] text-center">{{ $unreadComments }}</span>
                                 @endif
                             @endif
                         </span>
