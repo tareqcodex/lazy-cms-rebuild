@@ -170,22 +170,29 @@ class MediaController extends Controller
             $compressedSize = $file->getSize();
         }
 
-        $media = Media::create([
-            'title' => $originalName,
-            'filename' => $filename,
-            'path' => $path,
-            'mime_type' => $mimeType,
-            'width' => $width,
-            'height' => $height,
-            'original_size' => $file->getSize(),
-            'compressed_size' => $compressedSize,
-            'user_id' => auth()->id(),
-        ]);
+        try {
+            $media = Media::create([
+                'title' => $originalName,
+                'filename' => $filename,
+                'path' => $path,
+                'mime_type' => $mimeType,
+                'width' => $width,
+                'height' => $height,
+                'original_size' => $file->getSize(),
+                'compressed_size' => $compressedSize,
+                'user_id' => auth()->id(),
+            ]);
 
-        return response()->json([
-            'success' => true,
-            'data' => $media
-        ]);
+            return response()->json([
+                'success' => true,
+                'data' => $media
+            ]);
+        } catch (\Exception $e) {
+            return response()->json([
+                'success' => false,
+                'message' => $e->getMessage()
+            ], 500);
+        }
     }
 
     public function bulkDestroy(Request $request)
