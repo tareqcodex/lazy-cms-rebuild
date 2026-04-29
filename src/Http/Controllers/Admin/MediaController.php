@@ -271,6 +271,101 @@ class MediaController extends Controller
         return response()->json(['success' => true]);
     }
 
+    public function bulkOptimize()
+    {
+        try {
+            $mediaItems = Media::where('mime_type', 'like', 'image/%')->get();
+            $count = 0;
+            $quality = (int)get_cms_option('image_quality', 80);
+            $maxWidth = (int)get_cms_option('image_max_width', 1920);
+            $autoWebp = get_cms_option('image_auto_webp', '1') == '1';
+
+            if (!function_exists('imagecreatefromstring')) {
+                throw new \Exception("GD extension with imagecreatefromstring is required.");
+            }
+
+            foreach ($mediaItems as $media) {
+                $filePath = storage_path('app/public/' . $media->path);
+                if (!file_exists($filePath)) continue;
+
+                // Skip if already webp and we are targeting webp
+                if ($autoWebp && $media->mime_type === 'image/webp') continue;
+
+                $img = @imagecreatefromstring(file_get_contents($filePath));
+                if (!$img) continue;
+
+                $width = imagesx($img);
+                $height = imagesy($img);
+
+                // Resize if needed
+                if ($width > $maxWidth) {
+                    $newWidth = $maxWidth;
+                    $newHeight = (int)floor($height * ($maxWidth / $width));
+                    $tmp = imagecreatetruecolor($newWidth, $newHeight);
+                    imagealphablending($tmp, false);
+                    imagesavealpha($tmp, true);
+                    imagecopyresampled($tmp, $img, 0, 0, 0, 0, $newWidth, $newHeight, $width, $height);
+                    imagedestroy($img);
+                    $img = $tmp;
+                    $width = $newWidth;
+                    $height = $newHeight;
+                }
+
+                $filename = pathinfo($media->filename, PATHINFO_FILENAME);
+                $extension = $autoWebp ? 'webp' : pathinfo($media->path, PATHINFO_EXTENSION);
+                $newFilename = $filename . '-' . time() . '.' . $extension;
+                $newPath = 'media/' . $newFilename;
+
+                ob_start();
+                $success = false;
+                if ($autoWebp && function_exists('imagewebp')) {
+                    imagepalettetotruecolor($img);
+                    imagealphablending($img, true);
+                    imagesavealpha($img, true);
+                    $success = imagewebp($img, null, $quality);
+                } else {
+                    $ext = strtolower($extension);
+                    if (($ext === 'jpg' || $ext === 'jpeg') && function_exists('imagejpeg')) {
+                        $success = imagejpeg($img, null, $quality);
+                    } elseif ($ext === 'png' && function_exists('imagepng')) {
+                        $success = imagepng($img, null, (int)round(9 * (100 - $quality) / 100));
+                    }
+                }
+
+                $imageData = ob_get_clean();
+                if ($success && $imageData) {
+                    // Delete old file
+                    Storage::disk('public')->delete($media->path);
+                    
+                    // Save new file
+                    Storage::disk('public')->put($newPath, $imageData);
+
+                    // Update Database
+                    $media->update([
+                        'filename' => $newFilename,
+                        'path' => $newPath,
+                        'mime_type' => $autoWebp ? 'image/webp' : $media->mime_type,
+                        'width' => $width,
+                        'height' => $height,
+                        'compressed_size' => strlen($imageData)
+                    ]);
+                    $count++;
+                }
+                imagedestroy($img);
+            }
+
+            return response()->json([
+                'success' => true, 
+                'message' => "Successfully optimized {$count} images."
+            ]);
+        } catch (\Exception $e) {
+            return response()->json([
+                'success' => false, 
+                'message' => $e->getMessage()
+            ], 500);
+        }
+    }
+
     private function formatBytes(int $bytes): string
     {
         if ($bytes >= 1048576) return round($bytes / 1048576, 2) . ' MB';

@@ -38,6 +38,7 @@ Route::prefix('admin')->name('admin.')->middleware(['web', \Acme\CmsDashboard\Ht
     Route::post('media/bulk-delete', [MediaController::class, 'bulkDestroy'])->name('media.bulk-delete');
     Route::get('media', [MediaController::class, 'index'])->name('media.index');
     Route::get('media/upload', [MediaController::class, 'create'])->name('media.create');
+    Route::post('media/bulk-optimize', [MediaController::class, 'bulkOptimize'])->name('media.bulk-optimize');
     Route::post('media', [MediaController::class, 'store'])->name('media.store');
     Route::put('media/{media}', [MediaController::class, 'update'])->name('media.update');
     Route::delete('media/{media}', [MediaController::class, 'destroy'])->name('media.destroy');
