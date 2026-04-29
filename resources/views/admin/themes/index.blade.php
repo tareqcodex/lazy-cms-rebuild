@@ -28,6 +28,10 @@
                 <span class="text-[13px] text-[#1d2327] font-semibold border-b-2 border-[#1d2327] pb-1 cursor-pointer">All <span class="text-[#646970] font-normal">({{ count($themes) }})</span></span>
             </div>
             <div class="flex items-center gap-2">
+                <span class="text-[#646970] text-[13px]">Search themes...</span>
+                <input type="text" class="wp-input w-48 h-7">
+            </div>
+        </div>
 
         @if(session('success'))
             <div class="bg-[#edfaef] border-l-4 border-[#46b450] p-3 mb-6 text-[13px] text-[#1d2327]">
@@ -176,7 +180,7 @@
             padding: 12px;
             display: flex;
             align-items: center;
-            justify-between: space-between;
+            justify-content: space-between;
         }
     </style>
     @push('scripts')
