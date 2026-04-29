@@ -42,6 +42,9 @@ return new class extends Migration
                 $table->integer('login_attempts')->default(0)->after('is_blocked');
                 $table->timestamp('last_attempt_at')->nullable()->after('login_attempts');
                 $table->timestamp('blocked_until')->nullable()->after('last_attempt_at');
+                $table->string('last_failed_login_ip')->nullable()->after('blocked_until');
+                $table->timestamp('last_login_at')->nullable()->after('last_failed_login_ip');
+                $table->string('last_login_ip')->nullable()->after('last_login_at');
             }
 
             // Drop old role string column if exists
