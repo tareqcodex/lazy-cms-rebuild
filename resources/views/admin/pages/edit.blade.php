@@ -33,8 +33,8 @@
                     <div id="permalink-container" class="mt-2 text-[13px] flex items-center">
                         <strong class="text-[#646970] mr-1">Permalink:</strong>
                         <span id="permalink-view">
-                            <a id="permalink-full-link" href="{{ url($page->slug) }}" target="_blank" class="text-[#2271b1] hover:underline">{{ url('/') }}/<span id="permalink-slug-display" class="font-medium text-black">{{ $page->slug }}</span>/</a>
-                            <button type="button" id="edit-slug-btn" class="wp-btn-secondary bg-[#f6f7f7] text-[12px] h-[24px] ml-1">Edit</button>
+                            <a id="permalink-full-link" href="{{ url($page->slug) }}" target="_blank" class="text-[#2271b1] underline">{{ url('/') }}/<span id="permalink-slug-display" class="font-medium text-[#2271b1]">{{ $page->slug }}</span>/</a>
+                            <button type="button" id="edit-slug-btn" class="wp-btn-secondary bg-[#f6f7f7] text-[12px] h-[24px] ml-1 text-[#2271b1] border-[#c3c4c7] font-medium">Edit</button>
                         </span>
                         <span id="permalink-edit" class="hidden items-center">
                             <span class="text-[#646970]">{{ url('/') }}/</span>

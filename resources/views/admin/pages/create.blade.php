@@ -33,7 +33,7 @@
                         <span class="text-[#646970] mr-1">Permalink:</span>
                         <span id="permalink-view">
                             <a id="permalink-full-link" href="#" target="_blank" class="text-[#2271b1] underline font-medium">{{ url('/') }}/<span id="permalink-slug-display" class="text-[#2271b1]">{{ old('slug') }}</span>/</a>
-                            <button type="button" id="edit-slug-btn" class="wp-btn-secondary bg-[#f6f7f7] text-[12px] h-[24px] ml-1 font-medium">Edit</button>
+                            <button type="button" id="edit-slug-btn" class="wp-btn-secondary bg-[#f6f7f7] text-[12px] h-[24px] ml-1 font-medium text-[#2271b1] border-[#c3c4c7]">Edit</button>
                         </span>
                         <span id="permalink-edit" class="hidden items-center">
                             <span class="text-[#646970] font-medium">{{ url('/') }}/</span>

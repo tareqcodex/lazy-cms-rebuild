@@ -69,10 +69,14 @@ class Sidebar extends Component
         
         if (in_array($targetPath, $indexPaths)) {
             // Index routes MUST be an exact match (ignoring query strings for now) 
-            // unless it's a specific type (handled in step 3)
+            // unless it's a specific type (handled in step 3) or an edit/create page
             if ($currentPath !== $targetPath) {
-                // If it's something like admin/posts/create, the index 'admin/posts' should be inactive
-                return false;
+                // If it's something like admin/posts/create, the index 'admin/posts' should be active 
+                // ONLY if the types match (handled later) or if it's a generic index.
+                // For now, let's allow it if it starts with the target path followed by /
+                if (!str_starts_with($currentPath, $targetPath . '/')) {
+                    return false;
+                }
             }
         } elseif (!str_starts_with($currentPath, $targetPath)) {
             return false;
@@ -109,9 +113,12 @@ class Sidebar extends Component
                 return false;
             }
             
-            // Even if types match, if target is an index path, current path MUST match exactly
+            // Even if types match, if target is an index path, current path MUST match exactly 
+            // OR be a child of it (like /create or /1/edit)
             if (in_array($targetPath, $indexPaths) && $currentPath !== $targetPath) {
-                return false;
+                if (!str_starts_with($currentPath, $targetPath . '/')) {
+                    return false;
+                }
             }
 
             return true;
@@ -191,6 +198,10 @@ class Sidebar extends Component
                     return url('/admin/posts?type=' . $postType->slug);
                 }
             } catch (\Exception $e) {}
+
+            if ($title === 'Tools') {
+                if (Route::has('admin.backup.index')) return route('admin.backup.index');
+            }
 
             return '#';
         }
