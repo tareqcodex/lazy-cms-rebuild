@@ -58,18 +58,18 @@
                 <!-- Homepage Selection -->
                 <tr>
                     <th scope="row" class="w-[200px] text-left align-top pt-2">
-                        <label for="home_page_id" class="text-[14px] font-semibold text-[#1d2327]">Home Page</label>
+                        <label for="home_page_id" class="text-[14px] font-semibold text-[#1d2327]">Select your Home page</label>
                     </th>
                     <td>
                         <select name="home_page_id" id="home_page_id" class="wp-input w-[400px] h-8 py-0 shadow-sm mb-1">
-                            <option value="">Default Laravel Welcome Page</option>
+                            <option value="">Latest Blog Posts (Default)</option>
                             @foreach($pages as $page)
                                 <option value="{{ $page->id }}" {{ ($settings['home_page_id'] ?? '') == $page->id ? 'selected' : '' }}>
                                     {{ $page->title }}
                                 </option>
                             @endforeach
                         </select>
-                        <p class="text-[12px] text-[#646970]">Choose a static page to be your home page. If not selected, the default welcome page will be shown.</p>
+                        <p class="text-[12px] text-[#646970]">Choose what to display on your site's home page. If none selected, the latest blog posts will be shown.</p>
                     </td>
                 </tr>
 
