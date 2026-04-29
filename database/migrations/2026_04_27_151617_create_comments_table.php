@@ -19,6 +19,7 @@ return new class extends Migration
             $table->string('email')->nullable();
             $table->text('comment');
             $table->boolean('is_approved')->default(true);
+            $table->boolean('is_read')->default(false);
             $table->unsignedBigInteger('parent_id')->nullable();
             $table->timestamps();
         });

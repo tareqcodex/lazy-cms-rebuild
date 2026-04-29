@@ -18,6 +18,8 @@ return new class extends Migration
                 $table->text('description')->nullable();
                 $table->json('properties')->nullable();
                 $table->string('ip_address', 45)->nullable();
+                $table->string('country')->nullable();
+                $table->string('country_code', 10)->nullable();
                 $table->text('user_agent')->nullable();
                 $table->timestamps();
 

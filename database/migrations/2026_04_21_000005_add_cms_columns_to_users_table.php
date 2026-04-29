@@ -21,6 +21,16 @@ return new class extends Migration
                 $table->foreignId('role_id')->nullable()->after('id')->constrained('roles')->nullOnDelete();
             }
             
+            // Profile fields
+            if (!Schema::hasColumn('users', 'avatar')) {
+                $table->string('avatar')->nullable()->after('email');
+                $table->string('phone')->nullable()->after('avatar');
+                $table->text('bio')->nullable()->after('phone');
+                $table->string('facebook_url')->nullable()->after('bio');
+                $table->string('twitter_url')->nullable()->after('facebook_url');
+                $table->string('linkedin_url')->nullable()->after('twitter_url');
+            }
+
             // Blocking and throttling
             if (!Schema::hasColumn('users', 'is_blocked')) {
                 $table->boolean('is_blocked')->default(false)->after('password');

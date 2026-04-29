@@ -17,25 +17,50 @@ return new class extends Migration
             $table->text('description')->nullable();
             $table->string('icon')->nullable();
             $table->boolean('is_builtin')->default(false);
+            $table->boolean('is_active')->default(true);
+            $table->boolean('has_archive')->default(true);
+            $table->boolean('public')->default(true);
+            $table->boolean('show_in_menu')->default(true);
+            $table->boolean('show_in_rest')->default(true);
+            $table->boolean('hierarchical')->default(false);
+            $table->boolean('exclude_from_search')->default(false);
+            $table->boolean('publicly_queryable')->default(true);
+            $table->json('supports')->nullable(); // title, editor, thumbnail, etc.
             $table->softDeletes();
             $table->timestamps();
         });
 
         DB::table('post_types')->insert([
-            ['name' => 'Posts', 'slug' => 'post', 'is_builtin' => true, 'created_at' => now(), 'updated_at' => now()],
-            ['name' => 'Pages', 'slug' => 'page', 'is_builtin' => true, 'created_at' => now(), 'updated_at' => now()],
+            ['name' => 'Posts', 'slug' => 'post', 'is_builtin' => true, 'created_at' => now(), 'updated_at' => now(), 'supports' => json_encode(['title', 'editor', 'thumbnail', 'excerpt', 'comments'])],
+            ['name' => 'Pages', 'slug' => 'page', 'is_builtin' => true, 'created_at' => now(), 'updated_at' => now(), 'supports' => json_encode(['title', 'editor', 'thumbnail'])],
         ]);
 
         // 2. Posts Table
         Schema::create('posts', function (Blueprint $table) {
             $table->id();
             $table->foreignId('user_id')->nullable()->constrained('users')->nullOnDelete();
+            $table->foreignId('parent_id')->nullable()->constrained('posts')->nullOnDelete();
             $table->string('title');
-            $table->string('slug')->unique();
+            $table->string('slug'); // Unique check handled by composite or manual logic if needed, but usually unique
             $table->longText('content')->nullable();
+            $table->text('excerpt')->nullable();
             $table->string('type')->default('post')->index();
             $table->string('status')->default('draft')->index();
+            $table->string('featured_image')->nullable();
+            $table->string('editor_type')->default('classic'); // classic, block
+            $table->string('template')->nullable();
+            $table->integer('order')->default(0);
+            $table->timestamp('published_at')->nullable();
+            
+            // SEO Meta
+            $table->string('seo_title')->nullable();
+            $table->text('seo_description')->nullable();
+            $table->string('seo_keywords')->nullable();
+
+            $table->softDeletes();
             $table->timestamps();
+
+            $table->unique(['slug', 'type', 'deleted_at']); // Better unique constraint
         });
 
         // 3. Menus Table
