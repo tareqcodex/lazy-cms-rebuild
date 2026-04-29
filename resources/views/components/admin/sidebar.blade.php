@@ -104,7 +104,8 @@
             $groupedPages = [];
             foreach($customPages as $slug => $page) {
                 $group = $page['group'] ?? 'Custom Options';
-                $groupedPages[$group][$slug] = $page;
+                if (is_array($group)) $group = reset($group); // Safety for array_merge_recursive leftovers
+                $groupedPages[(string)$group][$slug] = $page;
             }
         @endphp
 

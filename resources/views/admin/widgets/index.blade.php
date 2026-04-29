@@ -80,35 +80,64 @@
                                 </div>
                                 
                                 <!-- Widget Settings Form -->
-                                <div id="widget-settings-{{ $widget->id }}" class="hidden px-4 pb-4 pt-2 border-t border-slate-200 bg-white">
-                                    <form action="{{ route('admin.widgets.update', $widget->id) }}" method="POST" class="space-y-4">
+                                <div id="widget-settings-{{ $widget->id }}" class="hidden px-5 py-5 border-t-2 border-primary/10 bg-slate-50/30">
+                                    <form action="{{ route('admin.widgets.update', $widget->id) }}" method="POST" class="space-y-5">
                                         @csrf
                                         @method('PUT')
-                                        <div>
-                                            <label class="block text-[11px] font-bold text-slate-400 uppercase mb-1">Widget Title</label>
-                                            <input type="text" name="title" value="{{ $widget->title }}" class="w-full border border-slate-200 rounded px-3 py-2 text-sm focus:border-primary outline-none">
+                                        <div class="bg-white p-4 rounded-lg border border-slate-200 shadow-sm space-y-4">
+                                            <div>
+                                                <label class="block text-[11px] font-bold text-slate-400 uppercase mb-1.5">Widget Title</label>
+                                                <input type="text" name="title" value="{{ $widget->title }}" class="w-full border border-slate-200 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-primary/20 focus:border-primary outline-none transition-all">
+                                            </div>
+
+                                            @if($widget->type === 'recent_posts')
+                                                <div>
+                                                    <label class="block text-[11px] font-bold text-slate-400 uppercase mb-1.5">Number of posts</label>
+                                                    <input type="number" name="settings[limit]" value="{{ $widget->settings['limit'] ?? 5 }}" class="w-full border border-slate-200 rounded-lg px-3 py-2 text-sm">
+                                                </div>
+                                            @elseif($widget->type === 'custom_html')
+                                                <div>
+                                                    <label class="block text-[11px] font-bold text-slate-400 uppercase mb-1.5">HTML Content</label>
+                                                    <textarea name="settings[content]" rows="5" class="w-full border border-slate-200 rounded-lg px-3 py-2 text-sm font-mono">{{ $widget->settings['content'] ?? '' }}</textarea>
+                                                </div>
+                                            @elseif($widget->type === 'social_media')
+                                                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                                    <div>
+                                                        <label class="block text-[11px] font-bold text-slate-400 uppercase mb-1.5">Facebook URL</label>
+                                                        <input type="text" name="settings[facebook]" value="{{ $widget->settings['facebook'] ?? get_cms_option('social_facebook') }}" class="w-full border border-slate-200 rounded-lg px-3 py-2 text-sm">
+                                                    </div>
+                                                    <div>
+                                                        <label class="block text-[11px] font-bold text-slate-400 uppercase mb-1.5">Twitter URL</label>
+                                                        <input type="text" name="settings[twitter]" value="{{ $widget->settings['twitter'] ?? get_cms_option('social_twitter') }}" class="w-full border border-slate-200 rounded-lg px-3 py-2 text-sm">
+                                                    </div>
+                                                    <div>
+                                                        <label class="block text-[11px] font-bold text-slate-400 uppercase mb-1.5">Instagram URL</label>
+                                                        <input type="text" name="settings[instagram]" value="{{ $widget->settings['instagram'] ?? get_cms_option('social_instagram') }}" class="w-full border border-slate-200 rounded-lg px-3 py-2 text-sm">
+                                                    </div>
+                                                    <div>
+                                                        <label class="block text-[11px] font-bold text-slate-400 uppercase mb-1.5">LinkedIn URL</label>
+                                                        <input type="text" name="settings[linkedin]" value="{{ $widget->settings['linkedin'] ?? get_cms_option('social_linkedin') }}" class="w-full border border-slate-200 rounded-lg px-3 py-2 text-sm">
+                                                    </div>
+                                                </div>
+                                            @endif
                                         </div>
 
-                                        @if($widget->type === 'recent_posts')
-                                            <div>
-                                                <label class="block text-[11px] font-bold text-slate-400 uppercase mb-1">Number of posts</label>
-                                                <input type="number" name="settings[limit]" value="{{ $widget->settings['limit'] ?? 5 }}" class="w-full border border-slate-200 rounded px-3 py-2 text-sm">
-                                            </div>
-                                        @elseif($widget->type === 'custom_html')
-                                            <div>
-                                                <label class="block text-[11px] font-bold text-slate-400 uppercase mb-1">HTML Content</label>
-                                                <textarea name="settings[content]" rows="5" class="w-full border border-slate-200 rounded px-3 py-2 text-sm font-mono">{{ $widget->settings['content'] ?? '' }}</textarea>
-                                            </div>
-                                        @endif
-
                                         <div class="flex items-center justify-between pt-2">
-                                            <label class="flex items-center gap-2 cursor-pointer">
-                                                <input type="checkbox" name="is_active" value="1" {{ $widget->is_active ? 'checked' : '' }} class="rounded border-slate-300 text-primary focus:ring-primary">
-                                                <span class="text-xs text-slate-600">Active</span>
+                                            <label class="flex items-center gap-2 cursor-pointer group">
+                                                <input type="checkbox" name="is_active" value="1" {{ $widget->is_active ? 'checked' : '' }} class="w-4 h-4 rounded border-slate-300 text-primary focus:ring-primary transition-all">
+                                                <span class="text-xs font-bold text-slate-500 group-hover:text-slate-700 uppercase tracking-wider">Active Status</span>
                                             </label>
-                                            <button type="submit" class="bg-primary text-white px-4 py-1.5 rounded text-xs font-bold hover:bg-primary-hover transition-colors">
-                                                Save Changes
-                                            </button>
+                                            <div class="flex gap-3">
+                                                <button type="button" onclick="toggleWidgetSettings({{ $widget->id }})" class="px-5 py-2 rounded-lg text-xs font-bold text-slate-500 hover:bg-slate-200 transition-all">
+                                                    Cancel
+                                                </button>
+                                                <button type="button" onclick="saveWidgetSettings({{ $widget->id }})" id="save-btn-{{ $widget->id }}" class="px-8 py-2 rounded-lg text-xs font-black uppercase tracking-widest hover:shadow-lg transition-all flex items-center gap-2" style="background-color: #1d4ed8 !important; color: white !important;">
+                                                    <span class="save-text">Save Widget</span>
+                                                    <span class="save-loader hidden">
+                                                        <svg class="animate-spin h-3.5 w-3.5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg>
+                                                    </span>
+                                                </button>
+                                            </div>
                                         </div>
                                     </form>
                                 </div>
@@ -191,6 +220,66 @@
     function toggleWidgetSettings(id) {
         const el = document.getElementById(`widget-settings-${id}`);
         el.classList.toggle('hidden');
+    }
+
+    async function saveWidgetSettings(id) {
+        const form = document.getElementById(`widget-settings-${id}`).querySelector('form');
+        const btn = document.getElementById(`save-btn-${id}`);
+        const text = btn.querySelector('.save-text');
+        const loader = btn.querySelector('.save-loader');
+        
+        // Show loading
+        btn.disabled = true;
+        text.innerText = 'Saving...';
+        loader.classList.remove('hidden');
+
+        const formData = new FormData(form);
+        const data = {};
+        formData.forEach((value, key) => {
+            if (key.includes('[')) {
+                const parts = key.split('[');
+                const mainKey = parts[0];
+                const subKey = parts[1].replace(']', '');
+                if (!data[mainKey]) data[mainKey] = {};
+                data[mainKey][subKey] = value;
+            } else {
+                data[key] = value;
+            }
+        });
+
+        try {
+            const baseUrl = '{{ url("admin/widgets") }}';
+            const response = await fetch(`${baseUrl}/${id}`, {
+                method: 'POST',
+                headers: {
+                    'Accept': 'application/json',
+                    'Content-Type': 'application/json',
+                    'X-CSRF-TOKEN': '{{ csrf_token() }}',
+                    'X-HTTP-Method-Override': 'PUT'
+                },
+                body: JSON.stringify(data)
+            });
+
+            const result = await response.json();
+            
+            if (response.ok) {
+                showToast('Settings saved successfully!');
+                // Update title label if changed
+                if (data.title) {
+                    const titleLabel = form.closest('.widget-item').querySelector('.font-bold.text-slate-700');
+                    titleLabel.innerText = data.title;
+                }
+            } else {
+                showToast('Error saving settings', 'error');
+            }
+        } catch (error) {
+            console.error(error);
+            showToast('Something went wrong', 'error');
+        } finally {
+            btn.disabled = false;
+            text.innerText = 'Save Changes';
+            loader.classList.add('hidden');
+        }
     }
 
     document.addEventListener('DOMContentLoaded', function() {

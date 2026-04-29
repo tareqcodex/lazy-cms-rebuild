@@ -129,13 +129,20 @@ class FrontendController extends Controller
 
     public function search(Request $request)
     {
-        $query = $request->input('q');
-        $title = 'Search results for: ' . $query;
+        $query = $request->input('s');
+        $title = 'Search results for: ' . ($query ?: 'All');
         
-        $posts = Post::where('status', 'published')
-            ->where('title', 'like', "%{$query}%")
-            ->latest()
-            ->paginate(12);
+        $postsQuery = Post::where('status', 'published');
+        
+        if ($query) {
+            $postsQuery->where(function($q) use ($query) {
+                $q->where('title', 'like', "%{$query}%")
+                  ->orWhere('content', 'like', "%{$query}%")
+                  ->orWhere('excerpt', 'like', "%{$query}%");
+            });
+        }
+
+        $posts = $postsQuery->latest()->paginate(12);
             
         $type = 'Search';
         return view('cms-dashboard::themes.lazy-theme.archive', compact('posts', 'title', 'type'));

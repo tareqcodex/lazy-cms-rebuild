@@ -89,6 +89,11 @@ class WidgetController extends Controller
     public function update(Request $request, Widget $widget)
     {
         $widget->update($request->only(['title', 'settings', 'order', 'is_active']));
+
+        if ($request->wantsJson() || $request->ajax()) {
+            return response()->json(['status' => 'success', 'message' => 'Widget updated successfully!']);
+        }
+
         return back()->with('success', 'Widget updated successfully!');
     }
 

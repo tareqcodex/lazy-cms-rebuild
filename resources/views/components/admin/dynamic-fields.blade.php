@@ -48,6 +48,18 @@
                             @endif
                             <input type="file" name="{{ $name }}" id="{{ $name }}" class="text-[13px]">
                         </div>
+                    @elseif($field['type'] === 'media')
+                        <div class="flex items-center gap-4">
+                            <div id="media-preview-{{ $name }}" class="w-16 h-16 border rounded bg-slate-50 flex items-center justify-center overflow-hidden {{ empty($settings[$name]) ? 'hidden' : '' }}">
+                                @if(!empty($settings[$name]))
+                                    <img src="{{ asset('storage/' . $settings[$name]) }}" class="max-w-full max-h-full object-contain">
+                                @endif
+                            </div>
+                            <div class="flex flex-col gap-2">
+                                <button type="button" class="wp-btn-secondary h-8 px-4 text-[12px] open-media-for-setting" data-target="{{ $name }}">Choose from Library</button>
+                                <input type="hidden" name="{{ $name }}" id="input-{{ $name }}" value="{{ $settings[$name] ?? '' }}">
+                            </div>
+                        </div>
                     @endif
 
                     @if(isset($field['desc']))

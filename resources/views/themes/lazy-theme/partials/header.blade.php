@@ -5,9 +5,13 @@
             <!-- Logo -->
             <div class="flex-shrink-0">
                 <a href="{{ url('/') }}" class="flex items-center gap-2">
-                    <span class="text-2xl font-black tracking-tighter text-slate-900">
-                        Lazy Theme<span class="text-primary">.</span>
-                    </span>
+                    @if(get_cms_option('theme_logo'))
+                        <img src="{{ asset('storage/' . get_cms_option('theme_logo')) }}" alt="{{ get_cms_option('site_title', 'Lazy CMS') }}" class="h-10 w-auto">
+                    @else
+                        <span class="text-2xl font-black tracking-tighter text-slate-900">
+                            Lazy Theme<span class="text-primary">.</span>
+                        </span>
+                    @endif
                 </a>
             </div>
 

@@ -14,6 +14,7 @@ use Acme\CmsDashboard\Http\Controllers\Admin\AcptCptController;
 use Acme\CmsDashboard\Http\Controllers\Admin\AcptTaxonomyController;
 use Acme\CmsDashboard\Http\Controllers\Admin\AcptTermController;
 use Acme\CmsDashboard\Http\Controllers\Admin\WidgetController;
+use Acme\CmsDashboard\Http\Controllers\Admin\ThemeController;
 use Acme\CmsDashboard\Http\Controllers\FrontendController;
 
 // 1. Dynamic Login & Registration URLs (Highest Priority - Outside any group)
@@ -26,6 +27,12 @@ Route::middleware(['web'])->group(function() use ($login_slug, $register_slug) {
     
     Route::get($register_slug, [RegisterController::class, 'showRegistrationForm'])->name('admin.register');
     Route::post($register_slug, [RegisterController::class, 'register']);
+
+    // Password Recovery
+    Route::get('forgot-password', [LoginController::class, 'showForgotPasswordForm'])->name('admin.password.request');
+    Route::post('forgot-password', [LoginController::class, 'sendResetLinkEmail'])->name('admin.password.email');
+    Route::get('reset-password/{token}', [LoginController::class, 'showResetForm'])->name('admin.password.reset');
+    Route::post('reset-password', [LoginController::class, 'resetPassword'])->name('admin.password.update');
 
     // Redirect standard admin/login and admin/register to custom slugs
     Route::get('admin/login', function() use ($login_slug) { return redirect($login_slug); });
@@ -180,6 +187,12 @@ Route::prefix('admin')->name('admin.')->middleware(['web', \Acme\CmsDashboard\Ht
     Route::put('/widgets/{widget}', [WidgetController::class, 'update'])->name('widgets.update');
     Route::delete('/widgets/{widget}', [WidgetController::class, 'destroy'])->name('widgets.destroy');
     Route::post('/widgets/order', [WidgetController::class, 'updateOrder'])->name('widgets.update-order');
+
+    // Themes
+    Route::get('/themes', [ThemeController::class, 'index'])->name('themes.index');
+    Route::post('/themes/upload', [ThemeController::class, 'upload'])->name('themes.upload');
+    Route::post('/themes/{slug}/activate', [ThemeController::class, 'activate'])->name('themes.activate');
+    Route::delete('/themes/{slug}', [ThemeController::class, 'destroy'])->name('themes.destroy');
  
  
 });

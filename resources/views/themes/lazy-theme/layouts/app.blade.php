@@ -5,6 +5,11 @@
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <title>@yield('title', get_cms_option('site_title', 'Lazy CMS'))</title>
     
+    <!-- Favicon -->
+    @if(get_cms_option('theme_favicon'))
+        <link rel="icon" type="image/x-icon" href="{{ asset('storage/' . get_cms_option('theme_favicon')) }}">
+    @endif
+
     <!-- Meta SEO -->
     @yield('seo')
 
@@ -73,12 +78,17 @@
         }
 
         /* Sidebar Widgets */
+        .widget {
+            margin-bottom: 2rem;
+        }
         .widget-title {
             position: relative;
-            padding-bottom: 15px;
-            margin-bottom: 20px;
-            border-bottom: 2px solid var(--border-color);
-            font-size: 1.2rem;
+            padding-bottom: 10px;
+            margin-bottom: 15px;
+            border-bottom: 1px solid var(--border-color);
+            font-size: 0.95rem;
+            text-transform: uppercase;
+            letter-spacing: 1px;
         }
         .widget-title::after {
             content: '';

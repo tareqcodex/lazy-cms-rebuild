@@ -36,6 +36,12 @@
                 <button type="submit" class="btn-fallback bg-[#2271b1] text-white px-4 py-1.5 rounded-[3px] text-[13px] font-semibold hover:bg-[#135e96]">Log In</button>
             </div>
         </form>
+        <p class="mt-4 text-[13px] text-[#3c434a]">
+            <a href="{{ route('admin.password.request') }}" class="hover:text-[#2271b1]">Lost your password?</a>
+        </p>
+        <p class="mt-2 text-[13px] text-[#3c434a]">
+            <a href="{{ url('/') }}" class="hover:text-[#2271b1]">← Go to {{ get_cms_option('site_title', 'Lazy CMS') }}</a>
+        </p>
     </div>
 </body>
 </html>

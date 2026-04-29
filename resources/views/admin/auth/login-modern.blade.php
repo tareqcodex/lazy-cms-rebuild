@@ -52,6 +52,7 @@
             <div class="mb-6">
                 <div class="flex justify-between mb-1">
                     <label class="block text-sm font-medium text-gray-700">Password</label>
+                    <a href="{{ route('admin.password.request') }}" class="text-xs text-indigo-600 hover:text-indigo-500 font-semibold">Forgot password?</a>
                 </div>
                 <div style="position: relative;">
                     <input type="password" id="password" name="password" class="wp-input" placeholder="••••••••" required>

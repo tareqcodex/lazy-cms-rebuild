@@ -14,6 +14,7 @@
 
         <form action="{{ route('admin.settings.update') }}" method="POST" class="max-w-[800px]">
             @csrf
+            {!! do_lazy_action('lazy_settings_form_top') !!}
 
             <table class="w-full border-separate border-spacing-y-6">
                 <!-- Site Title -->
@@ -272,6 +273,8 @@
                 </table>
             </div>
 
+            {!! do_lazy_action('lazy_settings_form_bottom') !!}
+
             <div class="pt-6 border-t border-gray-100 mt-6">
                 <button type="submit" class="wp-btn-primary px-4 h-8 font-semibold">Save Changes</button>
             </div>
@@ -302,6 +305,22 @@
 
                 // Listen for changes
                 registerCheckbox.addEventListener('change', toggleRegistrationFields);
+                
+                // Media Modal for settings
+                document.querySelectorAll('.open-media-for-setting').forEach(btn => {
+                    btn.addEventListener('click', function() {
+                        const target = this.getAttribute('data-target');
+                        window.openMediaModal(function(media) {
+                            const input = document.getElementById('input-' + target);
+                            if (input) input.value = media.path;
+                            const preview = document.getElementById('media-preview-' + target);
+                            if (preview) {
+                                preview.innerHTML = `<img src="/storage/${media.path}" class="max-w-full max-h-full object-contain">`;
+                                preview.classList.remove('hidden');
+                            }
+                        });
+                    });
+                });
 
                 // Bulk Optimize Logic
                 const optimizeBtn = document.getElementById('bulk-optimize-btn');

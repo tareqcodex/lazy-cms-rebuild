@@ -300,12 +300,56 @@ Route::get('/blogs', function () {
 
                 {{-- Section: Templates --}}
                 <section id="templates">
-                    <h2 class="text-2xl font-bold text-gray-900 mb-4">Custom Templates</h2>
-                    <p class="text-gray-700 mb-4">If you create a file in <code>resources/views/</code> that matches the <b>slug</b> of a CMS page, it will automatically be used to render that page.</p>
-                    <ul class="list-disc list-inside text-gray-600 space-y-2">
-                        <li>Page Slug: <code>contact-us</code></li>
-                        <li>Blade File: <code>resources/views/contact-us.blade.php</code></li>
-                    </ul>
+                    <h2 class="text-2xl font-bold text-gray-900 mb-4">Theme Development Guide</h2>
+                    <p class="text-gray-700 mb-6">Lazy CMS allows you to build custom themes with total creative freedom. Follow this guide to create your first theme.</p>
+
+                    <div class="space-y-8">
+                        {{-- Theme Structure --}}
+                        <div class="bg-white border border-gray-200 rounded-xl p-6 shadow-sm">
+                            <h3 class="text-lg font-bold text-blue-600 mb-3">1. Theme Structure & Location</h3>
+                            <p class="text-sm text-gray-600 mb-4">Themes are located in <code>resources/views/themes/{theme-name}/</code>. A standard theme should follow this structure:</p>
+                            <div class="bg-gray-100 p-4 rounded-lg font-mono text-xs text-gray-700 leading-relaxed">
+                                your-theme-name/<br>
+                                ├── layouts/ &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; # Master layout (app.blade.php)<br>
+                                ├── partials/ &nbsp;&nbsp;&nbsp;&nbsp;&nbsp; # Reusable parts (header, footer)<br>
+                                ├── widgets/ &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; # Custom theme widgets<br>
+                                ├── index.blade.php &nbsp; # Home / Blog index<br>
+                                ├── single.blade.php # Single post view<br>
+                                ├── page.blade.php &nbsp;&nbsp; # Single page view<br>
+                                ├── archive.blade.php # Category / Tag archives<br>
+                                └── functions.php &nbsp;&nbsp; # Theme hooks & logic
+                            </div>
+                        </div>
+
+                        {{-- Technical Requirements --}}
+                        <div class="bg-white border border-gray-200 rounded-xl p-6 shadow-sm">
+                            <h3 class="text-lg font-bold text-blue-600 mb-3">2. Essential Technical Criteria</h3>
+                            <p class="text-sm text-gray-600 mb-4">To ensure your theme works perfectly with core features, you must include these elements:</p>
+                            
+                            <div class="space-y-4">
+                                <div class="p-3 bg-gray-50 rounded border-l-4 border-blue-400">
+                                    <p class="text-xs font-bold text-gray-500 uppercase mb-1">SEO Support (In &lt;head&gt;)</p>
+                                    <code class="text-xs">@verbatim<x-cms-dashboard::frontend.seo-meta :post="$post ?? null" />@endverbatim</code>
+                                </div>
+
+                                <div class="p-3 bg-gray-50 rounded border-l-4 border-blue-400">
+                                    <p class="text-xs font-bold text-gray-500 uppercase mb-1">Head Hook (Before &lt;/head&gt;)</p>
+                                    <code class="text-xs">@verbatim{!! do_lazy_action('lazy_head') !!}@endverbatim</code>
+                                </div>
+
+                                <div class="p-3 bg-gray-50 rounded border-l-4 border-blue-400">
+                                    <p class="text-xs font-bold text-gray-500 uppercase mb-1">Footer Hook (Before &lt;/body&gt;)</p>
+                                    <code class="text-xs">@verbatim{!! do_lazy_action('lazy_footer') !!}@endverbatim</code>
+                                </div>
+                            </div>
+                        </div>
+
+                        {{-- Template Hierarchy --}}
+                        <div class="bg-amber-50 border border-amber-100 rounded-xl p-6">
+                            <h3 class="text-lg font-bold text-amber-800 mb-2">Template Overrides</h3>
+                            <p class="text-sm text-amber-700">If you create a file in <code>resources/views/</code> that matches a page slug (e.g., <code>contact.blade.php</code>), it will override the theme's default <code>page.blade.php</code>.</p>
+                        </div>
+                    </div>
                 </section>
 
                 {{-- Section: Custom Widgets --}}
@@ -377,19 +421,30 @@ Route::get('/blogs', function () {
                             <p class="text-sm text-gray-600">Actions allow you to "do something" at specific points in the page lifecycle.</p>
                             
                             <div class="bg-gray-50 border border-gray-200 rounded-lg p-4">
-                                <h4 class="text-xs font-bold text-gray-400 uppercase mb-2">Available Actions</h4>
-                                <ul class="text-xs space-y-2 text-gray-700">
-                                    <li><code>lazy_head</code> - Inside &lt;head&gt; tag</li>
-                                    <li><code>lazy_footer</code> - Before &lt;/body&gt; tag</li>
+                                <h4 class="text-xs font-bold text-gray-400 uppercase mb-2">Frontend Actions</h4>
+                                <ul class="text-xs space-y-1 text-gray-700 mb-4">
+                                    <li><code>lazy_head</code> - Inside frontend &lt;head&gt;</li>
+                                    <li><code>lazy_footer</code> - Before frontend &lt;/body&gt;</li>
                                     <li><code>lazy_before_content</code> - Above post body</li>
                                     <li><code>lazy_after_content</code> - Below post body</li>
+                                </ul>
+
+                                <h4 class="text-xs font-bold text-gray-400 uppercase mb-2">Admin Panel Actions</h4>
+                                <ul class="text-xs space-y-1 text-gray-700">
+                                    <li><code>lazy_admin_head</code> - Inside admin &lt;head&gt;</li>
+                                    <li><code>lazy_admin_footer</code> - Before admin &lt;/body&gt;</li>
+                                    <li><code>lazy_admin_bar_right_before</code> - Top bar right side</li>
+                                    <li><code>lazy_settings_form_top</code> - General Settings top</li>
+                                    <li><code>lazy_settings_form_bottom</code> - General Settings bottom</li>
+                                    <li><code>lazy_seo_settings_form_top</code> - SEO Settings top</li>
+                                    <li><code>lazy_seo_settings_form_bottom</code> - SEO Settings bottom</li>
                                 </ul>
                             </div>
 
                             <div class="bg-gray-900 rounded-lg p-4 text-gray-300 font-mono text-xs">
-                                <pre><code>@verbatim// Example: Add Analytics
-add_lazy_action('lazy_head', function() {
-    echo "&lt;script&gt;console.log('Lazy CMS Loaded');&lt;/script&gt;";
+                                <pre><code>@verbatim// Example: Add CSS to Admin
+add_lazy_action('lazy_admin_head', function() {
+    echo "&lt;style&gt;body { border-top: 4px solid red; }&lt;/style&gt;";
 });@endverbatim</code></pre>
                             </div>
                         </div>
@@ -407,13 +462,19 @@ add_lazy_action('lazy_head', function() {
                                 <ul class="text-xs space-y-2 text-gray-700">
                                     <li><code>lazy_the_content</code> - Filters post body HTML</li>
                                     <li><code>lazy_post_title</code> - Filters post title</li>
+                                    <li><code>cms_theme_options</code> - Modify theme settings pages (via functions.php)</li>
                                 </ul>
                             </div>
 
                             <div class="bg-gray-900 rounded-lg p-4 text-gray-300 font-mono text-xs">
-                                <pre><code>@verbatim// Example: Modify Content
-add_lazy_filter('lazy_the_content', function($content) {
-    return str_replace('Lazy', '<b>Lazy</b>', $content);
+                                <pre><code>@verbatim// Example: Define Options via Hook
+add_lazy_filter('cms_theme_options', function($options) {
+    $options['pages']['my-ad-settings'] = [
+        'title' => 'Ad Settings',
+        'icon'  => 'ads_click',
+        'fields' => [ ... ]
+    ];
+    return $options;
 });@endverbatim</code></pre>
                             </div>
                         </div>

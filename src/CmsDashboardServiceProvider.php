@@ -51,6 +51,10 @@ class CmsDashboardServiceProvider extends ServiceProvider
             ], 'cms-dashboard-views');
 
             $this->publishes([
+                __DIR__ . '/../resources/views/themes' => resource_path('views/themes'),
+            ], 'cms-dashboard-themes');
+
+            $this->publishes([
                 __DIR__ . '/../public/assets' => public_path('vendor/cms-dashboard'),
             ], 'cms-dashboard-assets');
 
@@ -86,8 +90,22 @@ class CmsDashboardServiceProvider extends ServiceProvider
 
         // 3. Load theme-specific options.php (For Admin UI Config)
         $optionsFile = __DIR__ . "/../resources/views/themes/{$activeTheme}/options.php";
+        $themeOptions = [];
         if (file_exists($optionsFile)) {
             require_once $optionsFile;
         }
+
+        // 4. Merge and Filter Options
+        $baseOptions = config('lazy-options', []);
+        
+        // Merge themeOptions array if defined in options.php
+        if (!empty($themeOptions)) {
+            $baseOptions = array_replace_recursive($baseOptions, $themeOptions);
+        }
+
+        // Apply filters so users can add options via functions.php hooks
+        $finalOptions = apply_lazy_filters('cms_theme_options', $baseOptions);
+        
+        config(['lazy-options' => $finalOptions]);
     }
 }

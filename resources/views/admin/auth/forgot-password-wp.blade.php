@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Log In &lsaquo; CMS &#8212; WordPress</title>
+    <title>Lost Password &lsaquo; CMS &#8212; WordPress</title>
     <script src="{{ asset('vendor/cms-dashboard/js/tailwind.min.js') }}"></script>
     <style>
         body { background-color: #f0f0f1; display: flex; flex-direction: column; align-items: center; justify-content: center; min-height: 100vh; font-family: -apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Oxygen-Sans,Ubuntu,Cantarell,"Helvetica Neue",sans-serif; }
@@ -17,7 +17,7 @@
         .login-links a { color: #2271b1; text-decoration: none; }
         .login-links a:hover { color: #135e96; }
         .wp-logo { margin-bottom: 25px; }
-        .alert { background: #fff; border-left: 4px solid #d63638; box-shadow: 0 1px 1px 0 rgba(0,0,0,.1); margin-bottom: 20px; padding: 12px; width: 320px; font-size: 14px; color: #3c434a; }
+        .alert { background: #fff; border-left: 4px solid #72aee6; box-shadow: 0 1px 1px 0 rgba(0,0,0,.1); margin-bottom: 20px; padding: 12px; width: 320px; font-size: 14px; color: #3c434a; }
     </style>
 </head>
 <body>
@@ -31,66 +31,38 @@
         </a>
     </div>
 
-    @if(session('error'))
-        <div class="alert border-red-600">
-            {{ session('error') }}
-        </div>
-    @endif
-
-    @if(session('success'))
-        <div class="alert border-green-600" style="border-left-color: #46b450;">
-            {{ session('success') }}
+    @if(session('status'))
+        <div class="alert">
+            {{ session('status') }}
         </div>
     @endif
 
     @if($errors->any())
-        <div class="alert">
+        <div class="alert" style="border-left-color: #d63638;">
             {{ $errors->first() }}
         </div>
     @endif
 
     <div class="login-box">
-        <form action="{{ route('admin.login') }}" method="POST">
+        <p class="text-[14px] text-[#3c434a] mb-6 leading-relaxed">
+            Please enter your username or email address. You will receive a link to create a new password via email.
+        </p>
+
+        <form action="{{ route('admin.password.email') }}" method="POST">
             @csrf
             <div class="mb-4">
                 <label for="user_login" class="wp-label">Username or Email Address</label>
-                <input type="text" name="email" id="user_login" class="wp-input" value="{{ old('email') }}" required autofocus autocomplete="username">
+                <input type="text" name="email" id="user_login" class="wp-input" value="{{ old('email') }}" required autofocus>
             </div>
-            <div class="mb-4">
-                <label for="user_pass" class="wp-label">Password</label>
-                <div style="position: relative;">
-                    <input type="password" name="password" id="user_pass" class="wp-input" required autocomplete="current-password">
-                    <button type="button" class="toggle-password" data-target="user_pass" style="position: absolute; right: 10px; top: 8px; background: none; border: none; cursor: pointer; color: #646970;">
-                        <svg style="width:20px;height:20px" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"/></svg>
-                    </button>
-                </div>
-            </div>
-            <div class="flex items-center mb-6">
-                <input type="checkbox" name="remember" id="rememberme" class="mr-2">
-                <label for="rememberme" class="text-[13px] text-[#3c434a]">Remember Me</label>
-            </div>
-            <button type="submit" class="wp-submit">Log In</button>
+            <button type="submit" class="wp-submit">Get New Password</button>
         </form>
     </div>
 
     <div class="login-links">
-        @if(get_cms_option('users_can_register', '0') == '1')
-            <a href="{{ route('admin.register') }}">Register</a> | 
-        @endif
-        <a href="{{ route('admin.password.request') }}">Lost your password?</a>
+        <a href="{{ route('admin.login') }}">Log In</a>
         <br><br>
         <a href="/">&larr; Go to Site</a>
     </div>
 
-    <script>
-        document.querySelectorAll('.toggle-password').forEach(btn => {
-            btn.addEventListener('click', function() {
-                const target = document.getElementById(this.getAttribute('data-target'));
-                const type = target.type === 'password' ? 'text' : 'password';
-                target.type = type;
-                this.style.color = type === 'text' ? '#2271b1' : '#646970';
-            });
-        });
-    </script>
 </body>
 </html>

@@ -180,6 +180,10 @@
             Not a legend yet? <a href="{{ route('admin.register') }}">Join Us</a>
         </div>
         @endif
+
+        <div class="footer-text" style="margin-top: 15px;">
+            Forgot your access key? <a href="{{ route('admin.password.request') }}">Recover Here</a>
+        </div>
     </div>
 
     <script>
