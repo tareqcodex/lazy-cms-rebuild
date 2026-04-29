@@ -41,12 +41,12 @@
             </div>
         @endif
 
-        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+        <div class="themes-grid grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
             @foreach($themes as $theme)
-                <div class="group relative bg-white border {{ $theme['is_active'] ? 'border-[#2271b1] ring-1 ring-[#2271b1]' : 'border-[#dcdcde]' }} shadow-sm overflow-hidden flex flex-col h-full">
+                <div class="theme-card group relative bg-white border {{ $theme['is_active'] ? 'border-[#2271b1] ring-1 ring-[#2271b1]' : 'border-[#dcdcde]' }} shadow-sm overflow-hidden flex flex-col h-full">
                     
                     {{-- Theme Screenshot --}}
-                    <div class="relative aspect-[4/3] bg-[#f0f0f1] border-b border-[#dcdcde] overflow-hidden">
+                    <div class="theme-screenshot relative aspect-[4/3] bg-[#f0f0f1] border-b border-[#dcdcde] overflow-hidden">
                         @if($theme['screenshot'])
                             <img src="{{ $theme['screenshot'] }}" alt="{{ $theme['name'] }}" class="w-full h-full object-cover">
                         @else
@@ -97,7 +97,7 @@
                     </div>
 
                     {{-- Theme Info --}}
-                    <div class="p-3 bg-white flex items-center justify-between mt-auto">
+                    <div class="theme-info p-3 bg-white flex items-center justify-between mt-auto">
                         <div class="truncate">
                             <h2 class="text-[14px] font-bold text-[#1d2327] truncate">{{ $theme['name'] }}</h2>
                         </div>
@@ -132,10 +132,51 @@
             background: #2271b1; 
             border-color: #2271b1; 
             box-shadow: 0 1px 0 #135e96; 
+            color: #fff;
+            padding: 4px 12px;
+            border-radius: 3px;
+            cursor: pointer;
         }
         .wp-btn-primary:hover { 
             background: #135e96; 
             border-color: #135e96; 
+        }
+        .wp-btn-secondary {
+            background: #f6f7f7;
+            border: 1px solid #2271b1;
+            color: #2271b1;
+            padding: 4px 12px;
+            border-radius: 3px;
+            cursor: pointer;
+        }
+
+        /* Grid Fallback if Tailwind fails */
+        .themes-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+            gap: 24px;
+            margin-top: 20px;
+        }
+        .theme-card {
+            background: #fff;
+            border: 1px solid #dcdcde;
+            box-shadow: 0 1px 1px rgba(0,0,0,.04);
+            position: relative;
+            display: flex;
+            flex-direction: column;
+        }
+        .theme-screenshot {
+            aspect-ratio: 4/3;
+            background: #f0f0f1;
+            border-bottom: 1px solid #dcdcde;
+            position: relative;
+            overflow: hidden;
+        }
+        .theme-info {
+            padding: 12px;
+            display: flex;
+            align-items: center;
+            justify-between: space-between;
         }
     </style>
     @push('scripts')
