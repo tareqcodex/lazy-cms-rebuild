@@ -75,7 +75,7 @@ class MenuSeeder extends Seeder
         // 6. Appearance
         $appearanceMenu = Menu::create([
             'title' => 'Appearance',
-            'route' => '#',
+            'route' => 'admin.menus.index',
             'icon'  => 'palette',
             'group' => 'Main',
             'order' => 40,

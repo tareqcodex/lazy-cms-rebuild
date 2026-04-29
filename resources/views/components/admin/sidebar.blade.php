@@ -67,7 +67,7 @@
                                     @foreach($menu->children as $child)
                                         @php 
                                             $childHref = $resolveRoute($child->route, $child->title);
-                                            $isChildActive = \Acme\CmsDashboard\View\Components\Admin\Sidebar::isUrlActive($childHref);
+                                            $isChildActive = \Acme\CmsDashboard\View\Components\Admin\Sidebar::isUrlActive($childHref, true);
                                         @endphp
                                         <li>
                                             <a href="{{ $childHref }}" class="block px-3 py-[6px] transition text-[13px] {{ $isChildActive ? 'text-white font-semibold' : 'text-[#c3c4c7] hover:text-[#72aee6]' }}">

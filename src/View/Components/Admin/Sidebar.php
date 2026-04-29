@@ -26,7 +26,7 @@ class Sidebar extends Component
         }
     }
 
-    public static function isUrlActive($url)
+    public static function isUrlActive($url, $strict = false)
     {
         if (!$url || $url === '#') return false;
 
@@ -74,7 +74,7 @@ class Sidebar extends Component
                 // If it's something like admin/posts/create, the index 'admin/posts' should be active 
                 // ONLY if the types match (handled later) or if it's a generic index.
                 // For now, let's allow it if it starts with the target path followed by /
-                if (!str_starts_with($currentPath, $targetPath . '/')) {
+                if ($strict || !str_starts_with($currentPath, $targetPath . '/')) {
                     return false;
                 }
             }
@@ -116,7 +116,7 @@ class Sidebar extends Component
             // Even if types match, if target is an index path, current path MUST match exactly 
             // OR be a child of it (like /create or /1/edit)
             if (in_array($targetPath, $indexPaths) && $currentPath !== $targetPath) {
-                if (!str_starts_with($currentPath, $targetPath . '/')) {
+                if ($strict || !str_starts_with($currentPath, $targetPath . '/')) {
                     return false;
                 }
             }
