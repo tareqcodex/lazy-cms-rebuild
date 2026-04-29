@@ -124,9 +124,22 @@ class MenuSeeder extends Seeder
             'order' => 90,
         ]);
         $settingsMenu->children()->createMany([
-            ['title' => 'General',   'route' => 'admin.settings.index', 'order' => 1],
-            ['title' => 'SEO',       'route' => 'admin.settings.seo',   'order' => 2],
-            ['title' => 'Redirects', 'route' => 'admin.redirects.index', 'order' => 3],
+            ['title' => 'General',       'route' => 'admin.settings.index',         'order' => 1],
+            ['title' => 'SEO',           'route' => 'admin.settings.seo',           'order' => 2],
+            ['title' => 'Redirects',     'route' => 'admin.redirects.index',        'order' => 3],
+            ['title' => 'Activity Logs', 'route' => 'admin.settings.activity-logs', 'order' => 4],
+        ]);
+
+        // 10. Tools
+        $toolsMenu = Menu::create([
+            'title' => 'Tools',
+            'route' => 'admin.backup.index',
+            'icon'  => 'construction',
+            'group' => 'System',
+            'order' => 85,
+        ]);
+        $toolsMenu->children()->createMany([
+            ['title' => 'Backup & Restore', 'route' => 'admin.backup.index', 'order' => 1],
         ]);
 
         // Dynamic CPTs
