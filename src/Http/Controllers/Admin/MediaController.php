@@ -75,23 +75,120 @@ class MediaController extends Controller
     {
         try {
             $request->validate([
-                'file' => 'required|file|max:51200',
+                'file' => 'required|file|max:51200', // 50MB max
             ]);
 
             $file = $request->file('file');
             $originalName = pathinfo($file->getClientOriginalName(), PATHINFO_FILENAME);
             $extension = $file->getClientOriginalExtension();
+            $mimeType = $file->getMimeType();
             
-            $filename = Str::slug($originalName) . '-' . time() . '.' . $extension;
-            $path = $file->storeAs('media', $filename, 'public');
+            $filename = Str::slug($originalName) . '-' . time();
+            $isImage = strpos($mimeType, 'image/') === 0;
+
+            $width = null;
+            $height = null;
+            $path = null;
+
+            if ($isImage) {
+                // Get original dimensions
+                $imgSize = @getimagesize($file->getRealPath());
+                if ($imgSize) {
+                    $width = $imgSize[0];
+                    $height = $imgSize[1];
+                }
+
+                $quality = (int)get_cms_option('image_quality', 80);
+                $maxWidth = (int)get_cms_option('image_max_width', 1920);
+                $autoWebp = get_cms_option('image_auto_webp', '1') == '1';
+
+                // Decide final extension and mime
+                if ($autoWebp && function_exists('imagewebp')) {
+                    $saveFilename = $filename . '.webp';
+                    $targetMime = 'image/webp';
+                } else {
+                    $saveFilename = $filename . '.' . $extension;
+                    $targetMime = $mimeType;
+                }
+                
+                $savePath = 'media/' . $saveFilename;
+                $processed = false;
+
+                // Try processing with GD
+                if (function_exists('imagecreatefromstring')) {
+                    $img = @imagecreatefromstring(file_get_contents($file->getRealPath()));
+                    if ($img) {
+                        // Resize if too large
+                        if ($width > $maxWidth) {
+                            $newWidth = $maxWidth;
+                            $newHeight = (int)floor($height * ($maxWidth / $width));
+                            $tmp = imagecreatetruecolor($newWidth, $newHeight);
+                            
+                            // Handle transparency
+                            imagealphablending($tmp, false);
+                            imagesavealpha($tmp, true);
+                            
+                            imagecopyresampled($tmp, $img, 0, 0, 0, 0, $newWidth, $newHeight, $width, $height);
+                            imagedestroy($img);
+                            $img = $tmp;
+                            $width = $newWidth;
+                            $height = $newHeight;
+                        }
+
+                        // Output to buffer
+                        ob_start();
+                        $success = false;
+                        if ($targetMime === 'image/webp' && function_exists('imagewebp')) {
+                            imagepalettetotruecolor($img);
+                            imagealphablending($img, true);
+                            imagesavealpha($img, true);
+                            $success = imagewebp($img, null, $quality);
+                        } elseif (($targetMime === 'image/jpeg' || $targetMime === 'image/jpg') && function_exists('imagejpeg')) {
+                            $success = imagejpeg($img, null, $quality);
+                        } elseif ($targetMime === 'image/png' && function_exists('imagepng')) {
+                            $success = imagepng($img, null, (int)round(9 * (100 - $quality) / 100));
+                        }
+                        
+                        $imageData = ob_get_clean();
+                        if ($success && $imageData) {
+                            Storage::disk('public')->put($savePath, $imageData);
+                            $path = $savePath;
+                            $filename = $saveFilename;
+                            $mimeType = $targetMime;
+                            $processed = true;
+                        }
+                        imagedestroy($img);
+                    }
+                }
+
+                // Fallback if processing failed or skipped
+                if (!$processed) {
+                    $filename = $filename . '.' . $extension;
+                    $path = $file->storeAs('media', $filename, 'public');
+                }
+            } else {
+                // Non-image files
+                $filename = $filename . '.' . $extension;
+                $path = $file->storeAs('media', $filename, 'public');
+            }
+
+            // Ensure we have a path
+            if (!$path) {
+                throw new \Exception("Failed to store file.");
+            }
+
+            // Get file size
+            $compressedSize = Storage::disk('public')->size($path);
 
             $media = Media::create([
                 'title' => $originalName,
                 'filename' => $filename,
                 'path' => $path,
-                'mime_type' => $file->getMimeType(),
+                'mime_type' => $mimeType,
+                'width' => $width,
+                'height' => $height,
                 'original_size' => $file->getSize(),
-                'compressed_size' => $file->getSize(),
+                'compressed_size' => $compressedSize,
                 'user_id' => auth()->id(),
             ]);
 
@@ -102,8 +199,7 @@ class MediaController extends Controller
         } catch (\Exception $e) {
             return response()->json([
                 'success' => false,
-                'message' => $e->getMessage(),
-                'trace' => $e->getTraceAsString()
+                'message' => $e->getMessage()
             ], 500);
         }
     }
