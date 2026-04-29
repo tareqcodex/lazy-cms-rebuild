@@ -8,7 +8,7 @@
                 <p class="text-gray-500 mt-1">Master Lazy CMS and build stunning websites with freedom.</p>
             </div>
             <div class="bg-blue-50 text-blue-700 px-4 py-2 rounded-lg text-sm font-bold border border-blue-100">
-                v1.1.2 Stable
+                v3.0.3 Stable
             </div>
         </div>
 
@@ -17,6 +17,7 @@
             <div class="lg:col-span-1">
                 <nav class="sticky top-6 space-y-1" id="doc-nav">
                     <a href="#getting-started" class="nav-link block px-4 py-2 text-sm font-medium text-blue-600 bg-blue-50 rounded-md transition-all duration-200">Getting Started</a>
+                    <a href="#updating" class="nav-link block px-4 py-2 text-sm font-medium text-gray-600 hover:bg-gray-50 rounded-md transition-all duration-200">Updating to v3.0</a>
                     <a href="#custom-routes" class="nav-link block px-4 py-2 text-sm font-medium text-gray-600 hover:bg-gray-50 rounded-md transition-all duration-200">Custom Routes</a>
                     <a href="#helpers" class="nav-link block px-4 py-2 text-sm font-medium text-gray-600 hover:bg-gray-50 rounded-md transition-all duration-200">Helper Functions</a>
                     <a href="#loops" class="nav-link block px-4 py-2 text-sm font-medium text-gray-600 hover:bg-gray-50 rounded-md transition-all duration-200">Displaying Posts (Loops)</a>
@@ -34,7 +35,49 @@
                 {{-- Section: Getting Started --}}
                 <section id="getting-started">
                     <h2 class="text-2xl font-bold text-gray-900 mb-4">Getting Started</h2>
-                    <p class="text-gray-700 mb-4">Lazy CMS is designed to give you full control over your content while keeping the development process simple. You can manage everything from the dashboard and display it anywhere using our global helpers.</p>
+                    <p class="text-gray-700 mb-6">Lazy CMS is designed to give you full control over your content while keeping the development process simple.</p>
+                    
+                    <div class="bg-white border border-gray-200 rounded-xl p-6 shadow-sm mb-8">
+                        <h3 class="font-bold text-gray-800 mb-4">Fresh Installation</h3>
+                        <div class="bg-gray-900 rounded-lg p-4 text-gray-300 font-mono text-xs space-y-4">
+                            <div>
+                                <span class="text-gray-500"># 1. Install via composer</span><br>
+                                <code class="text-green-400">composer require tareqcodex/lazy-cms-rebuild</code>
+                            </div>
+                            <div>
+                                <span class="text-gray-500"># 2. Run CMS installer</span><br>
+                                <code class="text-green-400">php artisan lazy-cms:install</code>
+                            </div>
+                            <div>
+                                <span class="text-gray-500"># 3. Seed default admin & menus</span><br>
+                                <code class="text-green-400">php artisan lazy-cms:seed</code>
+                            </div>
+                        </div>
+                    </div>
+                </section>
+
+                {{-- Section: Updating --}}
+                <section id="updating">
+                    <h2 class="text-2xl font-bold text-gray-900 mb-4">Updating to v3.0.0+</h2>
+                    <div class="bg-amber-50 border border-amber-100 rounded-xl p-6 text-amber-800 mb-6">
+                        <p class="font-bold mb-2">⚠️ Breaking Change Warning</p>
+                        <p class="text-sm">We have consolidated 46 migrations into 21 clean parent files. To update from v2.x, you <b>must</b> refresh your database.</p>
+                    </div>
+
+                    <div class="bg-gray-900 rounded-lg p-4 text-gray-300 font-mono text-xs space-y-4">
+                        <div>
+                            <span class="text-gray-500"># 1. Update composer package</span><br>
+                            <code class="text-green-400">composer update tareqcodex/lazy-cms-rebuild</code>
+                        </div>
+                        <div>
+                            <span class="text-gray-500"># 2. Re-install assets</span><br>
+                            <code class="text-green-400">php artisan lazy-cms:install</code>
+                        </div>
+                        <div>
+                            <span class="text-gray-500"># 3. Refresh database & seed</span><br>
+                            <code class="text-green-400">php artisan migrate:fresh --seed</code>
+                        </div>
+                    </div>
                 </section>
 
                 {{-- Section: Custom Routes --}}
