@@ -15,6 +15,8 @@ class ActivityLog extends Model
         'description',
         'properties',
         'ip_address',
+        'country',
+        'country_code',
         'user_agent'
     ];
 

@@ -125,6 +125,8 @@ class PageController extends Controller
             }
         }
 
+        lazy_log_activity('created', "Created a new page: {$page->title}", $page);
+
         if ($request->has('redirect_to_builder')) {
             return redirect()->route('admin.pages.edit', ['page' => $page, 'start_builder' => 1])->with('success', 'Page created successfully.');
         }
@@ -226,12 +228,16 @@ class PageController extends Controller
             }
         }
 
+        lazy_log_activity('updated', "Updated page: {$page->title}", $page);
+
         return back()->with('success', 'Page updated successfully.');
     }
 
     public function destroy(Page $page)
     {
+        $title = $page->title;
         $page->delete();
+        lazy_log_activity('deleted', "Moved page to trash: {$title}", $page);
         return redirect()->route('admin.pages.index')->with('success', 'Page moved to trash.');
     }
 
@@ -259,16 +265,33 @@ class PageController extends Controller
         $ids = $request->input('post_ids');
 
         if ($action === 'trash') {
-            Page::whereIn('id', $ids)->delete();
+            $pages = Page::whereIn('id', $ids)->get();
+            foreach ($pages as $page) {
+                $page->delete();
+                lazy_log_activity('deleted', "Moved page to trash: {$page->title}", $page);
+            }
             return back()->with('success', count($ids) . ' pages moved to trash.');
         } elseif ($action === 'restore') {
-            Page::onlyTrashed()->whereIn('id', $ids)->restore();
+            $pages = Page::onlyTrashed()->whereIn('id', $ids)->get();
+            foreach ($pages as $page) {
+                $page->restore();
+                lazy_log_activity('restored', "Restored page from trash: {$page->title}", $page);
+            }
             return back()->with('success', count($ids) . ' pages restored.');
         } elseif ($action === 'delete') {
-            Page::onlyTrashed()->whereIn('id', $ids)->forceDelete();
+            $pages = Page::onlyTrashed()->whereIn('id', $ids)->get();
+            foreach ($pages as $page) {
+                $title = $page->title;
+                $page->forceDelete();
+                lazy_log_activity('deleted', "Deleted page permanently: {$title}", $page);
+            }
             return back()->with('success', count($ids) . ' pages deleted permanently.');
         } elseif (in_array($action, ['draft', 'published'])) {
-            Page::whereIn('id', $ids)->update(['status' => $action]);
+            $pages = Page::whereIn('id', $ids)->get();
+            foreach ($pages as $page) {
+                $page->update(['status' => $action]);
+                lazy_log_activity('updated', "Updated page status to {$action}: {$page->title}", $page);
+            }
             return back()->with('success', count($ids) . ' pages marked as ' . ucfirst($action) . '.');
         }
 

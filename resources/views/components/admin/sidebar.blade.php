@@ -1,4 +1,4 @@
-<div id="adminmenuwrap" class="fixed top-8 left-0 bottom-0 w-40 bg-[#1d2327] overflow-y-auto text-[#c3c4c7] z-40 pb-10 custom-scrollbar">
+<div id="adminmenuwrap" class="fixed top-8 left-0 bottom-0 w-40 bg-[#1d2327] overflow-y-auto overflow-x-hidden text-[#c3c4c7] z-40 pb-10 custom-scrollbar" style="scrollbar-width: none; -ms-overflow-style: none;">
     <ul class="pt-0">
         @foreach($menuGroups as $groupName => $menus)
             @if($groupName && $groupName !== 'Main')
@@ -56,7 +56,7 @@
                             @endif
                         </span>
                         @if($isActive)
-                            <div class="absolute right-0 top-1/2 -translate-y-1/2 w-0 h-0 border-y-[6px] border-y-transparent border-r-[6px] border-r-[#f0f0f1]"></div>
+                            <div class="absolute -right-[1px] top-1/2 -translate-y-1/2 w-0 h-0 border-y-[7px] border-y-transparent border-r-[7px] border-r-[#f0f0f1] z-50"></div>
                         @endif
                     </a>
                     @if($hasChildren)
@@ -128,7 +128,7 @@
                         </div>
                         <span class="text-[14px] leading-none {{ $isActive ? 'font-semibold' : '' }}">{{ $page['title'] }}</span>
                         @if($isActive)
-                            <div class="absolute right-0 top-1/2 -translate-y-1/2 w-0 h-0 border-y-[6px] border-y-transparent border-r-[6px] border-r-[#f0f0f1]"></div>
+                            <div class="absolute -right-[1px] top-1/2 -translate-y-1/2 w-0 h-0 border-y-[7px] border-y-transparent border-r-[7px] border-r-[#f0f0f1] z-50"></div>
                         @endif
                     </a>
                 </li>
@@ -144,7 +144,7 @@
                 </div>
                 <span class="text-[14px] leading-none {{ request()->routeIs('admin.documentation') ? 'font-semibold' : '' }}">Documentation</span>
                 @if(request()->routeIs('admin.documentation'))
-                    <div class="absolute right-0 top-1/2 -translate-y-1/2 w-0 h-0 border-y-[6px] border-y-transparent border-r-[6px] border-r-[#f0f0f1]"></div>
+                    <div class="absolute -right-[1px] top-1/2 -translate-y-1/2 w-0 h-0 border-y-[7px] border-y-transparent border-r-[7px] border-r-[#f0f0f1] z-50"></div>
                 @endif
             </a>
         </li>
@@ -174,11 +174,7 @@
 </script>
 @endpush
 <style>
-/* Thin scrollbar for sidebar */
-.custom-scrollbar::-webkit-scrollbar { width: 5px; }
-.custom-scrollbar::-webkit-scrollbar-track { background: #1d2327; }
-.custom-scrollbar::-webkit-scrollbar-thumb { background: #3c434a; border-radius: 10px; }
-.custom-scrollbar::-webkit-scrollbar-thumb:hover { background: #8c8f94; }
+.custom-scrollbar::-webkit-scrollbar { display: none; }
 </style>
 
 <script>

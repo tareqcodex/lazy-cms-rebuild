@@ -234,6 +234,24 @@ if (!function_exists('clear_page_cache')) {
 if (!function_exists('lazy_log_activity')) {
     function lazy_log_activity($action, $description, $model = null, $properties = []) {
         try {
+            $ip = request()->ip();
+            $country = null;
+            $countryCode = null;
+
+            // Simple IP to Country Cache/Lookup
+            if ($ip && $ip !== '127.0.0.1' && $ip !== '::1') {
+                try {
+                    $response = @file_get_contents("http://ip-api.com/json/{$ip}?fields=status,country,countryCode");
+                    if ($response) {
+                        $data = json_decode($response, true);
+                        if ($data && $data['status'] === 'success') {
+                            $country = $data['country'];
+                            $countryCode = $data['countryCode'];
+                        }
+                    }
+                } catch (\Exception $e) {}
+            }
+
             return \Acme\CmsDashboard\Models\ActivityLog::create([
                 'user_id' => auth()->id(),
                 'action' => $action,
@@ -241,7 +259,9 @@ if (!function_exists('lazy_log_activity')) {
                 'model_id' => $model ? $model->id : null,
                 'description' => $description,
                 'properties' => $properties,
-                'ip_address' => request()->ip(),
+                'ip_address' => $ip,
+                'country' => $country,
+                'country_code' => $countryCode,
                 'user_agent' => request()->userAgent()
             ]);
         } catch (\Exception $e) {

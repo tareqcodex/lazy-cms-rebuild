@@ -39,12 +39,46 @@ class Sidebar extends Component
             return $currentPath === 'admin';
         }
 
-        // 2. Base path check: Current path must start with target path
-        if (!str_starts_with($currentPath, $targetPath)) {
+        // 2. Base path check
+        $indexPaths = ['admin/posts', 'admin/pages', 'admin/users', 'admin/settings', 'admin/roles', 'admin/categories', 'admin/tags', 'admin/comments', 'admin/profile'];
+        
+        // Special case: Your Profile belongs to Users group
+        if ($targetPath === 'admin/users' && ($currentPath === 'admin/profile' || str_starts_with($currentPath, 'admin/users/') && str_ends_with($currentPath, '/edit'))) {
+            // If we are editing the CURRENT user, then Your Profile should be active
+            $route = request()->route();
+            if ($route && $route->getName() === 'admin.users.edit') {
+                $userParam = $route->parameter('user');
+                $userId = ($userParam instanceof \App\Models\User) ? $userParam->id : $userParam;
+                if ((int)$userId === (int)auth()->id()) {
+                    return false; // Parent itself not active, but children loop will find it
+                }
+            }
+        }
+
+        // Special case for Your Profile child item
+        if ($targetPath === 'admin/profile') {
+            if ($currentPath === 'admin/profile') return true;
+            
+            $route = request()->route();
+            if ($route && $route->getName() === 'admin.users.edit') {
+                $userParam = $route->parameter('user');
+                $userId = ($userParam instanceof \App\Models\User) ? $userParam->id : $userParam;
+                return (int)$userId === (int)auth()->id();
+            }
+        }
+        
+        if (in_array($targetPath, $indexPaths)) {
+            // Index routes MUST be an exact match (ignoring query strings for now) 
+            // unless it's a specific type (handled in step 3)
+            if ($currentPath !== $targetPath) {
+                // If it's something like admin/posts/create, the index 'admin/posts' should be inactive
+                return false;
+            }
+        } elseif (!str_starts_with($currentPath, $targetPath)) {
             return false;
         }
 
-        // 3. Query Parameter Strict Check (Crucial for CPTs and Taxonomies)
+        // 3. Query Parameter & Type Strict Check
         parse_str($targetUrl['query'] ?? '', $targetQuery);
         
         $currentType = request()->query('type');
@@ -71,7 +105,16 @@ class Sidebar extends Component
 
         // If target has a type/cpt_slug, current request MUST match it
         if ($targetType) {
-            return ($currentType === $targetType || $currentCpt === $targetType);
+            if ($currentType !== $targetType && $currentCpt !== $targetType) {
+                return false;
+            }
+            
+            // Even if types match, if target is an index path, current path MUST match exactly
+            if (in_array($targetPath, $indexPaths) && $currentPath !== $targetPath) {
+                return false;
+            }
+
+            return true;
         }
 
         // IMPORTANT: If target belongs to standard Posts/Pages but HAS NO TYPE (it's a root or general menu),

@@ -146,6 +146,13 @@ Route::prefix('admin')->name('admin.')->middleware(['web', \Acme\CmsDashboard\Ht
     Route::post('settings/seo', [DashboardController::class, 'updateSeoSettings'])->name('settings.seo.update');
     Route::get('settings/activity-logs', [DashboardController::class, 'activityLogs'])->name('settings.activity-logs');
     
+    // Backups
+    Route::get('tools/backup', [\Acme\CmsDashboard\Http\Controllers\Admin\BackupController::class, 'index'])->name('backup.index');
+    Route::post('tools/backup', [\Acme\CmsDashboard\Http\Controllers\Admin\BackupController::class, 'create'])->name('backup.create');
+    Route::post('tools/backup/restore/{filename}', [\Acme\CmsDashboard\Http\Controllers\Admin\BackupController::class, 'restore'])->name('backup.restore');
+    Route::get('tools/backup/download/{filename}', [\Acme\CmsDashboard\Http\Controllers\Admin\BackupController::class, 'download'])->name('backup.download');
+    Route::delete('tools/backup/{filename}', [\Acme\CmsDashboard\Http\Controllers\Admin\BackupController::class, 'destroy'])->name('backup.destroy');
+    
     // Redirection Manager
     Route::get('seo/redirects', [\Acme\CmsDashboard\Http\Controllers\Admin\RedirectController::class, 'index'])->name('redirects.index');
     Route::post('seo/redirects', [\Acme\CmsDashboard\Http\Controllers\Admin\RedirectController::class, 'store'])->name('redirects.store');

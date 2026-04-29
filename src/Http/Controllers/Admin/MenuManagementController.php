@@ -183,6 +183,8 @@ class MenuManagementController extends Controller
             'is_footer' => $isFooter,
         ]);
 
+        lazy_log_activity('created', "Created a new menu: {$menu->name}", $menu);
+
         return redirect()->route('admin.menus.index', ['menu' => $menu->id])->with('success', 'Menu created successfully.');
     }
 
@@ -218,6 +220,8 @@ class MenuManagementController extends Controller
             }
         }
 
+        lazy_log_activity('updated', "Updated menu structure: {$menu->name}", $menu);
+
         return redirect()
             ->route('admin.menus.index', ['menu' => $menu->id])
             ->with('success', 'Menu saved successfully.');
@@ -244,7 +248,10 @@ class MenuManagementController extends Controller
 
     public function destroy($id)
     {
-        NavigationMenu::findOrFail($id)->delete();
+        $menu = NavigationMenu::findOrFail($id);
+        $name = $menu->name;
+        $menu->delete();
+        lazy_log_activity('deleted', "Deleted menu: {$name}");
         return redirect()->route('admin.menus.index')->with('success', 'Menu deleted.');
     }
 }

@@ -500,25 +500,44 @@ class PostController extends Controller
         if (!$ids || $action === '-1') return redirect()->back()->with('error', 'Please select items and an action.');
 
         if ($action === 'trash') {
-            Post::whereIn('id', $ids)->delete();
+            $posts = Post::whereIn('id', $ids)->get();
+            foreach ($posts as $post) {
+                $post->delete();
+                lazy_log_activity('deleted', "Moved {$post->type} to trash: {$post->title}", $post);
+            }
+            clear_page_cache();
             return redirect()->back()->with('success', 'Selected items moved to trash.');
         }
 
         if ($action === 'restore') {
-            Post::onlyTrashed()->whereIn('id', $ids)->restore();
+            $posts = Post::onlyTrashed()->whereIn('id', $ids)->get();
+            foreach ($posts as $post) {
+                $post->restore();
+                lazy_log_activity('restored', "Restored {$post->type} from trash: {$post->title}", $post);
+            }
+            clear_page_cache();
             return redirect()->back()->with('success', 'Selected items restored.');
         }
 
         if ($action === 'delete') {
             $posts = Post::onlyTrashed()->whereIn('id', $ids)->get();
             foreach($posts as $p) {
+                $title = $p->title;
+                $type = $p->type;
                 $p->forceDelete();
+                lazy_log_activity('deleted', "Deleted {$type} permanently: {$title}", $p);
             }
+            clear_page_cache();
             return redirect()->back()->with('success', 'Selected items deleted permanently.');
         }
 
         if (in_array($action, ['draft', 'published'])) {
-            Post::whereIn('id', $ids)->update(['status' => $action]);
+            $posts = Post::whereIn('id', $ids)->get();
+            foreach ($posts as $post) {
+                $post->update(['status' => $action]);
+                lazy_log_activity('updated', "Updated {$post->type} status to {$action}: {$post->title}", $post);
+            }
+            clear_page_cache();
             return redirect()->back()->with('success', 'Selected items updated.');
         }
 

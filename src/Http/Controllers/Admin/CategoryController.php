@@ -87,7 +87,8 @@ class CategoryController extends Controller
             'description' => 'nullable|string',
         ]);
 
-        Category::create($validated);
+        $category = Category::create($validated);
+        lazy_log_activity('created', "Created a new category: {$category->name}", $category);
 
         return redirect()->route('admin.categories.index', ['type' => 'post'])->with('success', 'Category added.');
     }
@@ -144,13 +145,16 @@ class CategoryController extends Controller
         ]);
 
         $category->update($validated);
+        lazy_log_activity('updated', "Updated category: {$category->name}", $category);
 
         return redirect()->route('admin.categories.index', ['type' => 'post'])->with('success', 'Category updated.');
     }
 
     public function destroy(Category $category)
     {
+        $name = $category->name;
         $category->delete();
+        lazy_log_activity('deleted', "Deleted category: {$name}", $category);
         return redirect()->route('admin.categories.index', ['type' => 'post'])->with('success', 'Category deleted.');
     }
     public function ajax(Request $request)

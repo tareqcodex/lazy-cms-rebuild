@@ -192,6 +192,8 @@ class MediaController extends Controller
                 'user_id' => auth()->id(),
             ]);
 
+            lazy_log_activity('created', "Uploaded media: {$media->filename}", $media);
+
             return response()->json([
                 'success' => true,
                 'data' => $media
@@ -213,8 +215,10 @@ class MediaController extends Controller
 
         $mediaItems = Media::whereIn('id', $ids)->get();
         foreach ($mediaItems as $item) {
+            $name = $item->filename;
             Storage::disk('public')->delete($item->path);
             $item->delete();
+            lazy_log_activity('deleted', "Deleted media: {$name}");
         }
 
         return response()->json(['success' => true]);
@@ -266,8 +270,10 @@ class MediaController extends Controller
 
     public function destroy(Media $media)
     {
+        $name = $media->filename;
         Storage::disk('public')->delete($media->path);
         $media->delete();
+        lazy_log_activity('deleted', "Deleted media: {$name}");
         return response()->json(['success' => true]);
     }
 
@@ -353,6 +359,8 @@ class MediaController extends Controller
                 }
                 imagedestroy($img);
             }
+
+            lazy_log_activity('settings_updated', "Bulk optimized {$count} media items");
 
             return response()->json([
                 'success' => true, 

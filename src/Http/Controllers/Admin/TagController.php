@@ -46,7 +46,8 @@ class TagController extends Controller
             'description' => 'nullable|string',
         ]);
 
-        Tag::create($validated);
+        $tag = Tag::create($validated);
+        lazy_log_activity('created', "Created a new tag: {$tag->name}", $tag);
 
         return redirect()->route('admin.tags.index', ['type' => 'post'])->with('success', 'Tag added.');
     }
@@ -68,13 +69,16 @@ class TagController extends Controller
         ]);
 
         $tag->update($validated);
+        lazy_log_activity('updated', "Updated tag: {$tag->name}", $tag);
 
         return redirect()->route('admin.tags.index', ['type' => 'post'])->with('success', 'Tag updated.');
     }
 
     public function destroy(Tag $tag)
     {
+        $name = $tag->name;
         $tag->delete();
+        lazy_log_activity('deleted', "Deleted tag: {$name}", $tag);
         return redirect()->route('admin.tags.index', ['type' => 'post'])->with('success', 'Tag deleted.');
     }
     public function ajax(Request $request)

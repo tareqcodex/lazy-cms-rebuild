@@ -56,7 +56,7 @@
             <x-cms-dashboard::admin.pagination :paginator="$users" size="small" />
         </div>
 
-        <div class="bg-white border border-[#c3c4c7] shadow-sm">
+        <div class="bg-white border border-[#c3c4c7] shadow-sm overflow-x-auto">
             <table class="w-full text-left text-[13px] border-collapse">
                 <thead>
                     <tr class="border-b border-[#c3c4c7] bg-[#f9f9f9]">

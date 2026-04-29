@@ -179,6 +179,19 @@ class DashboardController extends Controller
 
         $query = \Acme\CmsDashboard\Models\ActivityLog::with('user')->latest();
 
+        if ($request->filled('s')) {
+            $search = $request->s;
+            $query->where(function($q) use ($search) {
+                $q->where('description', 'like', "%{$search}%")
+                  ->orWhere('action', 'like', "%{$search}%")
+                  ->orWhere('ip_address', 'like', "%{$search}%")
+                  ->orWhereHas('user', function($uq) use ($search) {
+                      $uq->where('name', 'like', "%{$search}%")
+                        ->orWhere('email', 'like', "%{$search}%");
+                  });
+            });
+        }
+
         if ($request->filled('user_id')) {
             $query->where('user_id', $request->user_id);
         }
@@ -187,7 +200,7 @@ class DashboardController extends Controller
             $query->where('action', $request->action);
         }
 
-        $logs = $query->paginate(20);
+        $logs = $query->paginate(20)->withQueryString();
         $users = User::all();
 
         return view('cms-dashboard::admin.settings.activity-logs', compact('logs', 'users'));

@@ -2,7 +2,9 @@
     <x-slot name="title">Settings - Lazy CMS</x-slot>
 
     <div class="px-2">
-        <h1 class="text-[23px] font-normal text-[#1d2327] mb-6">Settings</h1>
+        <h1 class="text-[23px] font-normal text-[#1d2327] mb-4">Settings</h1>
+        
+        @include('cms-dashboard::admin.settings.nav')
 
         @if (session('success'))
             <div class="bg-[#edfaef] border-l-4 border-[#46b450] p-3 mb-6 text-[13px] text-[#1d2327]">
