@@ -22,6 +22,9 @@ return new class extends Migration
             }
             
             // Profile fields
+            if (!Schema::hasColumn('users', 'username')) {
+                $table->string('username')->unique()->nullable()->after('name');
+            }
             if (!Schema::hasColumn('users', 'avatar')) {
                 $table->string('avatar')->nullable()->after('email');
                 $table->string('phone')->nullable()->after('avatar');
