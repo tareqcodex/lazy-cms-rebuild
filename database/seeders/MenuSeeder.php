@@ -81,9 +81,9 @@ class MenuSeeder extends Seeder
             'order' => 35,
         ]);
         $formsMenu->children()->createMany([
-            ['title' => 'All Forms',    'route' => 'admin.forms.index',       'order' => 1],
-            ['title' => 'Add New',     'route' => 'admin.forms.create',      'order' => 2],
-            ['title' => 'Submissions', 'route' => 'admin.forms.submissions', 'order' => 3],
+            ['title' => 'All Forms',    'route' => 'admin.forms.index',           'order' => 1],
+            ['title' => 'Add New',     'route' => 'admin.forms.create',          'order' => 2],
+            ['title' => 'Submissions', 'route' => 'admin.forms.all-submissions', 'order' => 3],
         ]);
 
         // 7. Appearance

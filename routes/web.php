@@ -216,6 +216,7 @@ Route::prefix('admin')->name('admin.')->middleware(['web', \Acme\CmsDashboard\Ht
     Route::get('forms/{id}/builder', [\Acme\CmsDashboard\Http\Controllers\Admin\FormController::class, 'builder'])->name('forms.builder');
     Route::post('forms/{id}/save', [\Acme\CmsDashboard\Http\Controllers\Admin\FormController::class, 'saveBuilder'])->name('forms.save');
     Route::get('forms/{id}/submissions', [\Acme\CmsDashboard\Http\Controllers\Admin\FormController::class, 'submissions'])->name('forms.submissions');
+    Route::get('forms/all-submissions', [\Acme\CmsDashboard\Http\Controllers\Admin\FormController::class, 'allSubmissions'])->name('forms.all-submissions');
     Route::delete('forms/submissions/{submission}', [\Acme\CmsDashboard\Http\Controllers\Admin\FormController::class, 'destroySubmission'])->name('forms.submissions.destroy');
     Route::delete('forms/{form}', [\Acme\CmsDashboard\Http\Controllers\Admin\FormController::class, 'destroy'])->name('forms.destroy');
 

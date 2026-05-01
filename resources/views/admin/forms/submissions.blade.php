@@ -1,5 +1,5 @@
 <x-cms-dashboard::layouts.admin>
-    <x-slot name="title">Submissions — {{ $form->title }}</x-slot>
+    <x-slot name="title">Submissions {{ $form ? '— ' . $form->title : '(All Forms)' }}</x-slot>
 
     {{-- Centered Detail Modal --}}
     <div id="sub-modal" class="fixed inset-0 z-50 hidden">
@@ -22,14 +22,16 @@
         {{-- Header --}}
         <div class="flex items-center justify-between mb-6">
             <div>
-                <h1 class="text-2xl font-black text-gray-900">{{ $form->title }} — Submissions</h1>
+                <h1 class="text-2xl font-black text-gray-900">{{ $form ? $form->title : 'All Forms' }} — Submissions</h1>
                 <p class="text-gray-400 text-sm mt-0.5">{{ $submissions->total() }} total {{ Str::plural('entry', $submissions->total()) }}</p>
             </div>
             <div class="flex items-center gap-2">
-                <a href="{{ route('admin.forms.builder', $form->id) }}"
-                   class="inline-flex items-center gap-1.5 text-sm text-gray-500 hover:text-gray-800 border border-gray-200 px-3 py-1.5 rounded-lg transition-colors">
-                    <span class="material-symbols-outlined text-[15px]">edit</span> Builder
-                </a>
+                @if($form)
+                    <a href="{{ route('admin.forms.builder', $form->id) }}"
+                       class="inline-flex items-center gap-1.5 text-sm text-gray-500 hover:text-gray-800 border border-gray-200 px-3 py-1.5 rounded-lg transition-colors">
+                        <span class="material-symbols-outlined text-[15px]">edit</span> Builder
+                    </a>
+                @endif
                 <a href="{{ route('admin.forms.index') }}" class="text-sm text-gray-500 hover:text-gray-800 border border-gray-200 px-3 py-1.5 rounded-lg transition-colors">
                     ← All Forms
                 </a>
@@ -54,6 +56,9 @@
                     <thead class="bg-gray-50 border-b border-gray-200">
                         <tr>
                             <th class="text-left px-5 py-3 text-xs font-bold text-gray-500 uppercase tracking-wider w-10">#</th>
+                            @if(!$form)
+                                <th class="text-left px-5 py-3 text-xs font-bold text-gray-500 uppercase tracking-wider">Form</th>
+                            @endif
                             <th class="text-left px-5 py-3 text-xs font-bold text-gray-500 uppercase tracking-wider">Preview</th>
                             <th class="text-left px-5 py-3 text-xs font-bold text-gray-500 uppercase tracking-wider w-36">IP Address</th>
                             <th class="text-left px-5 py-3 text-xs font-bold text-gray-500 uppercase tracking-wider w-36">Date</th>
@@ -77,6 +82,11 @@
                                 <td class="px-5 py-3.5 text-gray-400 text-xs font-mono">
                                     {{ $submissions->firstItem() + $i }}
                                 </td>
+                                @if(!$form)
+                                    <td class="px-5 py-3.5 font-bold text-blue-600 text-xs">
+                                        {{ $sub->form->title ?? 'Deleted Form' }}
+                                    </td>
+                                @endif
                                 <td class="px-5 py-3.5 text-gray-700 max-w-0 w-full">
                                     <div class="truncate text-xs">{!! $preview !!}</div>
                                 </td>

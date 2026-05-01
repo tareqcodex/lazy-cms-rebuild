@@ -63,6 +63,13 @@ class FormController extends Controller
         return view('cms-dashboard::admin.forms.submissions', compact('form', 'submissions'));
     }
 
+    public function allSubmissions()
+    {
+        $submissions = FormSubmission::with('form')->latest()->paginate(20);
+        $form = null;
+        return view('cms-dashboard::admin.forms.submissions', compact('form', 'submissions'));
+    }
+
     public function destroySubmission(FormSubmission $submission)
     {
         $formId = $submission->form_id;
