@@ -33,23 +33,25 @@
             <div>
                 <div class="flex justify-between items-center mb-2">
                     <label class="text-[11px] font-bold text-[#444]">Alignment</label>
-                    <i class="fa fa-question-circle text-[10px] text-slate-300"></i>
+                    <div class="flex gap-2 text-slate-300">
+                        <i class="fa fa-question-circle text-[10px]"></i>
+                    </div>
                 </div>
                 <div class="grid grid-cols-4 gap-2">
                     <button @click="{{ $c }}.alignment = 'flex-start'"
                             :class="{{ $c }}.alignment === 'flex-start' ? 'bg-[#0091ea] text-white' : 'bg-slate-100 text-slate-400 hover:bg-slate-200'"
                             class="py-2 rounded transition-colors flex items-center justify-center relative group/btn">
-                        <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor">
-                            <rect x="5" y="3" width="3" height="10" rx="0.5"/>
-                            <rect x="10.5" y="3" width="3" height="14" rx="0.5"/>
-                            <rect x="16" y="3" width="3" height="8" rx="0.5"/>
+                        <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor">
+                            <rect x="5" y="4" width="3" height="10" rx="0.5"/>
+                            <rect x="10.5" y="4" width="3" height="14" rx="0.5"/>
+                            <rect x="16" y="4" width="3" height="8" rx="0.5"/>
                         </svg>
                         <div class="lazy-tooltip-v2 opacity-0 group-hover/btn:opacity-100 z-[100] whitespace-nowrap">Top</div>
                     </button>
                     <button @click="{{ $c }}.alignment = 'center'"
                             :class="{{ $c }}.alignment === 'center' ? 'bg-[#0091ea] text-white' : 'bg-slate-100 text-slate-400 hover:bg-slate-200'"
                             class="py-2 rounded transition-colors flex items-center justify-center relative group/btn">
-                        <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor">
+                        <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor">
                             <rect x="5" y="7" width="3" height="10" rx="0.5"/>
                             <rect x="10.5" y="5" width="3" height="14" rx="0.5"/>
                             <rect x="16" y="8" width="3" height="8" rx="0.5"/>
@@ -59,17 +61,17 @@
                     <button @click="{{ $c }}.alignment = 'flex-end'"
                             :class="{{ $c }}.alignment === 'flex-end' ? 'bg-[#0091ea] text-white' : 'bg-slate-100 text-slate-400 hover:bg-slate-200'"
                             class="py-2 rounded transition-colors flex items-center justify-center relative group/btn">
-                        <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor">
-                            <rect x="5" y="11" width="3" height="10" rx="0.5"/>
-                            <rect x="10.5" y="7" width="3" height="14" rx="0.5"/>
-                            <rect x="16" y="13" width="3" height="8" rx="0.5"/>
+                        <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor">
+                            <rect x="5" y="10" width="3" height="10" rx="0.5"/>
+                            <rect x="10.5" y="6" width="3" height="14" rx="0.5"/>
+                            <rect x="16" y="12" width="3" height="8" rx="0.5"/>
                         </svg>
                         <div class="lazy-tooltip-v2 opacity-0 group-hover/btn:opacity-100 z-[100] whitespace-nowrap">Bottom</div>
                     </button>
                     <button @click="{{ $c }}.alignment = 'stretch'"
                             :class="{{ $c }}.alignment === 'stretch' ? 'bg-[#0091ea] text-white' : 'bg-slate-100 text-slate-400 hover:bg-slate-200'"
                             class="py-2 rounded transition-colors flex items-center justify-center relative group/btn">
-                        <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor">
+                        <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor">
                             <path d="M12 3l3 3h-2v12h2l-3 3-3-3h2V6H9l3-3z"/>
                         </svg>
                         <div class="lazy-tooltip-v2 opacity-0 group-hover/btn:opacity-100 z-[100] whitespace-nowrap">Stretch</div>
@@ -81,7 +83,9 @@
             <div>
                 <div class="flex justify-between items-center mb-2">
                     <label class="text-[11px] font-bold text-[#444]">Content Layout</label>
-                    <i class="fa fa-question-circle text-[10px] text-slate-300"></i>
+                    <div class="flex gap-2 text-slate-300">
+                        <i class="fa fa-question-circle text-[10px]"></i>
+                    </div>
                 </div>
                 <div class="grid grid-cols-3 gap-2">
                     <button @click="{{ $c }}.contentLayout = 'column'"
@@ -106,26 +110,28 @@
             <div v-if="{{ $c }}.contentLayout === 'column'">
                 <div class="flex justify-between items-center mb-2">
                     <label class="text-[11px] font-bold text-[#444]">Content Alignment</label>
-                    <i class="fa fa-question-circle text-[10px] text-slate-300"></i>
+                    <div class="flex gap-2 text-slate-300">
+                        <i class="fa fa-question-circle text-[10px]"></i>
+                    </div>
                 </div>
                 {{-- Row 1: Horizontal (align-items, cross-axis) --}}
                 <div class="grid grid-cols-3 gap-2 mb-2">
                     <button @click="{{ $c }}.contentAlignH = 'flex-start'"
                             :class="{{ $c }}.contentAlignH === 'flex-start' || !{{ $c }}.contentAlignH ? 'bg-[#0091ea] text-white' : 'bg-slate-100 text-slate-400 hover:bg-slate-200'"
                             class="py-2 rounded transition-colors flex items-center justify-center relative group/btn">
-                        <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor"><rect x="3" y="4" width="2" height="16" rx="0.5"/><rect x="7" y="7" width="5" height="10" rx="0.5"/><rect x="14" y="9" width="5" height="6" rx="0.5"/></svg>
+                        <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor"><rect x="3" y="4" width="2" height="16" rx="0.5"/><rect x="7" y="7" width="5" height="10" rx="0.5"/><rect x="14" y="9" width="5" height="6" rx="0.5"/></svg>
                         <div class="lazy-tooltip-v2 opacity-0 group-hover/btn:opacity-100 z-[100] whitespace-nowrap">Left</div>
                     </button>
                     <button @click="{{ $c }}.contentAlignH = 'center'"
                             :class="{{ $c }}.contentAlignH === 'center' ? 'bg-[#0091ea] text-white' : 'bg-slate-100 text-slate-400 hover:bg-slate-200'"
                             class="py-2 rounded transition-colors flex items-center justify-center relative group/btn">
-                        <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor"><rect x="11" y="3" width="2" height="18" rx="0.5"/><rect x="6" y="7" width="5" height="10" rx="0.5"/><rect x="13" y="9" width="5" height="6" rx="0.5"/></svg>
+                        <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor"><rect x="11" y="3" width="2" height="18" rx="0.5"/><rect x="6" y="7" width="5" height="10" rx="0.5"/><rect x="13" y="9" width="5" height="6" rx="0.5"/></svg>
                         <div class="lazy-tooltip-v2 opacity-0 group-hover/btn:opacity-100 z-[100] whitespace-nowrap">Center</div>
                     </button>
                     <button @click="{{ $c }}.contentAlignH = 'flex-end'"
                             :class="{{ $c }}.contentAlignH === 'flex-end' ? 'bg-[#0091ea] text-white' : 'bg-slate-100 text-slate-400 hover:bg-slate-200'"
                             class="py-2 rounded transition-colors flex items-center justify-center relative group/btn">
-                        <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor"><rect x="19" y="4" width="2" height="16" rx="0.5"/><rect x="8" y="7" width="5" height="10" rx="0.5"/><rect x="14" y="9" width="4" height="6" rx="0.5"/></svg>
+                        <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor"><rect x="19" y="4" width="2" height="16" rx="0.5"/><rect x="8" y="7" width="5" height="10" rx="0.5"/><rect x="14" y="9" width="4" height="6" rx="0.5"/></svg>
                         <div class="lazy-tooltip-v2 opacity-0 group-hover/btn:opacity-100 z-[100] whitespace-nowrap">Right</div>
                     </button>
                 </div>
@@ -134,19 +140,19 @@
                     <button @click="{{ $c }}.contentAlignV = 'flex-start'"
                             :class="{{ $c }}.contentAlignV === 'flex-start' || !{{ $c }}.contentAlignV ? 'bg-[#0091ea] text-white' : 'bg-slate-100 text-slate-400 hover:bg-slate-200'"
                             class="py-2 rounded transition-colors flex items-center justify-center relative group/btn">
-                        <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor"><rect x="4" y="3" width="16" height="2" rx="0.5"/><rect x="7" y="7" width="10" height="4" rx="0.5"/><rect x="9" y="13" width="6" height="4" rx="0.5"/></svg>
+                        <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor"><rect x="4" y="3" width="16" height="2" rx="0.5"/><rect x="7" y="7" width="10" height="4" rx="0.5"/><rect x="9" y="13" width="6" height="4" rx="0.5"/></svg>
                         <div class="lazy-tooltip-v2 opacity-0 group-hover/btn:opacity-100 z-[100] whitespace-nowrap">Top</div>
                     </button>
                     <button @click="{{ $c }}.contentAlignV = 'center'"
                             :class="{{ $c }}.contentAlignV === 'center' ? 'bg-[#0091ea] text-white' : 'bg-slate-100 text-slate-400 hover:bg-slate-200'"
                             class="py-2 rounded transition-colors flex items-center justify-center relative group/btn">
-                        <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor"><rect x="4" y="11" width="16" height="2" rx="0.5"/><rect x="7" y="5" width="10" height="4" rx="0.5"/><rect x="9" y="15" width="6" height="4" rx="0.5"/></svg>
+                        <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor"><rect x="4" y="11" width="16" height="2" rx="0.5"/><rect x="7" y="5" width="10" height="4" rx="0.5"/><rect x="9" y="15" width="6" height="4" rx="0.5"/></svg>
                         <div class="lazy-tooltip-v2 opacity-0 group-hover/btn:opacity-100 z-[100] whitespace-nowrap">Middle</div>
                     </button>
                     <button @click="{{ $c }}.contentAlignV = 'flex-end'"
                             :class="{{ $c }}.contentAlignV === 'flex-end' ? 'bg-[#0091ea] text-white' : 'bg-slate-100 text-slate-400 hover:bg-slate-200'"
                             class="py-2 rounded transition-colors flex items-center justify-center relative group/btn">
-                        <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor"><rect x="4" y="19" width="16" height="2" rx="0.5"/><rect x="7" y="9" width="10" height="4" rx="0.5"/><rect x="9" y="7" width="6" height="4" rx="0.5"/></svg>
+                        <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor"><rect x="4" y="19" width="16" height="2" rx="0.5"/><rect x="7" y="9" width="10" height="4" rx="0.5"/><rect x="9" y="7" width="6" height="4" rx="0.5"/></svg>
                         <div class="lazy-tooltip-v2 opacity-0 group-hover/btn:opacity-100 z-[100] whitespace-nowrap">Bottom</div>
                     </button>
                 </div>
@@ -157,25 +163,27 @@
                 {{-- Section 1: Content Alignment (justify-content, main-axis H) --}}
                 <div class="flex justify-between items-center mb-2">
                     <label class="text-[11px] font-bold text-[#444]">Content Alignment</label>
-                    <i class="fa fa-question-circle text-[10px] text-slate-300"></i>
+                    <div class="flex gap-2 text-slate-300">
+                        <i class="fa fa-question-circle text-[10px]"></i>
+                    </div>
                 </div>
                 <div class="grid grid-cols-3 gap-2 mb-2">
                     <button @click="{{ $c }}.contentAlignH = 'flex-start'"
                             :class="{{ $c }}.contentAlignH === 'flex-start' || !{{ $c }}.contentAlignH ? 'bg-[#0091ea] text-white' : 'bg-slate-100 text-slate-400 hover:bg-slate-200'"
                             class="py-2 rounded transition-colors flex items-center justify-center relative group/btn">
-                        <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor"><rect x="3" y="4" width="2" height="16" rx="0.5"/><rect x="7" y="7" width="5" height="10" rx="0.5"/><rect x="14" y="9" width="5" height="6" rx="0.5"/></svg>
+                        <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor"><rect x="3" y="4" width="2" height="16" rx="0.5"/><rect x="7" y="7" width="5" height="10" rx="0.5"/><rect x="14" y="9" width="5" height="6" rx="0.5"/></svg>
                         <div class="lazy-tooltip-v2 opacity-0 group-hover/btn:opacity-100 z-[100] whitespace-nowrap">Start</div>
                     </button>
                     <button @click="{{ $c }}.contentAlignH = 'center'"
                             :class="{{ $c }}.contentAlignH === 'center' ? 'bg-[#0091ea] text-white' : 'bg-slate-100 text-slate-400 hover:bg-slate-200'"
                             class="py-2 rounded transition-colors flex items-center justify-center relative group/btn">
-                        <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor"><rect x="11" y="3" width="2" height="18" rx="0.5"/><rect x="6" y="7" width="5" height="10" rx="0.5"/><rect x="13" y="9" width="5" height="6" rx="0.5"/></svg>
+                        <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor"><rect x="11" y="3" width="2" height="18" rx="0.5"/><rect x="6" y="7" width="5" height="10" rx="0.5"/><rect x="13" y="9" width="5" height="6" rx="0.5"/></svg>
                         <div class="lazy-tooltip-v2 opacity-0 group-hover/btn:opacity-100 z-[100] whitespace-nowrap">Center</div>
                     </button>
                     <button @click="{{ $c }}.contentAlignH = 'flex-end'"
                             :class="{{ $c }}.contentAlignH === 'flex-end' ? 'bg-[#0091ea] text-white' : 'bg-slate-100 text-slate-400 hover:bg-slate-200'"
                             class="py-2 rounded transition-colors flex items-center justify-center relative group/btn">
-                        <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor"><rect x="19" y="4" width="2" height="16" rx="0.5"/><rect x="8" y="7" width="5" height="10" rx="0.5"/><rect x="14" y="9" width="4" height="6" rx="0.5"/></svg>
+                        <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor"><rect x="19" y="4" width="2" height="16" rx="0.5"/><rect x="8" y="7" width="5" height="10" rx="0.5"/><rect x="14" y="9" width="4" height="6" rx="0.5"/></svg>
                         <div class="lazy-tooltip-v2 opacity-0 group-hover/btn:opacity-100 z-[100] whitespace-nowrap">End</div>
                     </button>
                 </div>
@@ -183,19 +191,19 @@
                     <button @click="{{ $c }}.contentAlignH = 'space-between'"
                             :class="{{ $c }}.contentAlignH === 'space-between' ? 'bg-[#0091ea] text-white' : 'bg-slate-100 text-slate-400 hover:bg-slate-200'"
                             class="py-2 rounded transition-colors flex items-center justify-center relative group/btn">
-                        <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor"><rect x="3" y="7" width="3" height="10" rx="0.5"/><rect x="10.5" y="9" width="3" height="6" rx="0.5"/><rect x="18" y="7" width="3" height="10" rx="0.5"/></svg>
+                        <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor"><rect x="3" y="7" width="3" height="10" rx="0.5"/><rect x="10.5" y="9" width="3" height="6" rx="0.5"/><rect x="18" y="7" width="3" height="10" rx="0.5"/></svg>
                         <div class="lazy-tooltip-v2 opacity-0 group-hover/btn:opacity-100 z-[100] whitespace-nowrap">Space Between</div>
                     </button>
                     <button @click="{{ $c }}.contentAlignH = 'space-around'"
                             :class="{{ $c }}.contentAlignH === 'space-around' ? 'bg-[#0091ea] text-white' : 'bg-slate-100 text-slate-400 hover:bg-slate-200'"
                             class="py-2 rounded transition-colors flex items-center justify-center relative group/btn">
-                        <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor"><rect x="4.5" y="7" width="3" height="10" rx="0.5"/><rect x="10.5" y="9" width="3" height="6" rx="0.5"/><rect x="16.5" y="7" width="3" height="10" rx="0.5"/></svg>
+                        <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor"><rect x="4.5" y="7" width="3" height="10" rx="0.5"/><rect x="10.5" y="9" width="3" height="6" rx="0.5"/><rect x="16.5" y="7" width="3" height="10" rx="0.5"/></svg>
                         <div class="lazy-tooltip-v2 opacity-0 group-hover/btn:opacity-100 z-[100] whitespace-nowrap">Space Around</div>
                     </button>
                     <button @click="{{ $c }}.contentAlignH = 'space-evenly'"
                             :class="{{ $c }}.contentAlignH === 'space-evenly' ? 'bg-[#0091ea] text-white' : 'bg-slate-100 text-slate-400 hover:bg-slate-200'"
                             class="py-2 rounded transition-colors flex items-center justify-center relative group/btn">
-                        <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor"><rect x="5" y="7" width="3" height="10" rx="0.5"/><rect x="10.5" y="9" width="3" height="6" rx="0.5"/><rect x="16" y="7" width="3" height="10" rx="0.5"/></svg>
+                        <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor"><rect x="5" y="7" width="3" height="10" rx="0.5"/><rect x="10.5" y="9" width="3" height="6" rx="0.5"/><rect x="16" y="7" width="3" height="10" rx="0.5"/></svg>
                         <div class="lazy-tooltip-v2 opacity-0 group-hover/btn:opacity-100 z-[100] whitespace-nowrap">Space Evenly</div>
                     </button>
                 </div>
@@ -203,25 +211,27 @@
                 {{-- Section 2: Content Vertical Alignment (align-items, cross-axis V) --}}
                 <div class="flex justify-between items-center mb-2">
                     <label class="text-[11px] font-bold text-[#444]">Content Vertical Alignment</label>
-                    <i class="fa fa-question-circle text-[10px] text-slate-300"></i>
+                    <div class="flex gap-2 text-slate-300">
+                        <i class="fa fa-question-circle text-[10px]"></i>
+                    </div>
                 </div>
                 <div class="grid grid-cols-3 gap-2 mb-2">
                     <button @click="{{ $c }}.contentAlignV = 'flex-start'"
                             :class="{{ $c }}.contentAlignV === 'flex-start' || !{{ $c }}.contentAlignV ? 'bg-[#0091ea] text-white' : 'bg-slate-100 text-slate-400 hover:bg-slate-200'"
                             class="py-2 rounded transition-colors flex items-center justify-center relative group/btn">
-                        <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor"><rect x="4" y="3" width="16" height="2" rx="0.5"/><rect x="7" y="7" width="10" height="4" rx="0.5"/><rect x="9" y="13" width="6" height="4" rx="0.5"/></svg>
+                        <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor"><rect x="4" y="3" width="16" height="2" rx="0.5"/><rect x="7" y="7" width="10" height="4" rx="0.5"/><rect x="9" y="13" width="6" height="4" rx="0.5"/></svg>
                         <div class="lazy-tooltip-v2 opacity-0 group-hover/btn:opacity-100 z-[100] whitespace-nowrap">Top</div>
                     </button>
                     <button @click="{{ $c }}.contentAlignV = 'center'"
                             :class="{{ $c }}.contentAlignV === 'center' ? 'bg-[#0091ea] text-white' : 'bg-slate-100 text-slate-400 hover:bg-slate-200'"
                             class="py-2 rounded transition-colors flex items-center justify-center relative group/btn">
-                        <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor"><rect x="4" y="11" width="16" height="2" rx="0.5"/><rect x="7" y="5" width="10" height="4" rx="0.5"/><rect x="9" y="15" width="6" height="4" rx="0.5"/></svg>
+                        <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor"><rect x="4" y="11" width="16" height="2" rx="0.5"/><rect x="7" y="5" width="10" height="4" rx="0.5"/><rect x="9" y="15" width="6" height="4" rx="0.5"/></svg>
                         <div class="lazy-tooltip-v2 opacity-0 group-hover/btn:opacity-100 z-[100] whitespace-nowrap">Middle</div>
                     </button>
                     <button @click="{{ $c }}.contentAlignV = 'flex-end'"
                             :class="{{ $c }}.contentAlignV === 'flex-end' ? 'bg-[#0091ea] text-white' : 'bg-slate-100 text-slate-400 hover:bg-slate-200'"
                             class="py-2 rounded transition-colors flex items-center justify-center relative group/btn">
-                        <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor"><rect x="4" y="19" width="16" height="2" rx="0.5"/><rect x="7" y="9" width="10" height="4" rx="0.5"/><rect x="9" y="7" width="6" height="4" rx="0.5"/></svg>
+                        <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor"><rect x="4" y="19" width="16" height="2" rx="0.5"/><rect x="7" y="9" width="10" height="4" rx="0.5"/><rect x="9" y="7" width="6" height="4" rx="0.5"/></svg>
                         <div class="lazy-tooltip-v2 opacity-0 group-hover/btn:opacity-100 z-[100] whitespace-nowrap">Bottom</div>
                     </button>
                 </div>
@@ -229,7 +239,7 @@
                     <button @click="{{ $c }}.contentAlignV = 'stretch'"
                             :class="{{ $c }}.contentAlignV === 'stretch' ? 'bg-[#0091ea] text-white' : 'bg-slate-100 text-slate-400 hover:bg-slate-200'"
                             class="py-2 rounded transition-colors flex items-center justify-center relative group/btn">
-                        <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor"><rect x="4" y="3" width="16" height="2" rx="0.5"/><rect x="4" y="19" width="16" height="2" rx="0.5"/><rect x="7" y="7" width="10" height="10" rx="0.5"/></svg>
+                        <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor"><rect x="4" y="3" width="16" height="2" rx="0.5"/><rect x="4" y="19" width="16" height="2" rx="0.5"/><rect x="7" y="7" width="10" height="10" rx="0.5"/></svg>
                         <div class="lazy-tooltip-v2 opacity-0 group-hover/btn:opacity-100 z-[100] whitespace-nowrap">Stretch</div>
                     </button>
                 </div>
@@ -239,7 +249,9 @@
             <div v-if="{{ $c }}.contentLayout === 'column' || {{ $c }}.contentLayout === 'row'">
                 <div class="flex justify-between items-center mb-2">
                     <label class="text-[11px] font-bold text-[#444]">Gap</label>
-                    <i class="fa fa-question-circle text-[10px] text-slate-300"></i>
+                    <div class="flex gap-2 text-slate-300">
+                        <i class="fa fa-question-circle text-[10px]"></i>
+                    </div>
                 </div>
                 <div class="grid grid-cols-2 gap-2">
                     <div>
@@ -259,7 +271,9 @@
             <div>
                 <div class="flex justify-between items-center mb-2">
                     <label class="text-[11px] font-bold text-[#444]">Column HTML Tag</label>
-                    <i class="fa fa-question-circle text-[10px] text-slate-300"></i>
+                    <div class="flex gap-2 text-slate-300">
+                        <i class="fa fa-question-circle text-[10px]"></i>
+                    </div>
                 </div>
                 <select v-model="{{ $c }}.htmlTag"
                         class="w-full border border-slate-200 rounded px-2 py-1.5 text-[11px] text-[#444] focus:outline-none focus:border-[#0091ea]">
@@ -276,7 +290,9 @@
             <div>
                 <div class="flex justify-between items-center mb-2">
                     <label class="text-[11px] font-bold text-[#444]">Link URL</label>
-                    <i class="fa fa-question-circle text-[10px] text-slate-300"></i>
+                    <div class="flex gap-2 text-slate-300">
+                        <i class="fa fa-question-circle text-[10px]"></i>
+                    </div>
                 </div>
                 <div class="relative">
                     <input type="text" v-model="{{ $c }}.linkUrl" placeholder="https://"
@@ -289,7 +305,9 @@
             <div>
                 <div class="flex justify-between items-center mb-2">
                     <label class="text-[11px] font-bold text-[#444]">Column Visibility</label>
-                    <i class="fa fa-question-circle text-[10px] text-slate-300"></i>
+                    <div class="flex gap-2 text-slate-300">
+                        <i class="fa fa-question-circle text-[10px]"></i>
+                    </div>
                 </div>
                 <div class="grid grid-cols-3 gap-2"
                      @click.capture="if (!{{ $c }}.visibility) { {{ $c }}.visibility = { mobile: true, tablet: true, desktop: true }; }">
@@ -318,7 +336,9 @@
             <div>
                 <div class="flex justify-between items-center mb-2">
                     <label class="text-[11px] font-bold text-[#444]">CSS Class</label>
-                    <i class="fa fa-question-circle text-[10px] text-slate-300"></i>
+                    <div class="flex gap-2 text-slate-300">
+                        <i class="fa fa-question-circle text-[10px]"></i>
+                    </div>
                 </div>
                 <input type="text" v-model="{{ $c }}.cssClass"
                        class="w-full border border-slate-200 rounded px-2 py-1.5 text-[11px] text-[#444] focus:outline-none focus:border-[#0091ea]">
@@ -328,7 +348,9 @@
             <div>
                 <div class="flex justify-between items-center mb-2">
                     <label class="text-[11px] font-bold text-[#444]">CSS ID</label>
-                    <i class="fa fa-question-circle text-[10px] text-slate-300"></i>
+                    <div class="flex gap-2 text-slate-300">
+                        <i class="fa fa-question-circle text-[10px]"></i>
+                    </div>
                 </div>
                 <input type="text" v-model="{{ $c }}.cssId"
                        class="w-full border border-slate-200 rounded px-2 py-1.5 text-[11px] text-[#444] focus:outline-none focus:border-[#0091ea]">
@@ -343,7 +365,10 @@
             <div>
                 <div class="flex justify-between items-center mb-2">
                     <label class="text-[11px] font-bold text-[#444]">Margin</label>
-                    <i class="fa fa-question-circle text-[10px] text-slate-300"></i>
+                    <div class="flex gap-2 text-slate-300">
+                        <i class="fa fa-question-circle text-[10px]"></i>
+                        <i class="fa fa-desktop text-[10px]"></i>
+                    </div>
                 </div>
                 <div class="grid grid-cols-4 gap-1">
                     <div><label class="block text-[8px] font-bold text-slate-400 mb-1 uppercase tracking-wider">Top</label>
@@ -361,7 +386,10 @@
             <div>
                 <div class="flex justify-between items-center mb-2">
                     <label class="text-[11px] font-bold text-[#444]">Padding</label>
-                    <i class="fa fa-question-circle text-[10px] text-slate-300"></i>
+                    <div class="flex gap-2 text-slate-300">
+                        <i class="fa fa-question-circle text-[10px]"></i>
+                        <i class="fa fa-desktop text-[10px]"></i>
+                    </div>
                 </div>
                 <div class="grid grid-cols-4 gap-1">
                     <div><label class="block text-[8px] font-bold text-slate-400 mb-1 uppercase tracking-wider">Top</label>
@@ -379,7 +407,13 @@
             <div>
                 <div class="flex justify-between items-center mb-2">
                     <label class="text-[11px] font-bold text-[#444]">Text Color</label>
-                    <i class="fa fa-question-circle text-[10px] text-slate-300"></i>
+                    <div class="flex gap-2 text-slate-300">
+                        <i class="fa fa-question-circle text-[10px]"></i>
+                        <i class="fa fa-cog text-[10px]"></i>
+                        <i class="fa fa-undo text-[10px]"></i>
+                        <i class="fa fa-circle text-[10px] text-white border border-slate-300 rounded-full"></i>
+                        <i class="fa fa-database text-[10px]"></i>
+                    </div>
                 </div>
                 <div class="flex gap-2 items-center">
                     <input type="color" :value="{{ $c }}.textColor || '#000000'" @input="{{ $c }}.textColor = $event.target.value" class="w-6 h-6 p-0 border-0 rounded cursor-pointer appearance-none bg-transparent">
@@ -395,7 +429,13 @@
             <div>
                 <div class="flex justify-between items-center mb-2">
                     <label class="text-[11px] font-bold text-[#444]">Background Color</label>
-                    <i class="fa fa-question-circle text-[10px] text-slate-300"></i>
+                    <div class="flex gap-2 text-slate-300">
+                        <i class="fa fa-question-circle text-[10px]"></i>
+                        <i class="fa fa-cog text-[10px]"></i>
+                        <i class="fa fa-undo text-[10px]"></i>
+                        <i class="fa fa-desktop text-[10px]"></i>
+                        <i class="fa fa-database text-[10px]"></i>
+                    </div>
                 </div>
                 <div class="flex gap-2 items-center">
                     <input type="color" :value="{{ $c }}.bgColor || '#ffffff'" @input="{{ $c }}.bgColor = $event.target.value" class="w-6 h-6 p-0 border-0 rounded cursor-pointer appearance-none bg-transparent">
@@ -411,7 +451,10 @@
             <div>
                 <div class="flex justify-between items-center mb-3">
                     <label class="text-[11px] font-bold text-[#444]">Typography</label>
-                    <i class="fa fa-question-circle text-[10px] text-slate-300"></i>
+                    <div class="flex gap-2 text-slate-300">
+                        <i class="fa fa-question-circle text-[10px]"></i>
+                        <i class="fa fa-cog text-[10px]"></i>
+                    </div>
                 </div>
                 <div class="grid grid-cols-2 gap-2 mb-2">
                     <div><label class="block text-[8px] font-bold text-slate-400 mb-1 uppercase tracking-wider">Size (px)</label>
@@ -469,7 +512,10 @@
             <div>
                 <div class="flex justify-between items-center mb-2">
                     <label class="text-[11px] font-bold text-[#444]">Border Size</label>
-                    <i class="fa fa-question-circle text-[10px] text-slate-300"></i>
+                    <div class="flex gap-2 text-slate-300">
+                        <i class="fa fa-question-circle text-[10px]"></i>
+                        <i class="fa fa-cog text-[10px]"></i>
+                    </div>
                 </div>
                 <div class="grid grid-cols-4 gap-1">
                     <div><label class="block text-[8px] font-bold text-slate-400 mb-1 uppercase tracking-wider">Top</label>
@@ -487,7 +533,10 @@
             <div v-if="{{ $c }}.borderSizeTop > 0 || {{ $c }}.borderSizeRight > 0 || {{ $c }}.borderSizeBottom > 0 || {{ $c }}.borderSizeLeft > 0">
                 <div class="flex justify-between items-center mb-2">
                     <label class="text-[11px] font-bold text-[#444]">Border Color</label>
-                    <i class="fa fa-question-circle text-[10px] text-slate-300"></i>
+                    <div class="flex gap-2 text-slate-300">
+                        <i class="fa fa-question-circle text-[10px]"></i>
+                        <i class="fa fa-database text-[10px]"></i>
+                    </div>
                 </div>
                 <div class="flex gap-2 items-center">
                     <input type="color" v-model="{{ $c }}.borderColor" class="w-6 h-6 p-0 border-0 rounded cursor-pointer appearance-none bg-transparent">
@@ -503,7 +552,9 @@
             <div>
                 <div class="flex justify-between items-center mb-2">
                     <label class="text-[11px] font-bold text-[#444]">Border Radius</label>
-                    <i class="fa fa-question-circle text-[10px] text-slate-300"></i>
+                    <div class="flex gap-2 text-slate-300">
+                        <i class="fa fa-question-circle text-[10px]"></i>
+                    </div>
                 </div>
                 <div class="grid grid-cols-4 gap-1">
                     <div><label class="block text-[7px] font-bold text-slate-400 mb-1 uppercase tracking-wider">Top/Left</label>
@@ -521,7 +572,9 @@
             <div>
                 <div class="flex justify-between items-center mb-2">
                     <label class="text-[11px] font-bold text-[#444]">Box Shadow</label>
-                    <i class="fa fa-question-circle text-[10px] text-slate-300"></i>
+                    <div class="flex gap-2 text-slate-300">
+                        <i class="fa fa-question-circle text-[10px]"></i>
+                    </div>
                 </div>
                 <div class="flex w-[100px] bg-slate-100 rounded overflow-hidden">
                     <button @click="{{ $c }}.boxShadow = true"
@@ -537,7 +590,9 @@
                 <div>
                     <div class="flex justify-between items-center mb-2">
                         <label class="text-[11px] font-bold text-[#444]">Shadow Position</label>
-                        <i class="fa fa-question-circle text-[10px] text-slate-300"></i>
+                        <div class="flex gap-2 text-slate-300">
+                            <i class="fa fa-question-circle text-[10px]"></i>
+                        </div>
                     </div>
                     <div class="grid grid-cols-2 gap-2">
                         <div><label class="block text-[8px] font-bold text-slate-400 mb-1 uppercase tracking-wider">Vertical</label>
@@ -549,7 +604,9 @@
                 <div>
                     <div class="flex justify-between items-center mb-2">
                         <label class="text-[11px] font-bold text-[#444]">Blur Radius</label>
-                        <i class="fa fa-question-circle text-[10px] text-slate-300"></i>
+                        <div class="flex gap-2 text-slate-300">
+                            <i class="fa fa-question-circle text-[10px]"></i>
+                        </div>
                     </div>
                     <div class="flex items-center gap-3">
                         <input type="number" v-model.number="{{ $c }}.boxShadowBlurRadius" class="w-16 border border-slate-200 rounded px-2 py-1.5 text-[11px] text-[#444] focus:outline-none focus:border-[#0091ea]">
@@ -559,7 +616,9 @@
                 <div>
                     <div class="flex justify-between items-center mb-2">
                         <label class="text-[11px] font-bold text-[#444]">Spread Radius</label>
-                        <i class="fa fa-question-circle text-[10px] text-slate-300"></i>
+                        <div class="flex gap-2 text-slate-300">
+                            <i class="fa fa-question-circle text-[10px]"></i>
+                        </div>
                     </div>
                     <div class="flex items-center gap-3">
                         <input type="number" v-model.number="{{ $c }}.boxShadowSpreadRadius" class="w-16 border border-slate-200 rounded px-2 py-1.5 text-[11px] text-[#444] focus:outline-none focus:border-[#0091ea]">
@@ -569,7 +628,9 @@
                 <div>
                     <div class="flex justify-between items-center mb-2">
                         <label class="text-[11px] font-bold text-[#444]">Shadow Color</label>
-                        <i class="fa fa-question-circle text-[10px] text-slate-300"></i>
+                        <div class="flex gap-2 text-slate-300">
+                            <i class="fa fa-question-circle text-[10px]"></i>
+                        </div>
                     </div>
                     <div class="flex gap-2 items-center">
                         <input type="color" v-model="{{ $c }}.boxShadowColor" class="w-6 h-6 p-0 border-0 rounded cursor-pointer appearance-none bg-transparent">
@@ -580,7 +641,9 @@
                 <div>
                     <div class="flex justify-between items-center mb-2">
                         <label class="text-[11px] font-bold text-[#444]">Shadow Style</label>
-                        <i class="fa fa-question-circle text-[10px] text-slate-300"></i>
+                        <div class="flex gap-2 text-slate-300">
+                            <i class="fa fa-question-circle text-[10px]"></i>
+                        </div>
                     </div>
                     <div class="flex w-[140px] bg-slate-100 rounded overflow-hidden">
                         <button @click="{{ $c }}.boxShadowStyle = 'outer'"
