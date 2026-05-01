@@ -37,11 +37,22 @@
                     <div id="permalink-container" class="mt-2 text-[13px] flex items-center font-medium">
                         <span class="text-[#646970] mr-1">Permalink:</span>
                         <span id="permalink-view">
-                            <a id="permalink-full-link" href="{{ url($post->slug) }}" target="_blank" class="text-[#2271b1] underline font-medium">{{ url('/') }}/<span id="permalink-slug-display" class="text-[#2271b1]">{{ $post->slug }}</span>/</a>
+                            <a id="permalink-full-link" href="{{ get_lazy_permalink($post) }}" target="_blank" class="text-[#2271b1] underline font-medium">
+                                @php 
+                                    $permalink = get_lazy_permalink($post);
+                                    $displayUrl = rtrim($permalink, '/');
+                                @endphp
+                                {{ $displayUrl }}/
+                            </a>
                             <button type="button" id="edit-slug-btn" class="wp-btn-secondary bg-[#f6f7f7] text-[12px] h-[24px] ml-1 font-medium text-[#2271b1] border-[#c3c4c7]">Edit</button>
                         </span>
                         <span id="permalink-edit" class="hidden items-center">
-                            <span class="text-[#646970] font-medium">{{ url('/') }}/</span>
+                            @php 
+                                $postLang = $post->lang_code ?? 'en';
+                                $prefix = ($postLang !== 'en') ? url($postLang) . '/' : url('/') . '/';
+                                if($post->type !== 'page') $prefix .= $post->type . '/';
+                            @endphp
+                            <span class="text-[#646970] font-medium">{{ $prefix }}</span>
                             <input type="text" name="slug" id="slug-input" value="{{ $post->slug }}" class="wp-input text-[13px] h-[24px] px-1 mx-1 font-medium" style="width: 150px;">/
                             <button type="button" id="ok-slug-btn" class="wp-btn-secondary bg-[#f6f7f7] text-[12px] h-[24px] mx-1 font-medium">OK</button>
                             <a href="#" id="cancel-slug-btn" class="text-[#2271b1] underline ml-1 font-medium">Cancel</a>
@@ -157,6 +168,59 @@
             <!-- Right Column: Metaboxes -->
             <div class="w-full lg:w-[280px] shrink-0 space-y-5">
                 
+                <!-- Language & Multilingual Metabox -->
+                @php $activeLanguages = \Acme\CmsDashboard\Models\Language::where('status', true)->get(); @endphp
+                <div class="wp-metabox mb-6" style="margin-bottom: 24px !important; margin-top: 10px !important;">
+                    <div class="wp-metabox-header"><span>Language</span></div>
+                    <div class="wp-metabox-content p-3">
+                        <div class="mb-3">
+                            <label class="block text-[12px] font-bold text-[#1d2327] mb-1">Post Language</label>
+                            <select name="lang_code" class="wp-input w-full text-[13px] h-8 py-0">
+                                @foreach($activeLanguages as $lang)
+                                    <option value="{{ $lang->code }}" {{ $post->lang_code == $lang->code ? 'selected' : '' }}>
+                                        {{ $lang->flag }} {{ $lang->name }}
+                                    </option>
+                                @endforeach
+                            </select>
+                        </div>
+
+                        @if(!$post->origin_id && $activeLanguages->count() > 1)
+                            <hr class="my-3 border-gray-100">
+                            <label class="flex items-center text-[13px] font-bold text-[#1d2327] mb-3 cursor-pointer">
+                                <input type="checkbox" name="make_multilingual_copy" value="1" class="mr-2 rounded-sm border-[#8c8f94] text-[#2271b1]" onchange="document.getElementById('multi-lang-list').classList.toggle('hidden', !this.checked)">
+                                Make more copies?
+                            </label>
+
+                            <div id="multi-lang-list" class="hidden space-y-2 pl-6 border-l-2 border-gray-100">
+                                <p class="text-[11px] text-gray-500 mb-2">Clone to:</p>
+                                @php
+                                    $existingClones = \Acme\CmsDashboard\Models\Post::where('origin_id', $post->id)->pluck('lang_code')->toArray();
+                                @endphp
+                                @foreach($activeLanguages as $lang)
+                                    @if($lang->code !== $post->lang_code && !in_array($lang->code, $existingClones))
+                                    <label class="flex items-center text-[12px] text-[#2c3338] lang-option-{{ $lang->code }}">
+                                        <input type="checkbox" name="copy_to_languages[]" value="{{ $lang->code }}" class="mr-2 rounded-sm border-[#8c8f94] text-[#2271b1]">
+                                        <span class="mr-1">{{ $lang->flag }}</span> {{ $lang->name }}
+                                    </label>
+                                    @endif
+                                @endforeach
+                            </div>
+                        @elseif($post->origin_id)
+                            @php $original = \Acme\CmsDashboard\Models\Post::find($post->origin_id); @endphp
+                            <div class="bg-blue-50 p-2 border border-blue-100 rounded-sm">
+                                <p class="text-[11px] text-blue-700">
+                                    This is the <strong>{{ $activeLanguages->where('code', $post->lang_code)->first()->name ?? $post->lang_code }}</strong> version.
+                                </p>
+                                @if($original)
+                                <p class="text-[10px] mt-1">
+                                    <a href="{{ route('admin.posts.edit', $original) }}" class="text-blue-600 underline font-bold">View Original ({{ strtoupper($original->lang_code) }})</a>
+                                </p>
+                                @endif
+                            </div>
+                        @endif
+                    </div>
+                </div>
+
                 <!-- Publish Metabox -->
                 <div class="wp-metabox mb-6" style="margin-bottom: 24px !important; margin-top: 10px !important;">
                     <div class="wp-metabox-header flex justify-between items-center cursor-pointer">
@@ -460,13 +524,17 @@
         }
 
         if (permalinkContainer && titleInput && slugInput) {
-            titleInput.addEventListener('input', function() {
-                // Only auto-update slug if it was empty or matched the previous generated slug
-                if (slugInput.value === generateSlug(this.value.substring(0, this.value.length - 1))) {
+            titleInput.addEventListener('blur', function() {
+                if (this.value && !slugInput.value) {
                     let newSlug = generateSlug(this.value);
                     slugInput.value = newSlug;
-                    slugDisplay.innerText = newSlug;
+                    if (slugDisplay) slugDisplay.innerText = newSlug;
                     originalSlug = newSlug;
+                }
+                
+                if (this.value) {
+                    permalinkContainer?.classList.remove('hidden');
+                    permalinkContainer?.classList.add('flex');
                 }
             });
             document.getElementById('edit-slug-btn')?.addEventListener('click', function() {
@@ -821,5 +889,24 @@
 
         // Initialize Tags
         renderTags();
+
+        // Language selector logic to hide current lang from clone list
+        const langSelect = document.querySelector('select[name="lang_code"]');
+        if (langSelect) {
+            const updateCloneList = () => {
+                const selectedLang = langSelect.value;
+                document.querySelectorAll('#multi-lang-list label').forEach(label => {
+                    if (label.classList.contains(`lang-option-${selectedLang}`)) {
+                        label.classList.add('hidden');
+                        label.querySelector('input').checked = false;
+                    } else {
+                        label.classList.remove('hidden');
+                        label.querySelector('input').checked = false; // In edit, don't auto check to avoid accidental clones
+                    }
+                });
+            };
+            langSelect.addEventListener('change', updateCloneList);
+            updateCloneList(); // Initial run
+        }
     </script>
 </x-cms-dashboard::layouts.admin>

@@ -54,13 +54,8 @@
             <div v-if="editingContext.type === 'container'" class="h-full">
                 @include('cms-dashboard::admin.lazy-builder.partials.components.container.edit-panel')
             </div>
-            <div v-else-if="editingContext.type" class="p-6">
-                <h3 class="text-[11px] font-black text-slate-400 uppercase tracking-[0.2em] mb-6">Editing @{{ editingContext.type }}</h3>
-                <div class="space-y-4">
-                    <div class="p-4 bg-slate-50 rounded border border-dashed border-slate-200 text-center">
-                        <p class="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Settings Coming Soon</p>
-                    </div>
-                </div>
+            <div v-else-if="editingContext.type === 'column'" class="h-full">
+                @include('cms-dashboard::admin.lazy-builder.partials.components.column.edit-panel')
             </div>
             <div v-else class="text-center py-20 px-10">
                 <i class="fa fa-mouse-pointer text-4xl text-slate-100 mb-6"></i>

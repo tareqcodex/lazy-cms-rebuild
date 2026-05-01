@@ -13,10 +13,13 @@ class CmsDashboardServiceProvider extends ServiceProvider
             return $user->role && $user->role->slug === 'super-admin' ? true : null;
         });
 
-        // Register Redirection Middleware (Prepend to ensure it runs first)
+        // Register Middlewares
         $this->app['router']->prependMiddlewareToGroup('web', \Acme\CmsDashboard\Http\Middleware\RedirectMiddleware::class);
+        $this->app['router']->pushMiddlewareToGroup('web', \Acme\CmsDashboard\Http\Middleware\TrackVisits::class);
+        $this->app['router']->pushMiddlewareToGroup('web', \Acme\CmsDashboard\Http\Middleware\LocalizationMiddleware::class);
 
         $this->app->booted(function () {
+            $this->loadRoutesFrom(__DIR__ . '/../routes/api.php');
             $this->loadRoutesFrom(__DIR__ . '/../routes/web.php');
         });
         $this->loadMigrationsFrom(__DIR__ . '/../database/migrations');
@@ -28,7 +31,8 @@ class CmsDashboardServiceProvider extends ServiceProvider
             'admin.settings.index' => 'general-settings',
             
             'cms-dashboard::admin.users.edit' => 'users-edit',
-            'cms-dashboard::admin.settings.index' => 'general-settings',
+            'cms-dashboard::admin.settings.index'         => 'general-settings',
+            'cms-dashboard::admin.settings.theme-options' => 'theme-options',
         ];
 
         view()->composer('*', function ($view) use ($viewMap) {
@@ -83,13 +87,21 @@ class CmsDashboardServiceProvider extends ServiceProvider
         } catch (\Exception $e) {}
 
         // 2. Load theme-specific functions.php (For Hooks/Logic)
-        $functionsFile = __DIR__ . "/../resources/views/themes/{$activeTheme}/functions.php";
+        $functionsFile = resource_path("views/themes/{$activeTheme}/functions.php");
+        if (!file_exists($functionsFile)) {
+            $functionsFile = __DIR__ . "/../resources/views/themes/{$activeTheme}/functions.php";
+        }
+        
         if (file_exists($functionsFile)) {
             require_once $functionsFile;
         }
 
         // 3. Load theme-specific options.php (For Admin UI Config)
-        $optionsFile = __DIR__ . "/../resources/views/themes/{$activeTheme}/options.php";
+        $optionsFile = resource_path("views/themes/{$activeTheme}/options.php");
+        if (!file_exists($optionsFile)) {
+            $optionsFile = __DIR__ . "/../resources/views/themes/{$activeTheme}/options.php";
+        }
+        
         $themeOptions = [];
         if (file_exists($optionsFile)) {
             require_once $optionsFile;
@@ -106,6 +118,15 @@ class CmsDashboardServiceProvider extends ServiceProvider
         // Apply filters so users can add options via functions.php hooks
         $finalOptions = apply_lazy_filters('cms_theme_options', $baseOptions);
         
+        // 5. Provide specific filters for Magic Keys (to make it cleaner for developers)
+        if (isset($finalOptions['hooks'])) {
+            foreach ($finalOptions['hooks'] as $key => $hookData) {
+                // Example tag: lazy_general_settings_fields
+                $filterTag = 'lazy_' . str_replace('-', '_', $key) . '_fields';
+                $finalOptions['hooks'][$key]['fields'] = apply_lazy_filters($filterTag, $finalOptions['hooks'][$key]['fields'] ?? []);
+            }
+        }
+
         config(['lazy-options' => $finalOptions]);
     }
 }

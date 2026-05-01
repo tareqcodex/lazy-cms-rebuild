@@ -14,6 +14,7 @@ use Acme\CmsDashboard\Http\Controllers\Admin\AcptCptController;
 use Acme\CmsDashboard\Http\Controllers\Admin\AcptTaxonomyController;
 use Acme\CmsDashboard\Http\Controllers\Admin\AcptTermController;
 use Acme\CmsDashboard\Http\Controllers\Admin\WidgetController;
+use Acme\CmsDashboard\Http\Controllers\Admin\LanguageController;
 use Acme\CmsDashboard\Http\Controllers\Admin\ThemeController;
 use Acme\CmsDashboard\Http\Controllers\FrontendController;
 
@@ -85,12 +86,16 @@ Route::prefix('admin')->name('admin.')->middleware(['web', \Acme\CmsDashboard\Ht
     Route::post('categories/ajax', function(\Illuminate\Http\Request $request) {
         $validated = $request->validate([
             'name' => 'required|string',
-            'parent_id' => 'nullable|exists:categories,id'
+            'parent_id' => 'nullable|exists:categories,id',
+            'lang_code' => 'nullable|string'
         ]);
         
+        $lang = $validated['lang_code'] ?? app()->getLocale();
         $category = \Acme\CmsDashboard\Models\Category::create([
             'name' => $validated['name'],
-            'parent_id' => !empty($validated['parent_id']) ? $validated['parent_id'] : null
+            'parent_id' => !empty($validated['parent_id']) ? $validated['parent_id'] : null,
+            'lang_code' => $lang,
+            'slug' => \Acme\CmsDashboard\Models\Category::generateUniqueSlug($validated['name'], 0, $lang)
         ]);
         
         return response()->json($category);
@@ -127,6 +132,8 @@ Route::prefix('admin')->name('admin.')->middleware(['web', \Acme\CmsDashboard\Ht
     });
  
     // Dashboard index
+    Route::get('dashboard', [DashboardController::class, 'index'])->name('dashboard');
+    Route::get('analytics', [DashboardController::class, 'analytics'])->name('analytics');
     Route::get('/', [DashboardController::class, 'index'])->name('dashboard.index');
  
     // Users
@@ -145,6 +152,11 @@ Route::prefix('admin')->name('admin.')->middleware(['web', \Acme\CmsDashboard\Ht
     Route::post('options/{slug}', [\Acme\CmsDashboard\Http\Controllers\Admin\CustomOptionsController::class, 'update'])->name('options.update');
 
     Route::resource('roles', RoleController::class);
+    
+    // Languages
+    Route::post('languages/settings', [LanguageController::class, 'updateSettings'])->name('languages.settings.update');
+    Route::post('languages/{id}/default', [\Acme\CmsDashboard\Http\Controllers\Admin\LanguageController::class, 'setDefault'])->name('languages.set-default');
+    Route::resource('languages', \Acme\CmsDashboard\Http\Controllers\Admin\LanguageController::class)->names('languages');
  
     // Settings
     Route::get('settings', [DashboardController::class, 'settings'])->name('settings.index');
@@ -152,6 +164,9 @@ Route::prefix('admin')->name('admin.')->middleware(['web', \Acme\CmsDashboard\Ht
     Route::get('settings/seo', [DashboardController::class, 'seoSettings'])->name('settings.seo');
     Route::post('settings/seo', [DashboardController::class, 'updateSeoSettings'])->name('settings.seo.update');
     Route::get('settings/activity-logs', [DashboardController::class, 'activityLogs'])->name('settings.activity-logs');
+    Route::get('settings/api', [DashboardController::class, 'apiSettings'])->name('settings.api');
+    Route::get('settings/theme-options', [DashboardController::class, 'themeOptions'])->name('settings.theme-options');
+    Route::post('settings/theme-options', [DashboardController::class, 'updateThemeOptions'])->name('settings.theme-options.update');
     
     // Backups
     Route::get('tools/backup', [\Acme\CmsDashboard\Http\Controllers\Admin\BackupController::class, 'index'])->name('backup.index');
@@ -193,18 +208,47 @@ Route::prefix('admin')->name('admin.')->middleware(['web', \Acme\CmsDashboard\Ht
     Route::post('/themes/upload', [ThemeController::class, 'upload'])->name('themes.upload');
     Route::post('/themes/{slug}/activate', [ThemeController::class, 'activate'])->name('themes.activate');
     Route::delete('/themes/{slug}', [ThemeController::class, 'destroy'])->name('themes.destroy');
- 
- 
+
+    // Form Builder
+    Route::get('forms', [\Acme\CmsDashboard\Http\Controllers\Admin\FormController::class, 'index'])->name('forms.index');
+    Route::get('forms/create', [\Acme\CmsDashboard\Http\Controllers\Admin\FormController::class, 'create'])->name('forms.create');
+    Route::post('forms', [\Acme\CmsDashboard\Http\Controllers\Admin\FormController::class, 'store'])->name('forms.store');
+    Route::get('forms/{id}/builder', [\Acme\CmsDashboard\Http\Controllers\Admin\FormController::class, 'builder'])->name('forms.builder');
+    Route::post('forms/{id}/save', [\Acme\CmsDashboard\Http\Controllers\Admin\FormController::class, 'saveBuilder'])->name('forms.save');
+    Route::get('forms/{id}/submissions', [\Acme\CmsDashboard\Http\Controllers\Admin\FormController::class, 'submissions'])->name('forms.submissions');
+    Route::delete('forms/submissions/{submission}', [\Acme\CmsDashboard\Http\Controllers\Admin\FormController::class, 'destroySubmission'])->name('forms.submissions.destroy');
+    Route::delete('forms/{form}', [\Acme\CmsDashboard\Http\Controllers\Admin\FormController::class, 'destroy'])->name('forms.destroy');
+
 });
  
 // 3. Frontend Routes (Catch-all for posts/pages) - Outside Admin Group
 Route::middleware(['web', \Acme\CmsDashboard\Http\Middleware\PageCacheMiddleware::class])->group(function() {
     Route::get('/', [FrontendController::class, 'index'])->name('frontend.index');
+    Route::get('lang/{locale}', [FrontendController::class, 'setLocale'])->name('frontend.set-locale');
+    
+    // Add a route for localized homepage like /bn or /fr
+    $supportedLocales = \Acme\CmsDashboard\Models\Language::where('status', true)->pluck('code')->toArray();
+    $localePattern = implode('|', $supportedLocales);
+    if (!empty($localePattern)) {
+        Route::get('/{locale}', [FrontendController::class, 'index'])
+            ->where('locale', $localePattern);
+            
+        Route::get('/{locale}/category/{slug}', [FrontendController::class, 'archive'])
+            ->where('locale', $localePattern)->where('slug', '.*');
+            
+        Route::get('/{locale}/tag/{slug}', [FrontendController::class, 'archive'])
+            ->where('locale', $localePattern)->where('slug', '.*');
+            
+        Route::get('/{locale}/search', [FrontendController::class, 'search'])
+            ->where('locale', $localePattern);
+    }
+
     Route::get('/category/{slug}', [FrontendController::class, 'archive'])->name('frontend.category')->where('slug', '.*');
     Route::get('/tag/{slug}', [FrontendController::class, 'archive'])->name('frontend.tag')->where('slug', '.*');
     Route::get('/search', [FrontendController::class, 'search'])->name('frontend.search');
     Route::post('/comment', [FrontendController::class, 'storeComment'])->name('frontend.comment.store');
+    Route::post('/form-submit', [FrontendController::class, 'submitForm'])->name('frontend.form.submit');
     Route::get('/robots.txt', [FrontendController::class, 'robots'])->name('frontend.robots');
     Route::get('/sitemap.xml', [\Acme\CmsDashboard\Http\Controllers\SitemapController::class, 'index'])->name('frontend.sitemap');
-    Route::get('/{typeOrSlug}/{slug?}', [FrontendController::class, 'show'])->name('frontend.show')->where('slug', '.*');
+    Route::get('/{typeOrSlug}/{slug?}', [FrontendController::class, 'single'])->name('frontend.show')->where('slug', '.*');
 });

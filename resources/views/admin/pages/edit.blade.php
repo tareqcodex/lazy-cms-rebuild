@@ -130,6 +130,59 @@
             <!-- Right Column: Metaboxes -->
             <div class="w-full lg:w-[280px] shrink-0 space-y-5">
                 
+                <!-- Language & Multilingual Metabox -->
+                @php $activeLanguages = \Acme\CmsDashboard\Models\Language::where('status', true)->get(); @endphp
+                <div class="wp-metabox mb-0">
+                    <div class="wp-metabox-header"><span>Language</span></div>
+                    <div class="wp-metabox-content p-3">
+                        <div class="mb-3">
+                            <label class="block text-[12px] font-bold text-[#1d2327] mb-1">Page Language</label>
+                            <select name="lang_code" class="wp-input w-full text-[13px] h-8 py-0">
+                                @foreach($activeLanguages as $lang)
+                                    <option value="{{ $lang->code }}" {{ $page->lang_code == $lang->code ? 'selected' : '' }}>
+                                        {{ $lang->flag }} {{ $lang->name }}
+                                    </option>
+                                @endforeach
+                            </select>
+                        </div>
+
+                        @if(!$page->origin_id && $activeLanguages->count() > 1)
+                            <hr class="my-3 border-gray-100">
+                            <label class="flex items-center text-[13px] font-bold text-[#1d2327] mb-3 cursor-pointer">
+                                <input type="checkbox" name="make_multilingual_copy" value="1" class="mr-2 rounded-sm border-[#8c8f94] text-[#2271b1]" onchange="document.getElementById('multi-lang-list').classList.toggle('hidden', !this.checked)">
+                                Make more copies?
+                            </label>
+                            
+                            <div id="multi-lang-list" class="hidden space-y-2 pl-6 border-l-2 border-gray-100">
+                                <p class="text-[11px] text-gray-500 mb-2">Clone to:</p>
+                                @php 
+                                    $existingClones = \Acme\CmsDashboard\Models\Page::where('origin_id', $page->id)->pluck('lang_code')->toArray();
+                                @endphp
+                                @foreach($activeLanguages as $lang)
+                                    @if($lang->code !== $page->lang_code && !in_array($lang->code, $existingClones))
+                                    <label class="flex items-center text-[12px] text-[#2c3338] lang-option-{{ $lang->code }}">
+                                        <input type="checkbox" name="copy_to_languages[]" value="{{ $lang->code }}" class="mr-2 rounded-sm border-[#8c8f94] text-[#2271b1]">
+                                        <span class="mr-1">{{ $lang->flag }}</span> {{ $lang->name }}
+                                    </label>
+                                    @endif
+                                @endforeach
+                            </div>
+                        @elseif($page->origin_id)
+                            @php $original = \Acme\CmsDashboard\Models\Page::find($page->origin_id); @endphp
+                            <div class="bg-blue-50 p-2 border border-blue-100 rounded-sm">
+                                <p class="text-[11px] text-blue-700">
+                                    This is the <strong>{{ $activeLanguages->where('code', $page->lang_code)->first()->name ?? $page->lang_code }}</strong> version.
+                                </p>
+                                @if($original)
+                                <p class="text-[10px] mt-1">
+                                    <a href="{{ route('admin.pages.edit', $original) }}" class="text-blue-600 underline font-bold">View Original ({{ strtoupper($original->lang_code) }})</a>
+                                </p>
+                                @endif
+                            </div>
+                        @endif
+                    </div>
+                </div>
+
                 <!-- Publish Metabox -->
                 <div class="wp-metabox mb-0">
                     <div class="wp-metabox-header flex justify-between items-center cursor-pointer">
@@ -275,12 +328,28 @@
             });
 
             // Permalink Logic
+            const titleInput = document.getElementById('title-input');
+            const permalinkContainer = document.getElementById('permalink-container');
             const slugDisplay = document.getElementById('permalink-slug-display');
             const slugInput = document.getElementById('slug-input');
             const viewSpan = document.getElementById('permalink-view');
             const editSpan = document.getElementById('permalink-edit');
             const statusHidden = document.getElementById('status-hidden');
             let originalSlug = slugInput?.value || '';
+
+            titleInput?.addEventListener('blur', function() {
+                if (this.value && !slugInput.value) {
+                    let newSlug = generateSlug(this.value);
+                    slugInput.value = newSlug;
+                    if (slugDisplay) slugDisplay.innerText = newSlug;
+                    originalSlug = newSlug;
+                }
+                
+                if (this.value) {
+                    permalinkContainer?.classList.remove('hidden');
+                    permalinkContainer?.classList.add('flex');
+                }
+            });
 
             document.getElementById('edit-slug-btn')?.addEventListener('click', function() {
                 viewSpan?.classList.add('hidden');
@@ -414,6 +483,25 @@
                 statusHidden.value = 'draft';
                 document.getElementById('page-form')?.submit();
             });
+
+            // Language selector logic
+            const langSelect = document.querySelector('select[name="lang_code"]');
+            if (langSelect) {
+                const updateCloneList = () => {
+                    const selectedLang = langSelect.value;
+                    document.querySelectorAll('#multi-lang-list label').forEach(label => {
+                        if (label.classList.contains(`lang-option-${selectedLang}`)) {
+                            label.classList.add('hidden');
+                            label.querySelector('input').checked = false;
+                        } else {
+                            label.classList.remove('hidden');
+                            label.querySelector('input').checked = false;
+                        }
+                    });
+                };
+                langSelect.addEventListener('change', updateCloneList);
+                updateCloneList();
+            }
         });
     </script>
 </x-cms-dashboard::layouts.admin>

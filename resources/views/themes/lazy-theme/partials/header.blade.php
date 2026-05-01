@@ -19,11 +19,14 @@
             <nav class="hidden lg:flex items-center gap-8">
                 @php $menuItems = get_lazy_menu('header'); @endphp
                 @foreach($menuItems as $item)
+                    @php 
+                        $isActive = (url()->current() == $item->url) || (request()->is(ltrim(parse_url($item->url, PHP_URL_PATH), '/')));
+                    @endphp
                     <div class="relative group">
-                        <a href="{{ $item->url }}" class="text-[14px] font-semibold text-slate-700 hover:text-primary transition-colors flex items-center gap-1 py-7">
+                        <a href="{{ $item->url }}" class="text-[14px] font-semibold {{ $isActive ? 'text-primary' : 'text-slate-700' }} hover:text-primary transition-colors flex items-center gap-1 py-7">
                             {{ $item->title }}
                             @if($item->children->count() > 0)
-                                <i data-lucide="chevron-down" class="w-4 h-4 text-slate-400 group-hover:text-primary transition-colors"></i>
+                                <i data-lucide="chevron-down" class="w-4 h-4 text-slate-400 group-hover:text-primary transition-colors {{ $isActive ? 'text-primary' : '' }}"></i>
                             @endif
                         </a>
                         
@@ -63,6 +66,9 @@
 
             <!-- Actions -->
             <div class="flex items-center gap-5">
+                <!-- Language Switcher -->
+                {!! lazy_lang_dropdown() !!}
+
                 <button class="text-slate-700 hover:text-primary transition-colors" onclick="document.getElementById('search-bar').classList.toggle('hidden')">
                     <i data-lucide="search" class="w-5 h-5"></i>
                 </button>
@@ -94,15 +100,27 @@
                 <i data-lucide="x" class="w-6 h-6"></i>
             </button>
         </div>
+        
+        <!-- Mobile Language Switcher -->
+        <div class="p-6 border-b border-slate-100 lg:hidden">
+            <p class="text-[12px] font-bold text-slate-400 uppercase tracking-wider mb-3">Select Language</p>
+            {!! lazy_mobile_lang_switcher() !!}
+        </div>
         <div class="flex-grow overflow-y-auto p-6">
             <nav class="space-y-4">
                 @foreach($menuItems as $item)
+                    @php 
+                        $isActive = (url()->current() == $item->url) || (request()->is(ltrim(parse_url($item->url, PHP_URL_PATH), '/')));
+                    @endphp
                     <div>
-                        <a href="{{ $item->url }}" class="text-[15px] font-bold text-slate-800 hover:text-primary block mb-2">{{ $item->title }}</a>
+                        <a href="{{ $item->url }}" class="text-[15px] font-bold {{ $isActive ? 'text-primary' : 'text-slate-800' }} hover:text-primary block mb-2">{{ $item->title }}</a>
                         @if($item->children->count() > 0)
                             <div class="pl-4 space-y-2 border-l border-slate-100 ml-1">
                                 @foreach($item->children as $child)
-                                    <a href="{{ $child->url }}" class="text-[14px] font-medium text-slate-600 hover:text-primary block">{{ $child->title }}</a>
+                                    @php 
+                                        $childActive = (url()->current() == $child->url) || (request()->is(ltrim(parse_url($child->url, PHP_URL_PATH), '/')));
+                                    @endphp
+                                    <a href="{{ $child->url }}" class="text-[14px] font-medium {{ $childActive ? 'text-primary' : 'text-slate-600' }} hover:text-primary block">{{ $child->title }}</a>
                                 @endforeach
                             </div>
                         @endif

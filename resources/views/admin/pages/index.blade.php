@@ -1,4 +1,4 @@
-<x-cms-dashboard::layouts.admin>
+<x-cms-dashboard::layouts.admin title="Pages">
     <div class="flex items-center mb-4">
         <h1 class="text-[23px] font-normal text-[#1d2327] mr-3">Pages</h1>
         <a href="{{ route('admin.pages.create') }}" class="wp-btn-secondary px-2 py-0.5 text-[12px] bg-white hover:bg-[#f6f7f7] border-[#2271b1] text-[#2271b1] leading-normal">Add New</a>

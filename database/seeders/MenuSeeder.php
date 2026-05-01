@@ -72,7 +72,21 @@ class MenuSeeder extends Seeder
             'order' => 50,
         ]);
 
-        // 6. Appearance
+        // 6. Forms
+        $formsMenu = Menu::create([
+            'title' => 'Forms',
+            'route' => 'admin.forms.index',
+            'icon'  => 'dynamic_form',
+            'group' => 'Main',
+            'order' => 35,
+        ]);
+        $formsMenu->children()->createMany([
+            ['title' => 'All Forms',    'route' => 'admin.forms.index',       'order' => 1],
+            ['title' => 'Add New',     'route' => 'admin.forms.create',      'order' => 2],
+            ['title' => 'Submissions', 'route' => 'admin.forms.submissions', 'order' => 3],
+        ]);
+
+        // 7. Appearance
         $appearanceMenu = Menu::create([
             'title' => 'Appearance',
             'route' => 'admin.themes.index',
@@ -86,7 +100,7 @@ class MenuSeeder extends Seeder
             ['title' => 'Widgets', 'route' => 'admin.widgets.index', 'order' => 2],
         ]);
 
-        // 7. ACPT
+        // 8. ACPT
         $acptMenu = Menu::create([
             'title' => 'ACPT',
             'route' => 'admin.acpt.cpt.index',
@@ -100,7 +114,7 @@ class MenuSeeder extends Seeder
             ['title' => 'Field Groups', 'route' => 'admin.acpt.fields.index',      'order' => 3],
         ]);
 
-        // 8. Users
+        // 9. Users
         $userMenu = Menu::create([
             'title' => 'Users',
             'route' => 'admin.users.index',
@@ -116,7 +130,29 @@ class MenuSeeder extends Seeder
             ['title' => 'Your Profile', 'route' => 'admin.profile',         'order' => 5],
         ]);
 
-        // 9. Settings
+        // 10. Tools
+        $toolsMenu = Menu::create([
+            'title' => 'Tools',
+            'route' => 'admin.backup.index',
+            'icon'  => 'construction',
+            'group' => 'System',
+            'order' => 85,
+        ]);
+        $toolsMenu->children()->createMany([
+            ['title' => 'Backup & Restore', 'route' => 'admin.backup.index',    'order' => 1],
+            ['title' => 'Languages',        'route' => 'admin.languages.index', 'order' => 2],
+        ]);
+
+        // 11. Analytics
+        Menu::create([
+            'title' => 'Analytics',
+            'route' => 'admin.analytics',
+            'icon'  => 'insights',
+            'group' => 'System',
+            'order' => 87,
+        ]);
+
+        // 12. Settings
         $settingsMenu = Menu::create([
             'title' => 'Settings',
             'route' => 'admin.settings.index',
@@ -131,16 +167,16 @@ class MenuSeeder extends Seeder
             ['title' => 'Activity Logs', 'route' => 'admin.settings.activity-logs', 'order' => 4],
         ]);
 
-        // 10. Tools
-        $toolsMenu = Menu::create([
-            'title' => 'Tools',
-            'route' => 'admin.backup.index',
-            'icon'  => 'construction',
+        // 13. Help
+        $helpMenu = Menu::create([
+            'title' => 'Help',
+            'route' => 'admin.documentation',
+            'icon'  => 'help',
             'group' => 'System',
-            'order' => 85,
+            'order' => 100,
         ]);
-        $toolsMenu->children()->createMany([
-            ['title' => 'Backup & Restore', 'route' => 'admin.backup.index', 'order' => 1],
+        $helpMenu->children()->createMany([
+            ['title' => 'Documentation', 'route' => 'admin.documentation', 'order' => 1],
         ]);
 
         // Dynamic CPTs

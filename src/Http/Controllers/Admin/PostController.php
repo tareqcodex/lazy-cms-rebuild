@@ -50,12 +50,32 @@ class PostController extends Controller
         }
     }
 
-    protected function generateUniqueSlug($title, $id = 0, $type = 'post')
+    protected function generateUniqueSlug($title, $id = 0, $type = 'post', $langCode = 'en')
     {
-        $slug = Str::slug($title);
+        // If string contains non-ascii characters OR lang is not english, use native slug logic
+        if ($langCode !== 'en' || preg_match('/[^\x00-\x7F]/', $title)) {
+            // For non-english, we want to keep the native characters but remove symbols
+            $slug = mb_strtolower($title, 'UTF-8');
+            $slug = str_replace(' ', '-', trim($slug));
+            // Keep letters (\p{L}), marks/vowels (\p{M}), numbers (\p{N}), and dashes. Everything else goes.
+            $slug = preg_replace('/[^\p{L}\p{M}\p{N}\-]+/u', '', $slug);
+            $slug = preg_replace('/-+/', '-', $slug); // Remove duplicate dashes
+            $slug = trim($slug, '-');
+        } else {
+            $slug = Str::slug($title);
+        }
+        
+        if (empty($slug)) {
+            $slug = 'post-' . time();
+        }
+
         $originalSlug = $slug;
         $count = 1;
-        while (Post::withTrashed()->where('slug', $slug)->where('type', $type)->where('id', '!=', $id)->exists()) {
+        while (Post::withTrashed()
+            ->where('slug', $slug)
+            ->where('type', $type)
+            ->where('id', '!=', $id)
+            ->exists()) {
             $slug = "{$originalSlug}-{$count}";
             $count++;
         }
@@ -72,7 +92,12 @@ class PostController extends Controller
         $this->checkTypeActive($type);
         $status = $request->query('status');
         
+        $lang = $request->query('lang');
         $query = Post::with(['categories', 'tags', 'taxonomyTerms'])->where('type', $type);
+
+        if ($lang && $lang !== 'all') {
+            $query->where('lang_code', $lang);
+        }
 
         if ($status === 'trash') {
             $query->onlyTrashed();
@@ -84,15 +109,24 @@ class PostController extends Controller
         }
 
         if ($request->filled('s')) {
-            $query->where(function($q) use ($request) {
-                $q->where('title', 'like', '%' . $request->s . '%')
-                  ->orWhere('content', 'like', '%' . $request->s . '%');
-            });
+            $query->where('title', 'like', '%' . $request->s . '%');
         }
 
         if ($request->filled('cat') && $request->cat != '-1') {
             $query->whereHas('categories', function($q) use ($request) {
                 $q->where('categories.id', $request->cat);
+            });
+        }
+
+        if ($request->filled('tag_id')) {
+            $query->whereHas('tags', function($q) use ($request) {
+                $q->where('tags.id', $request->tag_id);
+            });
+        }
+
+        if ($request->filled('term_id')) {
+            $query->whereHas('taxonomyTerms', function($q) use ($request) {
+                $q->where('taxonomy_terms.id', $request->term_id);
             });
         }
 
@@ -111,10 +145,10 @@ class PostController extends Controller
             ->orderBy('month', 'desc')
             ->get();
 
-        $allCount = Post::where('type', $type)->count();
-        $publishedCount = Post::where('type', $type)->where('status', 'published')->count();
-        $draftCount = Post::where('type', $type)->where('status', 'draft')->count();
-        $trashCount = Post::where('type', $type)->onlyTrashed()->count();
+        $allCount = Post::where('type', $type)->where('lang_code', $lang)->count();
+        $publishedCount = Post::where('type', $type)->where('lang_code', $lang)->where('status', 'published')->count();
+        $draftCount = Post::where('type', $type)->where('lang_code', $lang)->where('status', 'draft')->count();
+        $trashCount = Post::where('type', $type)->where('lang_code', $lang)->onlyTrashed()->count();
 
         $postType = \Acme\CmsDashboard\Models\PostType::where('slug', $type)->first();
         
@@ -202,14 +236,22 @@ class PostController extends Controller
             'template'       => 'nullable|string',
             'menu_order'     => 'nullable|integer',
             'editor_type'    => 'nullable|string|in:rich,builder',
+            'lang_code'      => 'nullable|string|max:10',
             'seo'            => 'nullable|array',
+
         ]);
 
         $validated['seo_meta'] = $request->input('seo');
         unset($validated['seo']);
 
+        $lang = $validated['lang_code'] ?? null;
+        if (!$lang || $lang === 'all') {
+            $lang = app()->getLocale();
+            $validated['lang_code'] = $lang;
+        }
+
         $slugSource = !empty($validated['slug']) ? $validated['slug'] : (!empty($validated['title']) ? $validated['title'] : 'no-title');
-        $validated['slug'] = $this->generateUniqueSlug($slugSource, 0, $validated['type']);
+        $validated['slug'] = $this->generateUniqueSlug($slugSource, 0, $validated['type'], $lang);
         if (empty($validated['title'])) $validated['title'] = '(no title)';
         $validated['user_id'] = auth()->id();
 
@@ -272,6 +314,54 @@ class PostController extends Controller
 
         lazy_log_activity('created', "Created a new {$validated['type']}: {$post->title}", $post);
 
+        // Multilingual Copy Logic
+        if ($request->has('make_multilingual_copy') && $request->has('copy_to_languages')) {
+            foreach ($request->copy_to_languages as $langCode) {
+                $clone = $post->replicate();
+                $clone->lang_code = $langCode;
+                $clone->origin_id = $post->origin_id ?: $post->id;
+                $clone->slug = $post->slug;
+                
+                $clone->title = lazy_translate($post->title, $langCode);
+                
+                // Generate translated slug
+                $clone->slug = $this->generateUniqueSlug($clone->title, 0, $post->type, $langCode);
+                // but let's translate simple text if it's rich editor
+                if ($post->editor_type === 'rich') {
+                    $clone->content = lazy_translate($post->content, $langCode);
+                }
+                
+                if ($post->excerpt) {
+                    $clone->excerpt = lazy_translate($post->excerpt, $langCode);
+                }
+                
+                $clone->save();
+
+                // Sync relationships for the clone
+                if ($request->has('categories')) {
+                    $clone->categories()->sync($request->categories);
+                }
+                if ($request->has('tax_terms')) {
+                    $clone->taxonomyTerms()->sync($request->tax_terms);
+                }
+                if ($request->tags && !in_array('tags', $overriddenTaxonomies)) {
+                    $clone->tags()->sync($tagIds ?? []);
+                }
+                
+                // Copy custom fields
+                if ($request->has('custom_fields')) {
+                    foreach ($request->custom_fields as $fieldId => $value) {
+                        DB::table('post_custom_field_values')->insert([
+                            'post_id' => $clone->id,
+                            'field_id' => $fieldId,
+                            'value' => is_array($value) ? json_encode($value) : $value,
+                            'created_at' => now(), 'updated_at' => now()
+                        ]);
+                    }
+                }
+            }
+        }
+
         if ($request->has('redirect_to_builder')) {
             clear_page_cache();
             return redirect()->route('admin.lazy-builder', $post->id)->with('success', ucfirst($validated['type']) . ' created successfully.');
@@ -287,6 +377,22 @@ class PostController extends Controller
         $permission = ($type === 'page') ? 'manage_pages' : (($type === 'post') ? 'manage_posts' : 'manage_' . $type);
         if (!auth()->user()->hasPermission($permission)) {
             abort(403, "You do not have permission to edit {$post->type}s.");
+        }
+
+        $locale = request('locale');
+        if ($locale && $locale !== app()->getLocale()) {
+            $translation = $post->translations()->where('locale', $locale)->first();
+            if ($translation) {
+                $post->title = $translation->title;
+                $post->content = $translation->content;
+                $post->excerpt = $translation->excerpt;
+                // We could also merge SEO meta from translation here if needed
+            } else {
+                // For new translation, start with empty content but keep metadata
+                $post->title = '';
+                $post->content = '';
+                $post->excerpt = '';
+            }
         }
         $this->checkTypeActive($post->type);
         $type = $post->type;
@@ -362,6 +468,7 @@ class PostController extends Controller
             'template'       => 'nullable|string',
             'menu_order'     => 'nullable|integer',
             'editor_type'    => 'nullable|string|in:rich,builder',
+            'lang_code'      => 'nullable|string|max:10',
             'seo'            => 'nullable|array',
         ]);
 
@@ -369,7 +476,7 @@ class PostController extends Controller
         unset($validated['seo']);
 
         $slugSource = !empty($validated['slug']) ? $validated['slug'] : (!empty($validated['title']) ? $validated['title'] : 'no-title');
-        $validated['slug'] = $this->generateUniqueSlug($slugSource, $post->id, $post->type);
+        $validated['slug'] = $this->generateUniqueSlug($slugSource, $post->id, $post->type, $validated['lang_code'] ?? $post->lang_code);
         if (empty($validated['title'])) $validated['title'] = '(no title)';
 
         if ($request->hasFile('featured_image')) {
@@ -397,7 +504,73 @@ class PostController extends Controller
         $prefix = ($post->type === 'post' || $post->type === 'page') ? '' : $post->type . '/';
         $oldUrl = '/' . ltrim($prefix . $oldSlug, '/');
 
+        $locale = $request->input('locale');
+        if ($locale && $locale !== app()->getLocale()) {
+            // Save as translation instead of main post
+            $post->translations()->updateOrInsert(
+                ['locale' => $locale],
+                [
+                    'slug'    => Str::slug($validated['title']),
+                    'title'   => $validated['title'],
+                    'content' => $validated['content'],
+                    'excerpt' => $validated['excerpt'],
+                    'meta_title' => $validated['seo_meta']['title'] ?? null,
+                    'meta_description' => $validated['seo_meta']['description'] ?? null,
+                    'updated_at' => now(),
+                ]
+            );
+            
+            lazy_log_activity('updated', "Updated {$locale} translation for {$post->type}: {$post->title}", $post);
+            clear_page_cache();
+            return redirect()->back()->with('success', ucfirst($post->type) . ' translation updated successfully.');
+        }
+
         $post->update($validated);
+
+        // Multilingual Copy Logic (on Update)
+        if ($request->has('make_multilingual_copy') && $request->has('copy_to_languages')) {
+            foreach ($request->copy_to_languages as $langCode) {
+                // Check if already exists to avoid duplicates
+                $rootId = $post->origin_id ?: $post->id;
+                $exists = Post::where('origin_id', $rootId)->where('lang_code', $langCode)->exists();
+                if ($exists) continue;
+
+                $clone = $post->replicate();
+                $clone->lang_code = $langCode;
+                $clone->origin_id = $rootId;
+                $clone->slug = $post->slug;
+
+                // Auto Translate
+                $clone->title = lazy_translate($post->title, $langCode);
+                
+                // Generate translated slug
+                $clone->slug = $this->generateUniqueSlug($clone->title, 0, $post->type, $langCode);
+                if ($post->editor_type === 'rich') {
+                    $clone->content = lazy_translate($post->content, $langCode);
+                }
+
+                if ($post->excerpt) {
+                    $clone->excerpt = lazy_translate($post->excerpt, $langCode);
+                }
+
+                $clone->save();
+
+                // Sync relationships
+                if ($request->has('categories')) $clone->categories()->sync($request->categories);
+                if ($request->has('tax_terms')) $clone->taxonomyTerms()->sync($request->tax_terms);
+                
+                // Copy custom fields
+                $originalFields = DB::table('post_custom_field_values')->where('post_id', $post->id)->get();
+                foreach ($originalFields as $field) {
+                    DB::table('post_custom_field_values')->insert([
+                        'post_id' => $clone->id,
+                        'field_id' => $field->field_id,
+                        'value' => $field->value,
+                        'created_at' => now(), 'updated_at' => now()
+                    ]);
+                }
+            }
+        }
 
         // Automatic Redirection Logic
         if ($oldSlug !== $post->slug) {

@@ -8,7 +8,7 @@
                 <p class="text-gray-500 mt-1">Master Lazy CMS and build stunning websites with freedom.</p>
             </div>
             <div class="bg-blue-50 text-blue-700 px-4 py-2 rounded-lg text-sm font-bold border border-blue-100">
-                v3.0.3 Stable
+                v3.1.4 Stable
             </div>
         </div>
 
@@ -26,6 +26,8 @@
                     <a href="#templates" class="nav-link block px-4 py-2 text-sm font-medium text-gray-600 hover:bg-gray-50 rounded-md transition-all duration-200">Custom Templates</a>
                     <a href="#custom-widgets" class="nav-link block px-4 py-2 text-sm font-medium text-gray-600 hover:bg-gray-50 rounded-md transition-all duration-200">Custom Widgets</a>
                     <a href="#hooks" class="nav-link block px-4 py-2 text-sm font-medium text-gray-600 hover:bg-gray-50 rounded-md transition-all duration-200">Hooks (Actions & Filters)</a>
+                    <a href="#rest-api" class="nav-link block px-4 py-2 text-sm font-medium text-gray-600 hover:bg-gray-50 rounded-md transition-all duration-200">REST API & Headless</a>
+                    <a href="#multilingual" class="nav-link block px-4 py-2 text-sm font-medium text-gray-600 hover:bg-gray-50 rounded-md transition-all duration-200">Multilingual & Localization</a>
                 </nav>
             </div>
 
@@ -463,18 +465,137 @@ add_lazy_action('lazy_admin_head', function() {
                                     <li><code>lazy_the_content</code> - Filters post body HTML</li>
                                     <li><code>lazy_post_title</code> - Filters post title</li>
                                     <li><code>cms_theme_options</code> - Modify theme settings pages (via functions.php)</li>
+                                    <li><code>lazy_general_settings_fields</code> - Simplified filter for General Settings</li>
+                                    <li><code>lazy_users_edit_fields</code> - Simplified filter for User Edit page</li>
                                 </ul>
                             </div>
 
                             <div class="bg-gray-900 rounded-lg p-4 text-gray-300 font-mono text-xs">
-                                <pre><code>@verbatim// Example: Define Options via Hook
-add_lazy_filter('cms_theme_options', function($options) {
-    $options['pages']['my-ad-settings'] = [
-        'title' => 'Ad Settings',
-        'icon'  => 'ads_click',
-        'fields' => [ ... ]
+                                <pre><code>@verbatim// Example: Simplified Field Hook
+add_lazy_filter('lazy_general_settings_fields', function($fields) {
+    $fields['copyright_text'] = [
+        'type' => 'text',
+        'label' => 'Copyright'
     ];
-    return $options;
+    return $fields;
+});@endverbatim</code></pre>
+                            </div>
+
+                            <h3 class="text-lg font-bold text-gray-800 mt-6 flex items-center gap-2">
+                                <span class="w-2 h-2 bg-red-600 rounded-full"></span>
+                                Removing Hooks & Fields
+                            </h3>
+                            <p class="text-sm text-gray-600">You can unregister any previously added hook or remove dynamic fields using removal helpers and high-priority filters.</p>
+                            
+                            <h4 class="text-xs font-bold text-gray-500 uppercase mt-4 mb-2">1. Removing Hooks</h4>
+                            <div class="bg-gray-900 rounded-lg p-4 text-gray-300 font-mono text-xs mb-4">
+                                <pre><code>@verbatimremove_lazy_action('tag', 'callback', $priority);
+remove_lazy_filter('tag', 'callback', $priority);@endverbatim</code></pre>
+                            </div>
+
+                            <h4 class="text-xs font-bold text-gray-500 uppercase mt-4 mb-2">2. Removing Dynamic Fields</h4>
+                            <div class="bg-gray-900 rounded-lg p-4 text-gray-300 font-mono text-xs">
+                                <pre><code>@verbatimadd_lazy_filter('lazy_general_settings_fields', function($fields) {
+    unset($fields['copyright_text']); // Remove a specific field
+    return $fields;
+}, 20); // Priority 20 to run after adding@endverbatim</code></pre>
+                            </div>
+                        </div>
+                    </div>
+                </section>
+
+                <!-- Multilingual & Localization Section -->
+                <section id="multilingual" class="doc-section mb-12">
+                    <h2 class="text-2xl font-bold text-gray-900 mb-4">Multilingual & Localization</h2>
+                    <p class="text-gray-700 mb-6">Reach a global audience with built-in translation support.</p>
+
+                    <div class="space-y-8">
+                        {{-- Language Management --}}
+                        <div class="bg-white border border-gray-200 rounded-xl p-6 shadow-sm">
+                            <h3 class="text-lg font-bold text-blue-600 mb-3">1. Managing Languages</h3>
+                            <p class="text-sm text-gray-600 mb-4">Go to <b>Tools > Languages</b> to add, edit, or remove site languages. You can set a default language and enable/disable others as needed.</p>
+                            <div class="bg-blue-50 border-l-4 border-blue-400 p-4 text-xs text-blue-700">
+                                <b>Note:</b> Each language code (e.g., 'en', 'bn') is used as a URL prefix (e.g., yoursite.com/bn/post-slug).
+                            </div>
+                        </div>
+
+                        {{-- Translatable Fields --}}
+                        <div class="bg-white border border-gray-200 rounded-xl p-6 shadow-sm">
+                            <h3 class="text-lg font-bold text-blue-600 mb-3">2. Translatable Options Fields</h3>
+                            <p class="text-sm text-gray-600 mb-4">To make a custom option field translatable, simply add <code>'translatable' => true</code> to the field definition in <code>config/lazy-options.php</code>.</p>
+                            <div class="bg-gray-900 rounded-lg p-4 text-gray-300 font-mono text-xs overflow-x-auto">
+                                <pre><code>@verbatim// config/lazy-options.php
+'fields' => [
+    'footer_text' => [
+        'type' => 'textarea',
+        'label' => 'Footer Copyright',
+        'translatable' => true, // Enables per-language inputs
+    ],
+]@endverbatim</code></pre>
+                            </div>
+                        </div>
+
+                        {{-- Frontend Helpers --}}
+                        <div class="bg-white border border-gray-200 rounded-xl p-6 shadow-sm">
+                            <h3 class="text-lg font-bold text-blue-600 mb-3">3. Translation Helpers</h3>
+                            <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                                <div>
+                                    <h4 class="text-xs font-bold text-gray-400 uppercase mb-2">Displaying Content</h4>
+                                    <p class="text-xs text-gray-600 mb-2"><code>get_cms_option()</code> automatically checks for the current locale first.</p>
+                                    <code class="block bg-gray-50 p-2 rounded text-xs">@verbatim{{ get_cms_option('footer_text') }}@endverbatim</code>
+                                </div>
+                                <div>
+                                    <h4 class="text-xs font-bold text-gray-400 uppercase mb-2">Language Switcher</h4>
+                                    <p class="text-xs text-gray-600 mb-2">Render a premium language dropdown or list switcher.</p>
+                                    <code class="block bg-gray-50 p-2 rounded text-xs">@verbatim{!! lazy_lang_dropdown() !!}
+{!! lazy_lang_switcher() !!}@endverbatim</code>
+                                </div>
+                            </div>
+                        </div>
+
+                        {{-- URL Handling --}}
+                        <div class="bg-white border border-gray-200 rounded-xl p-6 shadow-sm">
+                            <h3 class="text-lg font-bold text-blue-600 mb-3">4. URL & Permalink Handling</h3>
+                            <p class="text-sm text-gray-600 mb-4">The CMS handles localized URLs automatically. Always use <code>get_lazy_permalink($post)</code> to ensure the correct language prefix is included.</p>
+                            <div class="bg-gray-900 rounded-lg p-4 text-gray-300 font-mono text-xs">
+                                <pre><code>@verbatim&lt;!-- Correct: Includes /en/ or /bn/ prefix --&gt;
+&lt;a href="{{ get_lazy_permalink($post) }}"&gt;{{ $post->title }}&lt;/a&gt;@endverbatim</code></pre>
+                            </div>
+                        </div>
+                    </div>
+                <!-- REST API Section -->
+                <section id="rest-api" class="doc-section mb-12">
+                    <h2 class="text-2xl font-bold text-gray-900 mb-4">REST API & Headless</h2>
+                    <p class="text-gray-700 mb-6">Build modern frontends with React, Vue, or Mobile apps.</p>
+
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                        <div class="space-y-4">
+                            <h3 class="text-lg font-bold text-gray-800">Available Endpoints</h3>
+                            <div class="bg-gray-50 border border-gray-200 rounded-lg p-4">
+                                <ul class="text-xs space-y-3 text-gray-700">
+                                    <li class="flex items-center justify-between border-b border-gray-100 pb-2">
+                                        <code class="text-blue-600">GET /api/v1/posts</code>
+                                        <span class="text-[10px] font-bold text-gray-400">List all posts</span>
+                                    </li>
+                                    <li class="flex items-center justify-between border-b border-gray-100 pb-2">
+                                        <code class="text-blue-600">GET /api/v1/settings</code>
+                                        <span class="text-[10px] font-bold text-gray-400">Site settings</span>
+                                    </li>
+                                    <li class="flex items-center justify-between border-b border-gray-100 pb-2">
+                                        <code class="text-blue-600">GET /api/v1/menus</code>
+                                        <span class="text-[10px] font-bold text-gray-400">Navigation</span>
+                                    </li>
+                                </ul>
+                            </div>
+                        </div>
+
+                        <div class="space-y-4">
+                            <h3 class="text-lg font-bold text-gray-800">Filtering API Data</h3>
+                            <p class="text-xs text-gray-600">Modify JSON responses using theme hooks:</p>
+                            <div class="bg-gray-900 rounded-lg p-4 text-gray-300 font-mono text-[10px]">
+                                <pre><code>@verbatimadd_lazy_filter('lazy_api_post_data', function($data, $post) {
+    $data['reading_time'] = '5 min read';
+    return $data;
 });@endverbatim</code></pre>
                             </div>
                         </div>

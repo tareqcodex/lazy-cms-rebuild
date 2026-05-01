@@ -55,4 +55,30 @@ class HookManager
 
         return $value;
     }
+
+    public function removeAction($tag, $callback, $priority = 10)
+    {
+        if (isset($this->actions[$tag][$priority])) {
+            foreach ($this->actions[$tag][$priority] as $index => $registered_callback) {
+                if ($registered_callback === $callback) {
+                    unset($this->actions[$tag][$priority][$index]);
+                    return true;
+                }
+            }
+        }
+        return false;
+    }
+
+    public function removeFilter($tag, $callback, $priority = 10)
+    {
+        if (isset($this->filters[$tag][$priority])) {
+            foreach ($this->filters[$tag][$priority] as $index => $registered_callback) {
+                if ($registered_callback === $callback) {
+                    unset($this->filters[$tag][$priority][$index]);
+                    return true;
+                }
+            }
+        }
+        return false;
+    }
 }

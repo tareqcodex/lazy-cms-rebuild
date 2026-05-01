@@ -10,12 +10,30 @@ use Illuminate\Support\Facades\DB;
 
 class PageController extends Controller
 {
-    protected function generateUniqueSlug($title, $id = 0)
+    protected function generateUniqueSlug($title, $id = 0, $langCode = 'en')
     {
-        $slug = Str::slug($title);
+        // If string contains non-ascii characters OR lang is not english, use native slug logic
+        if ($langCode !== 'en' || preg_match('/[^\x00-\x7F]/', $title)) {
+            $slug = mb_strtolower($title, 'UTF-8');
+            $slug = str_replace(' ', '-', trim($slug));
+            // Keep letters (\p{L}), marks/vowels (\p{M}), numbers (\p{N}), and dashes.
+            $slug = preg_replace('/[^\p{L}\p{M}\p{N}\-]+/u', '', $slug);
+            $slug = preg_replace('/-+/', '-', $slug);
+            $slug = trim($slug, '-');
+        } else {
+            $slug = Str::slug($title);
+        }
+        
+        if (empty($slug)) {
+            $slug = 'page-' . time();
+        }
+
         $originalSlug = $slug;
         $count = 1;
-        while (Page::withTrashed()->where('slug', $slug)->where('id', '!=', $id)->exists()) {
+        while (Page::withTrashed()
+            ->where('slug', $slug)
+            ->where('id', '!=', $id)
+            ->exists()) {
             $slug = "{$originalSlug}-{$count}";
             $count++;
         }
@@ -25,7 +43,12 @@ class PageController extends Controller
     public function index(Request $request)
     {
         $status = $request->query('status');
+        $lang = $request->query('lang');
         $query = Page::query();
+
+        if ($lang && $lang !== 'all') {
+            $query->where('lang_code', $lang);
+        }
 
         if ($status === 'trash') {
             $query->onlyTrashed();
@@ -92,13 +115,19 @@ class PageController extends Controller
             'published_at' => 'nullable|date',
             'featured_image' => 'nullable',
             'editor_type' => 'nullable|string|in:rich,builder',
+            'lang_code' => 'nullable|string|max:10',
             'seo' => 'nullable|array',
         ]);
 
         $validated['seo_meta'] = $request->input('seo');
         unset($validated['seo']);
 
-        $validated['slug'] = $this->generateUniqueSlug($validated['title']);
+        $lang = $request->input('lang_code');
+        if (!$lang || $lang === 'all') {
+            $lang = app()->getLocale();
+        }
+        $validated['lang_code'] = $lang;
+        $validated['slug'] = $this->generateUniqueSlug($validated['title'], 0, $validated['lang_code']);
         $validated['user_id'] = auth()->id();
 
         if ($request->hasFile('featured_image')) {
@@ -126,6 +155,28 @@ class PageController extends Controller
         }
 
         lazy_log_activity('created', "Created a new page: {$page->title}", $page);
+        
+        // Multilingual Copy Logic
+        if ($request->has('make_multilingual_copy') && $request->has('copy_to_languages')) {
+            foreach ($request->copy_to_languages as $langCode) {
+                $clone = $page->replicate();
+                $clone->lang_code = $langCode;
+                $clone->origin_id = $page->id;
+                
+                $clone->title = lazy_translate($page->title, $langCode);
+                $clone->slug = $this->generateUniqueSlug($clone->title, 0, $langCode);
+                
+                if ($page->editor_type === 'rich') {
+                    $clone->content = lazy_translate($page->content, $langCode);
+                }
+                
+                if ($page->excerpt) {
+                    $clone->excerpt = lazy_translate($page->excerpt, $langCode);
+                }
+                
+                $clone->save();
+            }
+        }
 
         if ($request->has('redirect_to_builder')) {
             return redirect()->route('admin.pages.edit', ['page' => $page, 'start_builder' => 1])->with('success', 'Page created successfully.');
@@ -169,6 +220,7 @@ class PageController extends Controller
             'published_at' => 'nullable|date',
             'featured_image' => 'nullable',
             'editor_type' => 'nullable|string|in:rich,builder',
+            'lang_code' => 'nullable|string|max:10',
             'seo' => 'nullable|array'
         ]);
 
@@ -176,9 +228,9 @@ class PageController extends Controller
         unset($validated['seo']);
 
         if (empty($validated['slug'])) {
-            $validated['slug'] = $this->generateUniqueSlug($validated['title'], $page->id);
+            $validated['slug'] = $this->generateUniqueSlug($validated['title'], $page->id, $page->lang_code);
         } else {
-            $validated['slug'] = $this->generateUniqueSlug($validated['slug'], $page->id);
+            $validated['slug'] = $this->generateUniqueSlug($validated['slug'], $page->id, $page->lang_code);
         }
 
         if ($request->hasFile('featured_image')) {
@@ -229,6 +281,31 @@ class PageController extends Controller
         }
 
         lazy_log_activity('updated', "Updated page: {$page->title}", $page);
+
+        // Multilingual Copy Logic for Edit
+        if ($request->has('make_multilingual_copy') && $request->has('copy_to_languages')) {
+            foreach ($request->copy_to_languages as $langCode) {
+                $exists = Page::where('origin_id', $page->id)->where('lang_code', $langCode)->exists();
+                if ($exists) continue;
+
+                $clone = $page->replicate();
+                $clone->lang_code = $langCode;
+                $clone->origin_id = $page->id;
+                
+                $clone->title = lazy_translate($page->title, $langCode);
+                $clone->slug = $this->generateUniqueSlug($clone->title, 0, $langCode);
+                
+                if ($page->editor_type === 'rich') {
+                    $clone->content = lazy_translate($page->content, $langCode);
+                }
+                
+                if ($page->excerpt) {
+                    $clone->excerpt = lazy_translate($page->excerpt, $langCode);
+                }
+                
+                $clone->save();
+            }
+        }
 
         return back()->with('success', 'Page updated successfully.');
     }

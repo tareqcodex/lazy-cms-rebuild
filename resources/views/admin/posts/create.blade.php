@@ -147,6 +147,44 @@
             <!-- Right Column: Metaboxes -->
             <div class="w-full lg:w-[280px] shrink-0 space-y-5">
                 
+                <!-- Multilingual Metabox -->
+                @php $activeLanguages = \Acme\CmsDashboard\Models\Language::where('status', true)->get(); @endphp
+
+                <div class="wp-metabox mb-6" style="margin-bottom: 24px !important; margin-top: 10px !important;">
+                    <div class="wp-metabox-header"><span>Language</span></div>
+                    <div class="wp-metabox-content p-3">
+                        <div class="mb-3">
+                            <label class="block text-[12px] font-bold text-[#1d2327] mb-1">Post Language</label>
+                            <select name="lang_code" class="wp-input w-full text-[13px] h-8 py-0">
+                                @foreach($activeLanguages as $lang)
+                                    <option value="{{ $lang->code }}" {{ $lang->is_default ? 'selected' : '' }}>
+                                        {{ $lang->flag }} {{ $lang->name }}
+                                    </option>
+                                @endforeach
+                            </select>
+                            <p class="text-[11px] text-gray-500 mt-1">This is the language of the content you are currently writing.</p>
+                        </div>
+
+                        @if($activeLanguages->count() > 1)
+                        <hr class="my-3 border-gray-100">
+                        <label class="flex items-center text-[13px] font-bold text-[#1d2327] mb-3 cursor-pointer">
+                            <input type="checkbox" name="make_multilingual_copy" value="1" class="mr-2 rounded-sm border-[#8c8f94] text-[#2271b1]" onchange="document.getElementById('multi-lang-list').classList.toggle('hidden', !this.checked)">
+                            Make a copy for other languages?
+                        </label>
+
+                        <div id="multi-lang-list" class="hidden space-y-2 pl-6 border-l-2 border-gray-100">
+                            <p class="text-[11px] text-gray-500 mb-2">Select languages to clone this post to:</p>
+                            @foreach($activeLanguages as $lang)
+                                <label class="flex items-center text-[12px] text-[#2c3338] lang-option-{{ $lang->code }}">
+                                    <input type="checkbox" name="copy_to_languages[]" value="{{ $lang->code }}" checked class="mr-2 rounded-sm border-[#8c8f94] text-[#2271b1]">
+                                    <span class="mr-1">{{ $lang->flag }}</span> {{ $lang->name }}
+                                </label>
+                            @endforeach
+                        </div>
+                        @endif
+                    </div>
+                </div>
+
                 <!-- Publish Metabox -->
                 <div class="wp-metabox mb-6" style="margin-bottom: 24px !important; margin-top: 10px !important;">
                     <div class="wp-metabox-header flex justify-between items-center cursor-pointer">
@@ -426,16 +464,16 @@
         }
 
         if (permalinkContainer && titleInput && slugInput) {
-            titleInput.addEventListener('input', function() {
-                if (!slugInput.value || slugInput.value === generateSlug(this.value.substring(0, this.value.length - 1))) {
+            titleInput.addEventListener('blur', function() {
+                if (this.value) {
                     let newSlug = generateSlug(this.value);
-                    slugInput.value = newSlug;
-                    if (slugDisplay) slugDisplay.innerText = newSlug;
-                    originalSlug = newSlug;
-                    if (this.value) {
-                        permalinkContainer?.classList.remove('hidden');
-                        permalinkContainer?.classList.add('flex');
+                    if (!slugInput.value) {
+                        slugInput.value = newSlug;
+                        if (slugDisplay) slugDisplay.innerText = newSlug;
+                        originalSlug = newSlug;
                     }
+                    permalinkContainer?.classList.remove('hidden');
+                    permalinkContainer?.classList.add('flex');
                 }
             });
 
@@ -800,5 +838,23 @@
             form.submit();
         });
 
+        // Language selector logic to hide current lang from clone list
+        const langSelect = document.querySelector('select[name="lang_code"]');
+        if (langSelect) {
+            const updateCloneList = () => {
+                const selectedLang = langSelect.value;
+                document.querySelectorAll('#multi-lang-list label').forEach(label => {
+                    if (label.classList.contains(`lang-option-${selectedLang}`)) {
+                        label.classList.add('hidden');
+                        label.querySelector('input').checked = false;
+                    } else {
+                        label.classList.remove('hidden');
+                        label.querySelector('input').checked = true;
+                    }
+                });
+            };
+            langSelect.addEventListener('change', updateCloneList);
+            updateCloneList(); // Initial run
+        }
     </script>
 </x-cms-dashboard::layouts.admin>

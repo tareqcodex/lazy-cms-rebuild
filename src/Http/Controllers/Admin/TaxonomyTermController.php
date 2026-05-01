@@ -12,20 +12,22 @@ class TaxonomyTermController extends Controller
 {
     public function index(Request $request, $taxonomySlug)
     {
+        $lang = $request->query('lang', app()->getLocale());
         $taxonomy = CustomTaxonomy::where('slug', $taxonomySlug)->firstOrFail();
         $cptSlug  = $request->query('cpt');
-
+        
         $query = TaxonomyTerm::where('taxonomy_slug', $taxonomySlug)
-            ->where('cpt_slug', $cptSlug);
+            ->where('cpt_slug', $cptSlug)
+            ->where('lang_code', $lang);
 
         if ($request->filled('s')) {
             $query->where('name', 'like', '%' . $request->s . '%');
         }
 
-        $terms   = $query->latest()->paginate(20);
-        
+        $terms   = $query->withCount('posts')->latest()->paginate(20);
         $allTerms = TaxonomyTerm::where('taxonomy_slug', $taxonomySlug)
             ->where('cpt_slug', $cptSlug)
+            ->latest()
             ->get();
             
         $fullParents = collect();
@@ -90,8 +92,9 @@ class TaxonomyTermController extends Controller
             'parent_id' => 'nullable|exists:taxonomy_terms,id',
         ]);
 
+        $lang = $request->input('lang_code', app()->getLocale());
         $baseName = $request->slug ? $request->slug : $request->name;
-        $slug = TaxonomyTerm::generateUniqueSlug($baseName, 0, $cptSlug);
+        $slug = TaxonomyTerm::generateUniqueSlug($baseName, 0, $cptSlug, $lang);
 
         TaxonomyTerm::create([
             'taxonomy_slug' => $taxonomySlug,
@@ -100,6 +103,8 @@ class TaxonomyTermController extends Controller
             'slug'          => $slug,
             'description'   => $request->description,
             'parent_id'     => $request->parent_id ?: null,
+            'lang_code'     => $lang,
+            'origin_id'     => $request->origin_id ?: null,
         ]);
 
         return redirect()->back()->with('success', '"' . $request->name . '" added successfully.');

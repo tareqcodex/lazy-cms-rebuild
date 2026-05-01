@@ -153,15 +153,18 @@
                     </div>
                 </div>
 
-                <!-- Recent Activity Box -->
+                <!-- Security Status Box -->
                 <div class="classic-card">
                     <div class="classic-card-header">
                         <span class="classic-card-title">Security Status</span>
-                        <span class="px-2 py-0.5 bg-[#46b450] text-white text-[10px] rounded font-bold uppercase">Healthy</span>
+                        @php $sec = $stats['traffic_stats']['security'] ?? ['status' => 'Healthy', 'message' => 'System protection is active.']; @endphp
+                        <span class="px-2 py-0.5 {{ $sec['status'] === 'Healthy' ? 'bg-[#46b450]' : 'bg-[#d63638]' }} text-white text-[10px] rounded font-bold uppercase">
+                            {{ $sec['status'] }}
+                        </span>
                     </div>
                     <div class="p-4">
                         <p class="text-[13px] text-[#646970] leading-relaxed">
-                            System protection is active. No unauthorized attempts in the last 24 hours.
+                            {{ $sec['message'] }}
                         </p>
                     </div>
                 </div>

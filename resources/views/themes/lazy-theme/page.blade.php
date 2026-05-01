@@ -38,7 +38,7 @@
                     @if($post->editor_type === 'builder')
                         {!! get_lazy_content($post->content) !!}
                     @else
-                        {!! $post->content !!}
+                        {!! do_lazy_shortcode($post->content) !!}
                     @endif
                 </div>
             </div>

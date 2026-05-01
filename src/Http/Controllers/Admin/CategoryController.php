@@ -11,11 +11,17 @@ class CategoryController extends Controller
 {
     public function index(Request $request)
     {
-        $query = Category::withCount('posts')->orderBy('name');
+        $lang = $request->query('lang');
+        $query = Category::withCount('posts');
+        
+        if ($lang && $lang !== 'all') {
+            $query->where('lang_code', $lang);
+        }
+        
+        $query->latest();
         
         if ($request->has('s')) {
-            $query->where('name', 'like', '%' . $request->s . '%')
-                  ->orWhere('description', 'like', '%' . $request->s . '%');
+            $query->where('name', 'like', '%' . $request->s . '%');
             $categories = $query->paginate(10);
         } else {
             $allCategories = $query->get();
@@ -77,14 +83,24 @@ class CategoryController extends Controller
 
     public function store(Request $request)
     {
+        $lang = $request->input('lang_code');
+        if (!$lang || $lang === 'all') {
+            $lang = app()->getLocale();
+        }
+        
         $baseSlug = $request->slug ?: $request->name;
-        $request->merge(['slug' => Category::generateUniqueSlug($baseSlug)]);
+        $request->merge([
+            'slug' => Category::generateUniqueSlug($baseSlug, 0, $lang),
+            'lang_code' => $lang
+        ]);
 
         $validated = $request->validate([
             'name' => 'required|string|max:255',
             'slug' => 'required|string|max:255',
             'parent_id' => 'nullable|exists:categories,id',
             'description' => 'nullable|string',
+            'lang_code' => 'required|string|max:10',
+            'origin_id' => 'nullable|integer',
         ]);
 
         $category = Category::create($validated);
@@ -95,7 +111,10 @@ class CategoryController extends Controller
 
     public function edit(Category $category)
     {
-        $allCategories = Category::where('id', '!=', $category->id)->orderBy('name')->get();
+        $allCategories = Category::where('lang_code', $category->lang_code)
+            ->where('id', '!=', $category->id)
+            ->latest()
+            ->get();
         $fullTree = collect();
         $visitedIds = [];
 
@@ -142,9 +161,30 @@ class CategoryController extends Controller
                 },
             ],
             'description' => 'nullable|string',
+            'lang_code' => 'required|string|max:10',
         ]);
 
         $category->update($validated);
+
+        // Multilingual Copy Logic
+        if ($request->has('make_multilingual_copy') && $request->has('copy_to_languages')) {
+            foreach ($request->copy_to_languages as $targetLang) {
+                $exists = Category::where('origin_id', $category->id)->where('lang_code', $targetLang)->exists();
+                if ($exists) continue;
+
+                $clone = $category->replicate();
+                $clone->lang_code = $targetLang;
+                $clone->origin_id = $category->id;
+                
+                $clone->name = lazy_translate($category->name, $targetLang);
+                $clone->slug = Category::generateUniqueSlug($clone->name, 0, $targetLang);
+                if ($category->description) {
+                    $clone->description = lazy_translate($category->description, $targetLang);
+                }
+                $clone->save();
+            }
+        }
+
         lazy_log_activity('updated', "Updated category: {$category->name}", $category);
 
         return redirect()->route('admin.categories.index', ['type' => 'post'])->with('success', 'Category updated.');
@@ -159,12 +199,19 @@ class CategoryController extends Controller
     }
     public function ajax(Request $request)
     {
-        $request->validate(['name' => 'required|string|max:255']);
-        $slug = Category::generateUniqueSlug($request->name);
+        $request->validate([
+            'name' => 'required|string|max:255',
+            'parent_id' => 'nullable|exists:categories,id',
+            'lang_code' => 'nullable|string'
+        ]);
+        
+        $lang = $request->lang_code ?: app()->getLocale();
+        $slug = Category::generateUniqueSlug($request->name, 0, $lang);
         $category = Category::create([
             'name' => $request->name,
             'slug' => $slug,
             'parent_id' => $request->parent_id,
+            'lang_code' => $lang
         ]);
         return response()->json($category);
     }

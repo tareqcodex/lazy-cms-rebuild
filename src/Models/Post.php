@@ -97,4 +97,29 @@ class Post extends Model
     {
         return $this->hasMany(Comment::class)->whereNull('parent_id')->where('is_approved', true);
     }
+
+    /**
+     * Get all translations/clones for this post.
+     */
+    public function translations()
+    {
+        $originId = $this->origin_id ?: $this->id;
+        return $this->hasMany(Post::class, 'origin_id', 'id') // Clones of this original
+               ->orWhere('id', $originId) // The original itself
+               ->orWhere('origin_id', $originId); // Other clones of same original
+    }
+
+    /**
+     * Get specific translation for a locale.
+     */
+    public function getTranslation($locale)
+    {
+        if ($this->lang_code === $locale) return $this;
+        
+        $originId = $this->origin_id ?: $this->id;
+        return Post::where('lang_code', $locale)
+                    ->where(function($q) use ($originId) {
+                        $q->where('id', $originId)->orWhere('origin_id', $originId);
+                    })->first();
+    }
 }

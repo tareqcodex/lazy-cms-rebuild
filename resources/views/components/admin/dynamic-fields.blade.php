@@ -1,7 +1,14 @@
 @if(!empty($dynamicFields))
-    <div class="mt-8 pt-6 border-t border-[#c3c4c7]">
+    <div class="mt-8">
         <table class="w-full border-separate border-spacing-y-6">
             @foreach($dynamicFields as $name => $field)
+            @if(($field['type'] ?? '') === 'title')
+            <tr>
+                <td colspan="2" class="pb-2 border-b border-[#c3c4c7]">
+                    <h3 class="text-[16px] font-semibold text-[#1d2327]">{{ $field['label'] }}</h3>
+                </td>
+            </tr>
+            @else
             <tr>
                 <th scope="row" class="w-[200px] text-left align-top pt-2">
                     <label for="{{ $name }}" class="text-[14px] font-semibold text-[#1d2327]">{{ $field['label'] }}</label>
@@ -31,8 +38,7 @@
                         </select>
 
                     @elseif($field['type'] === 'checkbox')
-                        <label class="inline-flex items-center cursor-pointer mb-1">
-                        <label class="inline-flex items-center cursor-pointer mt-1">
+                        <label class="items-center cursor-pointer mt-1">
                             <input type="checkbox" name="{{ $name }}" id="{{ $name }}" value="1" 
                                 {{ ($settings[$name] ?? ($field['default'] ?? '0')) == '1' ? 'checked' : '' }}
                                 class="w-4 h-4 mr-2">
@@ -67,6 +73,7 @@
                     @endif
                 </td>
             </tr>
+            @endif
             @endforeach
         </table>
     </div>

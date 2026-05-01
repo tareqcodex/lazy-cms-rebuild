@@ -19,7 +19,7 @@
     @endif
 
     <div class="flex flex-col md:flex-row justify-between items-start md:items-center mb-2 gap-4">
-        <div class="flex items-center text-[13px] text-[#646970]">
+        <div class="flex flex-wrap items-center text-[13px] text-[#646970]">
             <a href="{{ route('admin.posts.index', ['type' => $type]) }}" class="{{ !request('status') ? 'text-black font-semibold' : 'text-[#2271b1]' }}">All <span class="text-[#646970]">({{ $allCount }})</span></a>
             <span class="mx-1 text-[#c3c4c7]">|</span>
             <a href="{{ route('admin.posts.index', ['type' => $type, 'status' => 'published']) }}" class="{{ request('status') == 'published' ? 'text-black font-semibold' : 'text-[#2271b1]' }}">Published <span class="text-[#646970]">({{ $publishedCount }})</span></a>
@@ -30,6 +30,7 @@
                 <a href="{{ route('admin.posts.index', ['type' => $type, 'status' => 'trash']) }}" class="{{ request('status') == 'trash' ? 'text-black font-semibold' : 'text-[#2271b1]' }}">Trash <span class="text-[#646970]">({{ $trashCount }})</span></a>
             @endif
         </div>
+
         
         <form action="{{ route('admin.posts.index') }}" method="GET" class="flex items-center space-x-1 w-full md:w-auto">
             <input type="hidden" name="type" value="{{ $type }}">
@@ -99,6 +100,7 @@
                 <th class="wp-table-header w-8 text-center pb-0"><input type="checkbox" id="cb-select-all-1" class="rounded-sm border-[#8c8f94] text-[#2271b1] focus:ring-[#2271b1]"></th>
                 <th class="wp-table-header text-left">Title</th>
                 <th class="wp-table-header text-left">Author</th>
+                <th class="wp-table-header text-left">Slug</th>
 
                 @if(!in_array('categories', $overriddenTaxonomies))
                     <th class="wp-table-header text-left">Categories</th>
@@ -143,6 +145,7 @@
                         </div>
                     </td>
                     <td class="wp-table-cell text-[#2271b1] text-left">{{ $post->user?->name ?? 'admin' }}</td>
+                    <td class="wp-table-cell text-[#646970] text-left">{{ $post->slug }}</td>
                     
                     @if(!in_array('categories', $overriddenTaxonomies))
                     <td class="wp-table-cell text-left">
@@ -208,6 +211,7 @@
                 <th class="wp-table-header w-8 text-center pb-0 border-t"><input type="checkbox" id="cb-select-all-2" class="rounded-sm border-[#8c8f94] text-[#2271b1] focus:ring-[#2271b1]"></th>
                 <th class="wp-table-header text-left border-t">Title</th>
                 <th class="wp-table-header text-left border-t">Author</th>
+                <th class="wp-table-header text-left border-t">Slug</th>
                 @if(!in_array('categories', $overriddenTaxonomies))
                     <th class="wp-table-header text-left border-t">Categories</th>
                 @endif

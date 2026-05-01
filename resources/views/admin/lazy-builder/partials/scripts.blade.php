@@ -14,6 +14,7 @@
             const activeColCi = ref(null);
             const editingContext = ref({ type: null, ci: null, coli: null });
             const activePanelTab = ref('general');
+            const activeColPanelTab = ref('general');
 
             const isDragging = ref(false);
             const dragType = ref(null);
@@ -118,6 +119,11 @@
                                 if (col.settings.paddingLeft === undefined) col.settings.paddingLeft = 10;
                                 if (col.settings.paddingRight === undefined) col.settings.paddingRight = 10;
 
+                                // Migrate missing new column settings for old columns
+                                Object.entries(makeColumnSettings()).forEach(([k, v]) => {
+                                    if (col.settings[k] === undefined) col.settings[k] = v;
+                                });
+
                                 if (col.elements) {
                                     col.elements.forEach(el => {
                                         if (el.type === 'row' && el.columns) migrateBasis(el.columns);
@@ -179,6 +185,22 @@
 
             const uid = () => Math.random().toString(36).substr(2, 9);
 
+            const makeColumnSettings = (overrides = {}) => ({
+                paddingTop: 10, paddingBottom: 10, paddingLeft: 10, paddingRight: 10,
+                marginTop: 0, marginBottom: 0, marginLeft: 0, marginRight: 0,
+                alignment: 'default', contentLayout: '', contentAlignH: 'flex-start', contentAlignV: 'flex-start',
+                gapWidth: '', gapHeight: '', htmlTag: 'div', linkUrl: '',
+                visibility: { mobile: true, tablet: true, desktop: true },
+                cssClass: '', cssId: '', textColor: '', bgColor: '',
+                fontSize: '', fontWeight: '', lineHeight: '', letterSpacing: '', textAlign: '',
+                borderSizeTop: '', borderSizeRight: '', borderSizeBottom: '', borderSizeLeft: '',
+                borderColor: '#000000', borderRadiusTopLeft: '', borderRadiusTopRight: '',
+                borderRadiusBottomRight: '', borderRadiusBottomLeft: '',
+                boxShadow: false, boxShadowPositionVertical: 0, boxShadowPositionHorizontal: 0,
+                boxShadowBlurRadius: 0, boxShadowSpreadRadius: 0, boxShadowColor: '#000000', boxShadowStyle: 'outer',
+                ...overrides
+            });
+
             const columnModalType = ref('new'); // 'new' or 'edit'
             
             const openColumnModal = (index = null, type = 'new') => {
@@ -193,11 +215,7 @@
                     return {
                         id: uid(),
                         basis: Number((num / den) * 100),
-                        settings: { 
-                            paddingTop: 10, paddingBottom: 10, 
-                            paddingLeft: 10, paddingRight: 10,
-                            marginTop: 0, marginBottom: 0, marginLeft: 0, marginRight: 0 
-                        },
+                        settings: makeColumnSettings(),
                         elements: []
                     };
                 });
@@ -258,29 +276,11 @@
             };
 
             const addColumn = (ci) => {
-                const col = {
-                    id: uid(),
-                    basis: 100,
-                    settings: { 
-                        paddingTop: 10, paddingBottom: 10, paddingLeft: 10, paddingRight: 10,
-                        marginTop: 0, marginBottom: 0, marginLeft: 0, marginRight: 0 
-                    },
-                    elements: []
-                };
-                layout.value[ci].columns.push(col);
+                layout.value[ci].columns.push({ id: uid(), basis: 100, settings: makeColumnSettings(), elements: [] });
             };
 
             const addNestedColumn = (ci, coli, eli) => {
-                const row = layout.value[ci].columns[coli].elements[eli];
-                row.columns.push({
-                    id: uid(),
-                    basis: 100,
-                    settings: { 
-                        paddingTop: 10, paddingBottom: 10, paddingLeft: 10, paddingRight: 10,
-                        marginTop: 0, marginBottom: 0, marginLeft: 0, marginRight: 0 
-                    },
-                    elements: []
-                });
+                layout.value[ci].columns[coli].elements[eli].columns.push({ id: uid(), basis: 100, settings: makeColumnSettings(), elements: [] });
             };
 
 
@@ -640,7 +640,7 @@
                 return {
                     maxWidth: s.contentWidth === '100%' ? '100%' : '1220px',
                     height: '100%',
-                    alignItems: s.alignItems || 'stretch',
+                    alignItems: s.alignItems || 'flex-start',
                     alignContent: s.alignContent || 'flex-start',
                     justifyContent: s.justifyContent || 'flex-start',
                     flexWrap: s.flexWrap || 'wrap',
@@ -652,29 +652,86 @@
                 const s = column.settings;
                 const width = column.basis || (100 / totalColumns);
                 const flexBasis = width >= 100 ? '100%' : `calc(${width}% - 2%)`;
-                return {
+                const style = {
                     flex: `0 0 ${flexBasis}`,
                     maxWidth: `${flexBasis}`,
                     minWidth: '0',
-                    // Top/Bottom margins on outer: container height adjusts naturally
-                    marginTop: (s.marginTop || 0) + 'px',
-                    marginBottom: (s.marginBottom || 0) + 'px',
-                    // Left/Right margins are NOT here — they live on column-inner
+                    marginTop: (Number(s.marginTop) || 0) + 'px',
+                    marginBottom: (Number(s.marginBottom) || 0) + 'px',
                 };
+                // alignSelf must be on the direct flex child (column-outer), not column-inner
+                if (s.alignment && s.alignment !== 'default') style.alignSelf = s.alignment;
+                return style;
             };
 
             const columnInnerStyle = (column) => {
                 const s = column.settings;
-                return {
-                    paddingTop: (s.paddingTop || 0) + 'px',
-                    paddingBottom: (s.paddingBottom || 0) + 'px',
-                    paddingLeft: (s.paddingLeft || 0) + 'px',
-                    paddingRight: (s.paddingRight || 0) + 'px',
-                    // Left/Right margins on inner: only the inner border moves, outer width unchanged
-                    marginLeft: (s.marginLeft || 0) + 'px',
-                    marginRight: (s.marginRight || 0) + 'px',
-                    minHeight: (100 + (s.paddingTop || 0) + (s.paddingBottom || 0)) + 'px',
+                const pTop = Number(s.paddingTop) || 0;
+                const pBottom = Number(s.paddingBottom) || 0;
+                const style = {
+                    paddingTop: pTop + 'px',
+                    paddingBottom: pBottom + 'px',
+                    paddingLeft: (Number(s.paddingLeft) || 0) + 'px',
+                    paddingRight: (Number(s.paddingRight) || 0) + 'px',
+                    marginLeft: (Number(s.marginLeft) || 0) + 'px',
+                    marginRight: (Number(s.marginRight) || 0) + 'px',
+                    minHeight: (100 + pTop + pBottom) + 'px',
                 };
+
+                // content layout — only apply when user has explicitly chosen a layout
+                if (s.contentLayout) {
+                    if (s.contentLayout === 'block') {
+                        style.display = 'block';
+                    } else {
+                        style.display = 'flex';
+                        style.flexDirection = s.contentLayout === 'row' ? 'row' : 'column';
+                        const gW = s.gapWidth ? s.gapWidth + 'px' : '0px';
+                        const gH = s.gapHeight ? s.gapHeight + 'px' : '0px';
+                        if (s.gapWidth || s.gapHeight) style.gap = gH + ' ' + gW;
+                        if (s.contentLayout === 'row') {
+                            // row: main axis = horizontal → justifyContent; cross = vertical → alignItems
+                            if (s.contentAlignH) style.justifyContent = s.contentAlignH;
+                            if (s.contentAlignV) style.alignItems = s.contentAlignV;
+                        } else {
+                            // column: main axis = vertical → justifyContent; cross = horizontal → alignItems
+                            if (s.contentAlignV) style.justifyContent = s.contentAlignV;
+                            if (s.contentAlignH) style.alignItems = s.contentAlignH;
+                        }
+                    }
+                }
+
+                // typography
+                if (s.textColor) style.color = s.textColor;
+                if (s.fontSize) style.fontSize = s.fontSize + 'px';
+                if (s.fontWeight) style.fontWeight = s.fontWeight;
+                if (s.lineHeight) style.lineHeight = s.lineHeight;
+                if (s.letterSpacing) style.letterSpacing = s.letterSpacing + 'px';
+                if (s.textAlign) style.textAlign = s.textAlign;
+
+                // background
+                if (s.bgColor) style.backgroundColor = s.bgColor;
+
+                // border
+                if (s.borderSizeTop) style.borderTopWidth = s.borderSizeTop + 'px';
+                if (s.borderSizeRight) style.borderRightWidth = s.borderSizeRight + 'px';
+                if (s.borderSizeBottom) style.borderBottomWidth = s.borderSizeBottom + 'px';
+                if (s.borderSizeLeft) style.borderLeftWidth = s.borderSizeLeft + 'px';
+                if (s.borderSizeTop || s.borderSizeRight || s.borderSizeBottom || s.borderSizeLeft) {
+                    style.borderStyle = 'solid';
+                    style.borderColor = s.borderColor || '#000000';
+                }
+                if (s.borderRadiusTopLeft) style.borderTopLeftRadius = s.borderRadiusTopLeft + 'px';
+                if (s.borderRadiusTopRight) style.borderTopRightRadius = s.borderRadiusTopRight + 'px';
+                if (s.borderRadiusBottomRight) style.borderBottomRightRadius = s.borderRadiusBottomRight + 'px';
+                if (s.borderRadiusBottomLeft) style.borderBottomLeftRadius = s.borderRadiusBottomLeft + 'px';
+
+                // box shadow
+                if (s.boxShadow) {
+                    const inset = s.boxShadowStyle === 'inner' ? 'inset ' : '';
+                    style.boxShadow = `${inset}${s.boxShadowPositionHorizontal || 0}px ${s.boxShadowPositionVertical || 0}px ${s.boxShadowBlurRadius || 0}px ${s.boxShadowSpreadRadius || 0}px ${s.boxShadowColor || '#000000'}`;
+                }
+
+                return style;
             };
 
             const showElementModal = ref(false);
@@ -707,15 +764,7 @@
                     },
                     columns: layoutConfig.split('-').map((part, idx) => {
                         const [num, den] = part.split('/');
-                        return {
-                            id: Date.now() + idx,
-                            basis: Number((num / den) * 100),
-                            settings: {
-                                paddingTop: 10, paddingBottom: 10, paddingLeft: 10, paddingRight: 10,
-                                marginTop: 0, marginBottom: 0, marginLeft: 0, marginRight: 0
-                            },
-                            elements: []
-                        };
+                        return { id: Date.now() + idx, basis: Number((num / den) * 100), settings: makeColumnSettings(), elements: [] };
                     })
                 };
 
@@ -777,7 +826,7 @@
             };
 
             return {
-                layout, isPreview, isSaving, activeTab, activePanelTab, device, availableElements,
+                layout, isPreview, isSaving, activeTab, activePanelTab, activeColPanelTab, device, availableElements,
                 activeCi, editingCi, activeColi, activeColCi, editingContext,
                 showColumnModal, columnModalType, columnLayouts, openColumnModal, selectLayout,
                 showElementModal, elementModalTab, elementModalRestricted, openElementModal, selectNestedLayout,

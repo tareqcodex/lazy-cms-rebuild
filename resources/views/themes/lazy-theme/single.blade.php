@@ -44,7 +44,7 @@
                         prose-a:text-primary hover:prose-a:underline
                         prose-img:rounded shadow-none">
                         @php 
-                            $rawContent = ($post->editor_type === 'builder') ? get_lazy_content($post->content) : $post->content;
+                            $rawContent = ($post->editor_type === 'builder') ? get_lazy_content($post->content) : do_lazy_shortcode($post->content);
                             $filteredContent = apply_lazy_filters('lazy_the_content', $rawContent, $post);
                         @endphp
 

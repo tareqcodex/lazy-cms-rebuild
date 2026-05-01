@@ -89,6 +89,22 @@
                     </td>
                 </tr>
 
+                <!-- Documentation Access -->
+                <tr>
+                    <th scope="row" class="w-[200px] text-left align-top pt-2">
+                        <label class="text-[14px] font-semibold text-[#1d2327]">Enable Documentation</label>
+                    </th>
+                    <td>
+                        <label class="inline-flex items-center cursor-pointer">
+                            <input type="checkbox" name="enable_documentation" id="enable_documentation"
+                                class="w-4 h-4 mr-2"
+                                {{ ($settings['enable_documentation'] ?? '1') == '1' ? 'checked' : '' }}>
+                            <span class="text-[14px] text-[#1d2327]">Show documentation in admin menu and allow access</span>
+                        </label>
+                        <p class="text-[12px] text-[#646970] mt-1">If unchecked, the documentation link will be hidden and direct access will be forbidden.</p>
+                    </td>
+                </tr>
+
                 <!-- Themes Group -->
                 <tr id="reg-theme-row">
                     <th scope="row" class="w-[200px] text-left align-top pt-2">
@@ -197,82 +213,6 @@
                 </tr>
             </table>
 
-            @include('cms-dashboard::components.admin.dynamic-fields')
-
-            <div class="pt-8 border-t border-gray-100 mt-8">
-                <h3 class="text-[18px] font-medium text-[#1d2327] mb-6">Media & Image Optimization</h3>
-                
-                <table class="w-full border-separate border-spacing-y-6">
-                    <!-- Page Cache -->
-                    <tr>
-                        <th scope="row" class="w-[200px] text-left align-top pt-2">
-                            <label class="text-[14px] font-semibold text-[#1d2327]">Static Caching</label>
-                        </th>
-                        <td>
-                            <label class="inline-flex items-center cursor-pointer">
-                                <input type="checkbox" name="enable_page_cache" value="1" {{ ($settings['enable_page_cache'] ?? '0') == '1' ? 'checked' : '' }} class="w-4 h-4 mr-2">
-                                <span class="text-[14px] text-[#1d2327]">Enable response caching for frontend</span>
-                            </label>
-                            <p class="text-[12px] text-[#646970] mt-1">Drastically improves speed by caching HTML output. Cache is cleared when you save settings or update content.</p>
-                        </td>
-                    </tr>
-
-                    <!-- Auto WebP -->
-                    <tr>
-                        <th scope="row" class="w-[200px] text-left align-top pt-2">
-                            <label class="text-[14px] font-semibold text-[#1d2327]">WebP Conversion</label>
-                        </th>
-                        <td>
-                            <label class="inline-flex items-center cursor-pointer">
-                                <input type="checkbox" name="image_auto_webp" value="1" {{ ($settings['image_auto_webp'] ?? '1') == '1' ? 'checked' : '' }} class="w-4 h-4 mr-2">
-                                <span class="text-[14px] text-[#1d2327]">Auto convert uploaded images to WebP</span>
-                            </label>
-                            <p class="text-[12px] text-[#646970] mt-1">Recommended for better performance and smaller file sizes.</p>
-                        </td>
-                    </tr>
-
-                    <!-- Image Quality -->
-                    <tr>
-                        <th scope="row" class="w-[200px] text-left align-top pt-2">
-                            <label for="image_quality" class="text-[14px] font-semibold text-[#1d2327]">Image Quality</label>
-                        </th>
-                        <td>
-                            <input type="number" name="image_quality" id="image_quality" value="{{ $settings['image_quality'] ?? '80' }}" class="wp-input w-[100px] h-8 shadow-sm" min="1" max="100">
-                            <span class="text-[12px] text-[#646970] ml-2">(0-100) Lower quality means smaller file sizes. 80 is recommended.</span>
-                        </td>
-                    </tr>
-
-                    <!-- Max Width -->
-                    <tr>
-                        <th scope="row" class="w-[200px] text-left align-top pt-2">
-                            <label for="image_max_width" class="text-[14px] font-semibold text-[#1d2327]">Max Image Width</label>
-                        </th>
-                        <td>
-                            <div class="flex items-center gap-2">
-                                <input type="number" name="image_max_width" id="image_max_width" value="{{ $settings['image_max_width'] ?? '1920' }}" class="wp-input w-[100px] h-8 shadow-sm">
-                                <span class="text-[12px] text-[#646970]">Pixels. Images wider than this will be automatically resized. 1920 is default.</span>
-                            </div>
-                        </td>
-                    </tr>
-
-                    <!-- Bulk Optimize Action -->
-                    <tr>
-                        <th scope="row" class="w-[200px] text-left align-top pt-2">
-                            <label class="text-[14px] font-semibold text-[#1d2327]">Bulk Actions</label>
-                        </th>
-                        <td>
-                            <button type="button" id="bulk-optimize-btn" class="wp-btn-secondary px-4 h-8">
-                                Optimize Existing Images Now
-                            </button>
-                            <p class="text-[12px] text-[#b32d2e] mt-2 font-medium">Caution: This will replace all existing original images with optimized versions (and WebP if enabled). This process cannot be undone.</p>
-                            <div id="optimization-status" class="hidden mt-2 text-[13px] font-medium">
-                                <span class="text-[#2271b1]">Optimizing images, please wait...</span>
-                            </div>
-                        </td>
-                    </tr>
-                </table>
-            </div>
-
             {!! do_lazy_action('lazy_settings_form_bottom') !!}
 
             <div class="pt-6 border-t border-gray-100 mt-6">
@@ -322,46 +262,6 @@
                     });
                 });
 
-                // Bulk Optimize Logic
-                const optimizeBtn = document.getElementById('bulk-optimize-btn');
-                const statusDiv = document.getElementById('optimization-status');
-
-                if (optimizeBtn) {
-                    optimizeBtn.addEventListener('click', function() {
-                        if (!confirm('Are you sure you want to optimize all existing images? This will replace original files and may take some time.')) return;
-
-                        optimizeBtn.disabled = true;
-                        optimizeBtn.innerText = 'Processing...';
-                        statusDiv.classList.remove('hidden');
-
-                        fetch("{{ route('admin.media.bulk-optimize') }}", {
-                            method: 'POST',
-                            headers: {
-                                'X-CSRF-TOKEN': '{{ csrf_token() }}',
-                                'Accept': 'application/json',
-                                'X-Requested-With': 'XMLHttpRequest'
-                            }
-                        })
-                        .then(res => res.json())
-                        .then(data => {
-                            if (data.success) {
-                                alert(data.message);
-                                location.reload();
-                            } else {
-                                alert('Error: ' + data.message);
-                            }
-                        })
-                        .catch(err => {
-                            console.error(err);
-                            alert('An unexpected error occurred.');
-                        })
-                        .finally(() => {
-                            optimizeBtn.disabled = false;
-                            optimizeBtn.innerText = 'Optimize Existing Images Now';
-                            statusDiv.classList.add('hidden');
-                        });
-                    });
-                }
             });
         </script>
     @endpush

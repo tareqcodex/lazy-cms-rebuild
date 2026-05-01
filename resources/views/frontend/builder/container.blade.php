@@ -51,7 +51,7 @@
     $innerStyles = [
         'display: flex',
         'flex-wrap: ' . ($s['flexWrap'] ?? 'wrap'),
-        'align-items: ' . ($s['alignItems'] ?? 'stretch'),
+        'align-items: ' . ($s['alignItems'] ?? 'flex-start'),
         'justify-content: ' . ($s['justifyContent'] ?? 'flex-start'),
         'align-content: ' . ($s['alignContent'] ?? 'stretch'),
     ];
