@@ -47,7 +47,40 @@
                     </th>
                     <td>
                         <div class="space-y-6">
+
+                            <!-- Sidebar Menu Access -->
+                            @if($menuGroups->count() > 0)
+                            <div>
+                                <h4 class="text-[12px] font-bold text-[#1d2327] uppercase tracking-wider mb-3 border-b border-[#f0f0f1] pb-1">Sidebar Menu Access</h4>
+                                <div class="grid grid-cols-2 gap-x-4 gap-y-2">
+                                    @foreach($menuGroups as $menuItem)
+                                        @php $perm = $menuPermissions->get($menuItem->permission); @endphp
+                                        @if($perm)
+                                        <div>
+                                            <label class="inline-flex items-center">
+                                                <input type="checkbox" name="permissions[]" value="{{ $perm->id }}" class="w-4 h-4 mr-2">
+                                                <span class="text-[13px] font-semibold text-[#1d2327]">{{ $menuItem->title }}</span>
+                                            </label>
+                                            @foreach($menuItem->children as $child)
+                                                @php $childPerm = $menuPermissions->get($child->permission); @endphp
+                                                @if($childPerm)
+                                                <div class="ml-6 mt-1">
+                                                    <label class="inline-flex items-center">
+                                                        <input type="checkbox" name="permissions[]" value="{{ $childPerm->id }}" class="w-4 h-4 mr-2">
+                                                        <span class="text-[13px] text-[#1d2327]">{{ $child->title }}</span>
+                                                    </label>
+                                                </div>
+                                                @endif
+                                            @endforeach
+                                        </div>
+                                        @endif
+                                    @endforeach
+                                </div>
+                            </div>
+                            @endif
+
                             <!-- Core Permissions -->
+                            @if($corePermissions->count() > 0)
                             <div>
                                 <h4 class="text-[12px] font-bold text-[#1d2327] uppercase tracking-wider mb-3 border-b border-[#f0f0f1] pb-1">Core Permissions</h4>
                                 <div class="grid grid-cols-2 gap-x-4 gap-y-2">
@@ -59,10 +92,12 @@
                                     @endforeach
                                 </div>
                             </div>
+                            @endif
 
                             <!-- CPT Permissions -->
                             @if($cptPermissions->count() > 0)
                             <div>
+                                <h4 class="text-[12px] font-bold text-[#1d2327] uppercase tracking-wider mb-3 border-b border-[#f0f0f1] pb-1">Custom Post Types</h4>
                                 <div class="grid grid-cols-2 gap-x-4 gap-y-2">
                                     @foreach($cptPermissions as $permission)
                                         <label class="inline-flex items-center">
@@ -73,6 +108,7 @@
                                 </div>
                             </div>
                             @endif
+
                         </div>
                     </td>
                 </tr>

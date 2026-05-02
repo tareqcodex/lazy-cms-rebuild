@@ -33,7 +33,7 @@
 
     <!-- Simple Newsletter -->
     <section class="py-20 bg-slate-50 border-t border-slate-100">
-        <div class="container-custom max-w-4xl">
+        <div class="container-custom">
             <div class="bg-white p-12 rounded shadow-sm border border-slate-100 text-center">
                 <h2 class="text-3xl font-bold mb-6">Stay Connected</h2>
                 <p class="text-slate-500 mb-8">Join our newsletter to receive the latest updates and exclusive content directly in your inbox.</p>
@@ -44,4 +44,4 @@
             </div>
         </div>
     </section>
-@endsection
+@stop

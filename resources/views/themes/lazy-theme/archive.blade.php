@@ -7,7 +7,7 @@
     <section class="relative py-24 bg-white overflow-hidden">
         <div class="absolute top-0 right-0 w-1/2 h-full bg-slate-50/50 -skew-x-12 transform translate-x-20"></div>
         <div class="container-custom relative">
-            <div class="max-w-4xl mx-auto text-center">
+            <div class="mx-auto text-center">
                 <span class="inline-block py-1.5 px-4 mb-6 text-[10px] font-black text-primary bg-blue-50 rounded-xl uppercase tracking-[0.2em]">
                     {{ $type === 'Search' ? 'Showing results for' : 'Browsing ' . $type }}
                 </span>
@@ -36,4 +36,4 @@
             </div>
         </div>
     </section>
-@endsection
+@stop

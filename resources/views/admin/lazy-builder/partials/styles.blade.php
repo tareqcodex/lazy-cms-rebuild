@@ -10,6 +10,11 @@
 
     /* Basic Reset to prevent complete breakage without Tailwind */
     * { box-sizing: border-box; }
+    
+    .dragging-no-transition, .dragging-no-transition * {
+        transition: none !important;
+    }
+
     body {
         font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Oxygen-Sans, Ubuntu, Cantarell, "Helvetica Neue", sans-serif;
         background-color: var(--builder-bg);
@@ -20,6 +25,8 @@
         width: 100%;
         height: 100vh;
     }
+
+
 
     h1, h2, h3, .font-premium {
         font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Oxygen-Sans, Ubuntu, Cantarell, "Helvetica Neue", sans-serif;
@@ -162,7 +169,7 @@
     }
 
     /* Column Styles */
-    .column-box {
+    .column-outer {
         position: relative;
         transition: border 0.2s;
         border: 2px solid transparent;
@@ -172,7 +179,7 @@
         flex-direction: column;
         flex-shrink: 0; /* Bootstrap-like: don't shrink below content */
     }
-    .column-box:hover {
+    .column-outer:hover {
         border: 2px solid #bcdff1 !important;
         z-index: 6;
     }
@@ -180,7 +187,7 @@
         border: 2px solid var(--primary) !important;
         z-index: 7;
     }
-    .preview-mode .column-box {
+    .preview-mode .column-outer {
         border-color: transparent !important;
     }
 
@@ -235,7 +242,7 @@
         position: absolute;
         right: 0;
         top: 0;
-        z-index: 110;
+        z-index: 1000;
         opacity: 0;
         transition: opacity 0.2s;
     }
@@ -243,9 +250,12 @@
         position: absolute;
         left: 0;
         top: 0;
-        z-index: 110;
+        z-index: 1000;
         opacity: 0;
         transition: opacity 0.2s;
+    }
+    .column-left-panel:hover {
+        z-index: 1100;
     }
     .container-row:hover .container-right-panel,
     .container-active .container-right-panel,
@@ -557,5 +567,148 @@
     /* Ensure container-row first-child margin removed in preview */
     .is-preview .container-row:first-child {
         margin-top: 0 !important;
+    }
+    /* Hover Effects */
+    .lazy-column, .lazy-container, .column-outer, .container-row {
+        transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    }
+    .hover-effect-zoom:hover { transform: scale(1.03) !important; z-index: 50 !important; }
+    .hover-effect-lift:hover { transform: translateY(-10px) !important; z-index: 50 !important; box-shadow: 0 20px 40px rgba(0,0,0,0.1) !important; }
+    .hover-effect-glow:hover { box-shadow: 0 0 25px rgba(0, 145, 234, 0.5) !important; z-index: 50 !important; }
+    .hover-effect-fade:hover { opacity: 0.7 !important; }
+
+    /* Device Visibility Logic (User Breakpoints) */
+    @media (min-width: 320px) and (max-width: 640px) {
+        .lazy-hide-mobile { display: none !important; }
+    }
+    @media (min-width: 641px) and (max-width: 1024px) {
+        .lazy-hide-tablet { display: none !important; }
+    }
+    @media (min-width: 1025px) {
+        .lazy-hide-desktop { display: none !important; }
+    }
+    .lazy-hide-all { display: none !important; }
+    /* Alpha/Transparency Checkerboard */
+    .checkerboard {
+        background-color: #fff;
+        background-image: 
+            linear-gradient(45deg, #eee 25%, transparent 25%, transparent 75%, #eee 75%, #eee 100%), 
+            linear-gradient(45deg, #eee 25%, transparent 25%, transparent 75%, #eee 75%, #eee 100%);
+        background-size: 10px 10px;
+        background-position: 0 0, 5px 5px;
+    }
+
+    /* Modern Slider Style */
+    .alpha-slider {
+        -webkit-appearance: none;
+        width: 100%;
+        height: 8px;
+        border-radius: 4px;
+        outline: none;
+        background: linear-gradient(to right, transparent, var(--primary));
+    }
+    .alpha-slider::-webkit-slider-thumb {
+        -webkit-appearance: none;
+        width: 16px;
+        height: 16px;
+        background: white;
+        border: 2px solid var(--primary);
+        border-radius: 50%;
+        cursor: pointer;
+        box-shadow: 0 1px 3px rgba(0,0,0,0.2);
+    }
+    /* WordPress Style Pickr (Iris Lookalike) */
+    .pcr-app {
+        width: 260px !important;
+        padding: 12px !important;
+        background: #ffffff !important;
+        border-radius: 4px !important;
+        border: 1px solid #ccc !important;
+        box-shadow: 0 1px 15px rgba(0,0,0,0.15) !important;
+        display: flex !important;
+        flex-direction: column !important;
+    }
+    .pcr-app .pcr-selection {
+        display: flex !important;
+        flex-direction: row !important;
+        height: 150px !important;
+        margin-bottom: 10px !important;
+    }
+    .pcr-app .pcr-selection .pcr-color-preview {
+        display: none !important;
+    }
+    .pcr-app .pcr-selection .pcr-color-palette {
+        width: 200px !important;
+        height: 150px !important;
+        margin-right: 12px !important;
+    }
+    .pcr-app .pcr-selection .pcr-picker {
+        width: 14px !important;
+        height: 14px !important;
+    }
+    /* Move sliders to the side */
+    .pcr-app .pcr-selection .pcr-sliders {
+        flex: 1 !important;
+        display: flex !important;
+        flex-direction: row !important; /* This is tricky as Pickr assumes horizontal */
+        justify-content: space-between !important;
+        gap: 8px !important;
+    }
+    .pcr-app .pcr-selection .pcr-hue,
+    .pcr-app .pcr-selection .pcr-opacity {
+        width: 15px !important;
+        height: 100% !important;
+        margin: 0 !important;
+    }
+    /* Interaction & Inputs at bottom */
+    .pcr-app .pcr-interaction {
+        display: flex !important;
+        flex-wrap: wrap !important;
+        gap: 8px !important;
+        padding-top: 10px !important;
+        border-top: 1px solid #eee !important;
+    }
+    .pcr-app .pcr-interaction input {
+        flex: 1 !important;
+        min-width: 80px !important;
+        font-family: monospace !important;
+        font-size: 11px !important;
+        height: 28px !important;
+        border: 1px solid #ddd !important;
+        border-radius: 3px !important;
+    }
+    .pcr-app .pcr-interaction .pcr-save,
+    .pcr-app .pcr-interaction .pcr-cancel,
+    .pcr-app .pcr-interaction .pcr-clear {
+        height: 28px !important;
+        font-size: 11px !important;
+        padding: 0 10px !important;
+        border-radius: 3px !important;
+    }
+    .pcr-app .pcr-interaction .pcr-save { background: #2271b1 !important; }
+    .pcr-app .pcr-interaction .pcr-clear { background: #f6f7f7 !important; color: #2271b1 !important; border: 1px solid #2271b1 !important; }
+
+    /* Swatches at the very bottom */
+    .pcr-app .pcr-swatches {
+        display: flex !important;
+        flex-wrap: wrap !important;
+        gap: 4px !important;
+        margin-top: 10px !important;
+    }
+    .pcr-app .pcr-swatches button {
+        width: 22px !important;
+        height: 22px !important;
+        border-radius: 3px !important;
+    }
+    .toast-enter-active, .toast-leave-active {
+        transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+    }
+    .toast-enter-from {
+        opacity: 0;
+        transform: translateX(30px);
+    }
+    .toast-leave-to {
+        opacity: 0;
+        transform: translateY(-20px);
     }
 </style>

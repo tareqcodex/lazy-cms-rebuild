@@ -4,44 +4,39 @@
 
 @section('content')
     @php
-        $isFullWidth = ($post->template ?? 'site-width') === 'full-width';
+        $isBuilder = $post->editor_type === 'builder' || (is_string($post->content) && (str_starts_with($post->content, '[') || str_starts_with($post->content, '{')));
     @endphp
 
-    <!-- Page Header -->
-    <section class="py-20 bg-slate-50 border-b border-slate-100">
-        <div class="page-container text-center">
-            <h1 class="text-4xl lg:text-6xl font-bold mb-6 tracking-tight text-slate-900">
-                {{ $post->title }}
-            </h1>
-            <div class="flex justify-center">
-                @include('cms-dashboard::components.frontend.breadcrumbs', ['post' => $post])
-            </div>
+    @if($isBuilder)
+        <div class="lazy-content-wrapper">
+            {!! get_lazy_content($post->content) !!}
         </div>
-    </section>
-
-    <!-- Page Content -->
-    <section class="py-20 bg-white">
-        <div class="page-container">
-            @if(!empty($post->featured_image) && !$isFullWidth)
-                <div class="mb-16 max-w-5xl mx-auto">
-                    <img src="{{ str_starts_with($post->featured_image, 'http') ? $post->featured_image : asset('storage/'.$post->featured_image) }}" 
-                         class="w-full h-auto rounded shadow-sm border border-slate-100" 
-                         alt="{{ $post->title }}">
+    @else
+        <!-- Page Header -->
+        <section class="relative py-24 bg-slate-50 overflow-hidden border-b border-slate-100">
+            <div class="absolute top-0 right-0 w-1/3 h-full bg-white -skew-x-12 transform translate-x-10"></div>
+            <div class="container-custom relative">
+                <div class="max-w-3xl">
+                    <div class="mb-6">
+                        @include('cms-dashboard::components.frontend.breadcrumbs', ['post' => $post])
+                    </div>
+                    <h1 class="text-4xl lg:text-6xl font-black mb-6 text-slate-900 tracking-tight">
+                        {{ $post->title }}
+                    </h1>
+                    <div class="h-1.5 w-20 bg-primary rounded-full"></div>
                 </div>
-            @endif
+            </div>
+        </section>
 
-            <div class="{{ $isFullWidth ? '' : 'max-w-4xl mx-auto' }}">
-                <div class="prose prose-xl prose-slate max-w-none 
-                    prose-headings:font-bold prose-headings:text-slate-900
-                    prose-p:text-slate-600 prose-p:leading-relaxed
-                    prose-img:rounded">
-                    @if($post->editor_type === 'builder')
-                        {!! get_lazy_content($post->content) !!}
-                    @else
+        <!-- Page Content -->
+        <section class="py-20 bg-white">
+            <div class="container-custom">
+                <div class="prose prose-lg prose-slate max-w-none">
+                    <div class="lazy-content-wrapper">
                         {!! do_lazy_shortcode($post->content) !!}
-                    @endif
+                    </div>
                 </div>
             </div>
-        </div>
-    </section>
-@endsection
+        </section>
+    @endif
+@stop

@@ -35,11 +35,16 @@
                     <div id="permalink-container" class="mt-2 text-[13px] {{ old('title') ? 'flex' : 'hidden' }} items-center font-medium">
                         <span class="text-[#646970] mr-1">Permalink:</span>
                         <span id="permalink-view">
-                            <a id="permalink-full-link" href="#" target="_blank" class="text-[#2271b1] underline font-medium">{{ url('/') }}/<span id="permalink-slug-display" class="text-[#2271b1]">{{ old('slug') }}</span>/</a>
+                            @php 
+                                $selectedLang = request('lang', get_cms_option('default_language', 'en'));
+                                $baseUrl = url($selectedLang === 'en' ? '/' : $selectedLang) . '/';
+                                if($type !== 'page') $baseUrl .= $type . '/';
+                            @endphp
+                            <a id="permalink-full-link" href="#" target="_blank" class="text-[#2271b1] underline font-medium"><span id="permalink-base-display">{{ $baseUrl }}</span><span id="permalink-slug-display" class="text-[#2271b1]">{{ old('slug') }}</span>/</a>
                             <button type="button" id="edit-slug-btn" class="wp-btn-secondary bg-[#f6f7f7] text-[12px] h-[24px] ml-1 font-medium text-[#2271b1] border-[#c3c4c7]">Edit</button>
                         </span>
                         <span id="permalink-edit" class="hidden items-center">
-                            <span class="text-[#646970] font-medium">{{ url('/') }}/</span>
+                            <span class="text-[#646970] font-medium" id="permalink-base-edit">{{ $baseUrl }}</span>
                             <input type="text" name="slug" id="slug-input" value="{{ old('slug') }}" class="wp-input text-[13px] h-[24px] px-1 mx-1 font-medium" style="width: 150px;">/
                             <button type="button" id="ok-slug-btn" class="wp-btn-secondary bg-[#f6f7f7] text-[12px] h-[24px] mx-1 font-medium">OK</button>
                             <a href="#" id="cancel-slug-btn" class="text-[#2271b1] underline ml-1 font-medium">Cancel</a>
@@ -379,37 +384,6 @@
                 </div>
                 @endif
 
-                @if($type === 'page')
-                <!-- Page Attributes Metabox -->
-                <div class="wp-metabox mb-6" style="margin-bottom: 24px !important; margin-top: 10px !important;">
-                    <div class="wp-metabox-header flex justify-between items-center cursor-pointer">
-                        <span>Page Attributes</span> <svg class="w-4 h-4 text-[#646970]" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 15l7-7 7 7"/></svg>
-                    </div>
-                    <div class="wp-metabox-content p-3 space-y-3">
-                        <div>
-                            <label class="block text-[13px] font-bold mb-1">Parent</label>
-                            <select name="parent_id" class="wp-input w-full text-[13px] h-8 py-0">
-                                <option value="">(no parent)</option>
-                                @foreach($pages as $p)
-                                    <option value="{{ $p->id }}">{{ $p->title }}</option>
-                                @endforeach
-                            </select>
-                        </div>
-                        <div>
-                            <label class="block text-[13px] font-bold mb-1">Template</label>
-                            <select name="template" class="wp-input w-full text-[13px] h-8 py-0">
-                                <option value="default" selected>Default template</option>
-                                <option value="site-width">Site width</option>
-                                <option value="full-width">100% width</option>
-                            </select>
-                        </div>
-                        <div>
-                            <label class="block text-[13px] font-bold mb-1">Order</label>
-                            <input type="number" name="menu_order" value="0" class="wp-input w-16 text-[13px] h-8 px-2">
-                        </div>
-                    </div>
-                </div>
-                @endif
 
                 @if(in_array('featured_image', $supports))
                 <!-- Featured Image -->
@@ -843,6 +817,18 @@
         if (langSelect) {
             const updateCloneList = () => {
                 const selectedLang = langSelect.value;
+                
+                // Update Permalink Base Display
+                const siteUrl = "{{ url('/') }}";
+                const postType = "{{ $type }}";
+                let newBase = selectedLang === 'en' ? siteUrl + '/' : siteUrl + '/' + selectedLang + '/';
+                if(postType !== 'page') newBase += postType + '/';
+
+                const baseDisplay = document.getElementById('permalink-base-display');
+                const baseEdit = document.getElementById('permalink-base-edit');
+                if (baseDisplay) baseDisplay.innerText = newBase;
+                if (baseEdit) baseEdit.innerText = newBase;
+
                 document.querySelectorAll('#multi-lang-list label').forEach(label => {
                     if (label.classList.contains(`lang-option-${selectedLang}`)) {
                         label.classList.add('hidden');

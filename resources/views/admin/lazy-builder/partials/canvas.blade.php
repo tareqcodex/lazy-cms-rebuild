@@ -5,7 +5,7 @@
         
         <!-- Empty State -->
         <div v-if="layout.length === 0" class="flex flex-col items-center justify-center min-h-[500px] bg-white">
-            <div class="w-full max-w-4xl mx-auto border-2 border-dashed border-slate-200 rounded-lg p-20 flex flex-col items-center text-center">
+            <div class="w-full mx-auto border-2 border-dashed border-slate-200 rounded-lg p-20 flex flex-col items-center text-center">
                 <h2 class="text-[32px] font-medium text-[#444] mb-4">To get started, add a Container, or add a prebuilt page.</h2>
                 <p class="text-[15px] text-slate-500 mb-10">The building process always starts with a container, then columns, then elements.</p>
                 

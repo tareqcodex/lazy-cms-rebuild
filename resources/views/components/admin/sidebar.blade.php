@@ -5,12 +5,12 @@
                 <li class="mt-2 mb-1 px-3 text-[10px] font-semibold text-[#8c8f94] uppercase tracking-wider">{{ $groupName }}</li>
             @endif
             @foreach($menus as $menu)
-                    @php 
-                        $hasChildren = $menu->children->isNotEmpty(); 
+                    @php
+                        $hasChildren = $menu->children->isNotEmpty();
                         $href = $resolveRoute($menu->route, $menu->title);
-                        
-                        // Check if the current user can access this menu
-                        if (!\Acme\CmsDashboard\View\Components\Admin\Sidebar::canAccess($href)) {
+
+                        // Check menu-level permission (null = always visible)
+                        if ($menu->permission && !auth()->user()->hasPermission($menu->permission)) {
                             continue;
                         }
 
@@ -77,7 +77,10 @@
                             <div class="bg-[#2c3338] block w-full">
                                 <ul class="py-1">
                                     @foreach($menu->children as $child)
-                                        @php 
+                                        @php
+                                            if ($child->permission && !auth()->user()->hasPermission($child->permission)) {
+                                                continue;
+                                            }
                                             $childHref = $resolveRoute($child->route, $child->title);
                                             $isChildActive = \Acme\CmsDashboard\View\Components\Admin\Sidebar::isUrlActive($childHref, true);
                                         @endphp
@@ -96,6 +99,11 @@
                                 <div class="absolute -left-[6px] top-[10px] w-0 h-0 border-y-[6px] border-y-transparent border-r-[6px] border-r-[#2c3338]"></div>
                                 <ul class="py-1">
                                     @foreach($menu->children as $child)
+                                        @php
+                                            if ($child->permission && !auth()->user()->hasPermission($child->permission)) {
+                                                continue;
+                                            }
+                                        @endphp
                                         <li>
                                             <a href="{{ $resolveRoute($child->route, $child->title) }}" class="block px-3 py-[6px] transition text-[13px] hover:text-[#72aee6] text-[#c3c4c7]">
                                                 {{ $child->title }}

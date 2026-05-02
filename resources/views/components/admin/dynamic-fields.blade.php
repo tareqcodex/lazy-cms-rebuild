@@ -66,6 +66,21 @@
                                 <input type="hidden" name="{{ $name }}" id="input-{{ $name }}" value="{{ $settings[$name] ?? '' }}">
                             </div>
                         </div>
+                    @elseif($field['type'] === 'switcher')
+                        <div class="flex items-center">
+                            <div class="inline-flex bg-[#f0f0f1] rounded-sm p-1 border border-[#c3c4c7]">
+                                @foreach($field['options'] ?? [] as $val => $label)
+                                    @php $isActive = ($settings[$name] ?? ($field['default'] ?? '')) == $val; @endphp
+                                    <label class="cursor-pointer">
+                                        <input type="radio" name="{{ $name }}" value="{{ $val }}" class="hidden peer" {{ $isActive ? 'checked' : '' }}>
+                                        <span class="px-6 py-1.5 text-[13px] font-semibold flex items-center justify-center rounded-sm transition-all
+                                            peer-checked:bg-[#2271b1] peer-checked:text-white text-[#646970] hover:text-[#2271b1]">
+                                            {{ $label }}
+                                        </span>
+                                    </label>
+                                @endforeach
+                            </div>
+                        </div>
                     @endif
 
                     @if(isset($field['desc']))

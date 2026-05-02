@@ -182,12 +182,18 @@ class MenuSeeder extends Seeder
         // Dynamic CPTs
         $customCPTs = PostType::where('is_builtin', false)->where('is_active', true)->get();
         foreach ($customCPTs as $cpt) {
+            $permSlug = 'manage_' . str_replace('-', '_', $cpt->slug);
+            \Acme\CmsDashboard\Models\Permission::firstOrCreate(
+                ['slug' => $permSlug],
+                ['name' => 'Manage ' . $cpt->name, 'description' => 'Access ' . $cpt->name . ' section in sidebar']
+            );
             $cptParent = Menu::create([
-                'title' => $cpt->name,
-                'route' => url("/admin/posts?type={$cpt->slug}"),
-                'icon'  => $cpt->icon ?: 'folder',
-                'group' => 'Main',
-                'order' => 40 + $cpt->id,
+                'title'      => $cpt->name,
+                'route'      => url("/admin/posts?type={$cpt->slug}"),
+                'icon'       => $cpt->icon ?: 'folder',
+                'group'      => 'Main',
+                'order'      => 40 + $cpt->id,
+                'permission' => $permSlug,
             ]);
             Menu::create(['parent_id' => $cptParent->id, 'title' => "All {$cpt->name}", 'route' => url("/admin/posts?type={$cpt->slug}"), 'order' => 1]);
             Menu::create(['parent_id' => $cptParent->id, 'title' => 'Add New', 'route' => url("/admin/posts/create?type={$cpt->slug}"), 'order' => 2]);

@@ -1,6 +1,6 @@
-@props(['separator' => '/', 'showHome' => true])
-
 @php
+    $separator = $separator ?? '/';
+    $showHome = $showHome ?? true;
     $items = [];
     if ($showHome) {
         $items[] = ['title' => 'Home', 'url' => url('/')];

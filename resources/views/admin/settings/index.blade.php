@@ -194,23 +194,6 @@
                         </select>
                     </td>
                 </tr>
-
-                <!-- Timezone -->
-                <tr>
-                    <th scope="row" class="w-[200px] text-left align-top pt-2">
-                        <label for="timezone" class="text-[14px] font-semibold text-[#1d2327]">Timezone</label>
-                    </th>
-                    <td>
-                        <select name="timezone" id="timezone" class="wp-input w-[250px] h-8 py-0 mb-1">
-                            <option value="UTC+0">UTC+0</option>
-                            <option value="Asia/Dhaka">UTC+6 (Dhaka)</option>
-                        </select>
-                        <p class="text-[12px] text-[#646970]">Choose either a city in the same timezone as you or a UTC
-                            (Coordinated Universal Time) time offset.</p>
-                        <p class="text-[12px] text-[#646970] mt-2">Universal time is <span
-                                class="font-mono">{{ now()->format('Y-m-d H:i:s') }}</span>.</p>
-                    </td>
-                </tr>
             </table>
 
             {!! do_lazy_action('lazy_settings_form_bottom') !!}

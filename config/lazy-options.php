@@ -19,10 +19,11 @@ return [
                     'type'  => 'media',
                     'label' => 'Site Favicon',
                 ],
-                'footer_copyright' => [
+                'theme_site_width' => [
                     'type'    => 'text',
-                    'label'   => 'Footer Copyright Text',
-                    'default' => '© ' . date('Y') . ' Lazy CMS. All rights reserved.',
+                    'label'   => 'Site Width',
+                    'desc'    => 'Controls the overall site width. Enter value including any valid CSS unit, ex: 1200px.',
+                    'default' => '1200px',
                 ],
                 'footer_section' => [
                     'type'  => 'title',
@@ -58,6 +59,11 @@ return [
                 'social_linkedin' => [
                     'type'  => 'text',
                     'label' => 'LinkedIn URL',
+                ],
+                'footer_copyright' => [
+                    'type'    => 'text',
+                    'label'   => 'Footer Copyright Text',
+                    'default' => '© ' . date('Y') . ' Lazy CMS. All rights reserved.',
                 ],
                 'performance_section' => [
                     'type'  => 'title',

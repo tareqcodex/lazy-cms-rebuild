@@ -15,12 +15,13 @@
 
         <!-- Tabs (Exactly like column-select style) -->
         <div class="bg-[#0091ea] h-10 flex items-center px-4 shrink-0">
-            <button @click="elementModalTab = 'design'" 
+            <button v-if="elementModalAllowedTabs.includes('design')"
+                    @click="elementModalTab = 'design'" 
                     class="px-5 h-full text-[11px] font-bold uppercase transition-all"
                     :class="elementModalTab === 'design' ? 'text-white bg-white/10' : 'text-white/70 hover:bg-white/5'">
                 Elements
             </button>
-            <button v-if="!elementModalRestricted"
+            <button v-if="!elementModalRestricted && elementModalAllowedTabs.includes('nested')"
                     @click="elementModalTab = 'nested'" 
                     class="px-5 h-full text-[11px] font-bold uppercase transition-all"
                     :class="elementModalTab === 'nested' ? 'text-white bg-white/10' : 'text-white/70 hover:bg-white/5'">

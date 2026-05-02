@@ -232,7 +232,7 @@ class FrontendController extends Controller
         $viewName = ($post->type === 'page') ? 'page' : 'single';
         $view = $this->resolveThemeView($viewName);
         
-        if (view()->exists($post->slug)) {
+        if (preg_match('/^[a-z0-9-]+$/', $post->slug) && view()->exists($post->slug)) {
             $view = $post->slug;
         }
 

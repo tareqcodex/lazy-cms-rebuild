@@ -504,20 +504,47 @@ class PostController extends Controller
         $prefix = ($post->type === 'post' || $post->type === 'page') ? '' : $post->type . '/';
         $oldUrl = '/' . ltrim($prefix . $oldSlug, '/');
 
+        // Ensure editor_type is never set to null, which would trigger the DB default 'rich'
+        if (empty($validated['editor_type'])) {
+            $validated['editor_type'] = $post->editor_type ?: 'rich';
+        }
+
+        // Robust Protection: Prevent builder content from being overwritten by empty/HTML content from standard editor
+        $currentContent = $post->content;
+        $isCurrentBuilder = $post->editor_type === 'builder' || (is_string($currentContent) && (str_starts_with($currentContent, '[') || str_starts_with($currentContent, '{')));
+        
+        $targetEditorType = $validated['editor_type'] ?? $post->editor_type;
+        $incomingContent = $validated['content'] ?? '';
+        $isIncomingBuilder = is_string($incomingContent) && (Str::startsWith($incomingContent, '[') || Str::startsWith($incomingContent, '{'));
+
+        // If we are currently in builder mode, and we're staying in builder mode, protect the content
+        if ($isCurrentBuilder && $targetEditorType === 'builder' && !$isIncomingBuilder) {
+            unset($validated['content']);
+        }
+
         $locale = $request->input('locale');
         if ($locale && $locale !== app()->getLocale()) {
             // Save as translation instead of main post
+            $translationData = [
+                'slug'    => Str::slug($validated['title']),
+                'title'   => $validated['title'],
+                'excerpt' => $validated['excerpt'],
+                'meta_title' => $validated['seo_meta']['title'] ?? null,
+                'meta_description' => $validated['seo_meta']['description'] ?? null,
+                'updated_at' => now(),
+            ];
+
+            // Only update content in translation if it's not a builder page OR if we're sending JSON
+            if (isset($validated['content'])) {
+                $translationData['content'] = $validated['content'];
+            }
+            
+            // Also preserve editor_type in translation
+            $translationData['editor_type'] = $targetEditorType;
+
             $post->translations()->updateOrInsert(
                 ['locale' => $locale],
-                [
-                    'slug'    => Str::slug($validated['title']),
-                    'title'   => $validated['title'],
-                    'content' => $validated['content'],
-                    'excerpt' => $validated['excerpt'],
-                    'meta_title' => $validated['seo_meta']['title'] ?? null,
-                    'meta_description' => $validated['seo_meta']['description'] ?? null,
-                    'updated_at' => now(),
-                ]
+                $translationData
             );
             
             lazy_log_activity('updated', "Updated {$locale} translation for {$post->type}: {$post->title}", $post);

@@ -25,11 +25,27 @@
         }
     </script>
 
+    <!-- Pickr Color Picker -->
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@simonwep/pickr/dist/themes/classic.min.css"/>
+    <script src="https://cdn.jsdelivr.net/npm/@simonwep/pickr/dist/pickr.min.js"></script>
+
     @include('cms-dashboard::admin.lazy-builder.partials.styles')
 </head>
 <body class="bg-[#f1f1f1]">
 
-    <div id="lazy-builder-app" class="builder-wrapper" :class="{ 'is-preview': isPreview }" v-cloak>
+    <div id="lazy-builder-app" class="builder-wrapper" :class="{ 'is-preview': isPreview, 'dragging-no-transition': isDragging }" v-cloak>
+        
+        <!-- Toast Container -->
+        <div class="fixed top-14 right-5 z-[9999] flex flex-col gap-2 pointer-events-none">
+            <transition-group name="toast">
+                <div v-for="toast in toasts" :key="toast.id" 
+                     class="px-5 py-3 rounded shadow-2xl text-white font-bold text-sm pointer-events-auto flex items-center gap-3 min-w-[200px]"
+                     :class="toast.type === 'success' ? 'bg-[#00a32a]' : 'bg-[#d63638]'">
+                    <i class="fa" :class="toast.type === 'success' ? 'fa-check-circle' : 'fa-exclamation-circle'"></i>
+                    @{{ toast.message }}
+                </div>
+            </transition-group>
+        </div>
         
         <!-- Topbar -->
         <header class="builder-topbar">

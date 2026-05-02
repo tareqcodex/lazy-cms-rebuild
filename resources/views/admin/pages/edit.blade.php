@@ -33,11 +33,15 @@
                     <div id="permalink-container" class="mt-2 text-[13px] flex items-center">
                         <strong class="text-[#646970] mr-1">Permalink:</strong>
                         <span id="permalink-view">
-                            <a id="permalink-full-link" href="{{ url($page->slug) }}" target="_blank" class="text-[#2271b1] underline">{{ url('/') }}/<span id="permalink-slug-display" class="font-medium text-[#2271b1]">{{ $page->slug }}</span>/</a>
+                            @php 
+                                $fullUrl = get_lazy_permalink($page);
+                                $displayBase = str_replace($page->slug, '', $fullUrl);
+                            @endphp
+                            <a id="permalink-full-link" href="{{ $fullUrl }}" target="_blank" class="text-[#2271b1] underline">{{ $displayBase }}<span id="permalink-slug-display" class="font-medium text-[#2271b1]">{{ $page->slug }}</span>/</a>
                             <button type="button" id="edit-slug-btn" class="wp-btn-secondary bg-[#f6f7f7] text-[12px] h-[24px] ml-1 text-[#2271b1] border-[#c3c4c7] font-medium">Edit</button>
                         </span>
                         <span id="permalink-edit" class="hidden items-center">
-                            <span class="text-[#646970]">{{ url('/') }}/</span>
+                            <span class="text-[#646970]">{{ $displayBase }}</span>
                             <input type="text" name="slug" id="slug-input" value="{{ $page->slug }}" class="wp-input text-[13px] h-[24px] px-1 mx-1" style="width: 150px;">/
                             <button type="button" id="ok-slug-btn" class="wp-btn-secondary bg-[#f6f7f7] text-[12px] h-[24px] mx-1">OK</button>
                             <a href="#" id="cancel-slug-btn" class="text-[#2271b1] hover:underline ml-1">Cancel</a>
@@ -256,35 +260,6 @@
                     </div>
                 </div>
 
-                <!-- Page Attributes Metabox -->
-                <div class="wp-metabox mb-0">
-                    <div class="wp-metabox-header flex justify-between items-center cursor-pointer">
-                        <span>Page Attributes</span> <svg class="w-4 h-4 text-[#646970]" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 15l7-7 7 7"/></svg>
-                    </div>
-                    <div class="wp-metabox-content" style="padding: 10px;">
-                        <div class="mb-4">
-                            <label class="block text-[13px] font-bold mb-1">Parent</label>
-                            <select name="parent_id" form="page-form" class="wp-input w-full h-[30px] text-[13px] py-0">
-                                <option value="">(no parent)</option>
-                                @foreach($allPages as $p)
-                                    <option value="{{ $p->id }}" {{ $page->parent_id == $p->id ? 'selected' : '' }}>{{ $p->title }}</option>
-                                @endforeach
-                            </select>
-                        </div>
-                        <div class="mb-4">
-                            <label class="block text-[13px] font-bold mb-1">Template</label>
-                            <select name="template" form="page-form" class="wp-input w-full h-[30px] text-[13px] py-0">
-                                <option value="default" {{ $page->template == 'default' || empty($page->template) ? 'selected' : '' }}>Default template</option>
-                                <option value="site-width" {{ $page->template == 'site-width' ? 'selected' : '' }}>Site width</option>
-                                <option value="full-width" {{ $page->template == 'full-width' ? 'selected' : '' }}>100% width</option>
-                            </select>
-                        </div>
-                        <div>
-                            <label class="block text-[13px] font-bold mb-1">Order</label>
-                            <input type="number" name="menu_order" value="{{ $page->menu_order }}" class="wp-input w-20 h-[30px] text-[13px]">
-                        </div>
-                    </div>
-                </div>
 
                 <!-- Featured Image -->
                 <div class="wp-metabox mb-0">

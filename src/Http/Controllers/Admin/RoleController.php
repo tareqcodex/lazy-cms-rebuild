@@ -5,6 +5,7 @@ namespace Acme\CmsDashboard\Http\Controllers\Admin;
 use Illuminate\Routing\Controller;
 use Acme\CmsDashboard\Models\Role;
 use Acme\CmsDashboard\Models\Permission;
+use Acme\CmsDashboard\Models\Menu;
 use Illuminate\Http\Request;
 use Illuminate\Support\Str;
 
@@ -80,10 +81,30 @@ class RoleController extends Controller
         } catch (\Exception $e) {}
 
         $allPermissions = Permission::all();
-        
+
+        // Collect slugs that are linked to sidebar menus
+        $menuPermSlugs = Menu::whereNotNull('permission')
+            ->pluck('permission')
+            ->unique()
+            ->toArray();
+
         return [
-            'corePermissions' => $allPermissions->filter(fn($p) => !str_starts_with($p->slug, 'manage_')),
-            'cptPermissions'  => $allPermissions->filter(fn($p) => str_starts_with($p->slug, 'manage_')),
+            'corePermissions' => $allPermissions->filter(
+                fn($p) => !str_starts_with($p->slug, 'manage_') && !in_array($p->slug, $menuPermSlugs)
+            ),
+            'menuPermissions' => $allPermissions->filter(
+                fn($p) => in_array($p->slug, $menuPermSlugs)
+            )->keyBy('slug'),
+            'menuGroups' => Menu::with(['children' => function ($q) {
+                    $q->whereNotNull('permission')->orderBy('order');
+                }])
+                ->whereNull('parent_id')
+                ->whereNotNull('permission')
+                ->orderBy('order')
+                ->get(),
+            'cptPermissions' => $allPermissions->filter(
+                fn($p) => str_starts_with($p->slug, 'manage_') && !in_array($p->slug, $menuPermSlugs)
+            ),
         ];
     }
 
