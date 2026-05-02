@@ -711,4 +711,13 @@
         opacity: 0;
         transform: translateY(-20px);
     }
+
+    /* Auto Responsive Columns for Mobile Devices */
+    @media (max-width: 767px) {
+        .lazy-column, .column-outer {
+            flex-basis: 100% !important;
+            max-width: 100% !important;
+            width: 100% !important;
+        }
+    }
 </style>

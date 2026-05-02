@@ -178,6 +178,15 @@
         }
         .lazy-hide-all { display: none !important; }
 
+        /* Auto Responsive Columns for Mobile */
+        @media (max-width: 767px) {
+            .lazy-column {
+                flex-basis: 100% !important;
+                max-width: 100% !important;
+                width: 100% !important;
+            }
+        }
+
         /* Hover Effects */
         .lazy-column, .lazy-container {
             position: relative;
