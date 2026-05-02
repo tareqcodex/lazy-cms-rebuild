@@ -921,7 +921,7 @@
                     alignContent: s.alignContent || 'flex-start',
                     justifyContent: s.justifyContent || 'flex-start',
                     flexWrap: !s.flexWrap || s.flexWrap === 'default' ? 'wrap' : s.flexWrap,
-                    columnGap: isSpaceDistribution ? '0' : (s.columnGap || '2%')
+                    columnGap: isSpaceDistribution ? '0' : (s.columnGap || '20px')
                 };
             };
 
@@ -933,7 +933,8 @@
                 if (basis === 'auto') {
                     flexBasis = 'auto';
                 } else if (typeof basis === 'string' && basis.includes('%')) {
-                    flexBasis = `calc(${basis})`;
+                    // Account for flex container gap so columns don't wrap
+                    flexBasis = `calc(${basis} - 15px)`;
                 } else {
                     flexBasis = basis;
                 }

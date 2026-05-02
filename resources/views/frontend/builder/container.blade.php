@@ -111,12 +111,17 @@
     if (isset($s['borderRadiusBottomLeft'])) $containerStyles[] = "border-bottom-left-radius: {$s['borderRadiusBottomLeft']}" . ($s['borderRadiusBottomLeftUnit'] ?? 'px');
 
     // Flex/Alignment Inner
+    $justifyContent = $s['justifyContent'] ?? 'flex-start';
+    $isSpaceDist = in_array($justifyContent, ['space-between', 'space-around', 'space-evenly']);
+    $colGap = $isSpaceDist ? '0px' : ($s['columnGap'] ?? '20px');
+
     $innerStyles = [
         'display: flex',
         'flex-wrap: ' . ($s['flexWrap'] ?? 'wrap'),
         'align-items: ' . ($s['alignItems'] ?? 'flex-start'),
-        'justify-content: ' . ($s['justifyContent'] ?? 'flex-start'),
+        'justify-content: ' . $justifyContent,
         'align-content: ' . ($s['alignContent'] ?? 'stretch'),
+        'column-gap: ' . $colGap,
     ];
 
     if ($heightMode !== 'auto') {

@@ -10,9 +10,9 @@
     if ($basisRaw === 'auto') {
         $flexBasis = 'auto';
     } elseif (is_string($basisRaw) && strpos($basisRaw, '%') !== false) {
-        $flexBasis = "calc({$basisRaw})";
+        $flexBasis = "calc({$basisRaw} - 15px)";
     } elseif (is_numeric($basisRaw)) {
-        $flexBasis = "calc({$basisRaw}%)";
+        $flexBasis = "calc({$basisRaw}% - 15px)";
     }
 
     $flexGrow = (isset($s['flexGrow']) && $s['flexGrow'] !== '') ? $s['flexGrow'] : 0;
