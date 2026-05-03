@@ -54,16 +54,6 @@
                  :class="shouldShowGuide('column', ci, coli) ? ( ((activeColi === coli && activeColCi === ci) || (isDragging && dragCi === ci && dragColi === coli && dragType === 'marginBottom') || (hoveredType === 'column' && hoveredCi === ci && hoveredColi === coli)) ? 'opacity-100' : 'opacity-0' ) : 'hidden'">
                  <div class="absolute bottom-0 left-0 w-full border-b border-dashed border-[#9c27b0]/20"></div>
             </div>
-            <div class="absolute top-0 bottom-0 pointer-events-none z-0 bg-[#9c27b0]/5 transition-opacity"
-                 :style="{ width: (column.settings.marginLeft || 0) + 'px', left: '-' + (column.settings.marginLeft || 0) + 'px' }"
-                 :class="shouldShowGuide('column', ci, coli) ? ( ((activeColi === coli && activeColCi === ci) || (isDragging && dragCi === ci && dragColi === coli && dragType === 'marginLeft') || (hoveredType === 'column' && hoveredCi === ci && hoveredColi === coli)) ? 'opacity-100' : 'opacity-0' ) : 'hidden'">
-                 <div class="absolute top-0 left-0 h-full border-l border-dashed border-[#9c27b0]/20"></div>
-            </div>
-            <div class="absolute top-0 bottom-0 pointer-events-none z-0 bg-[#9c27b0]/5 transition-opacity"
-                 :style="{ width: (column.settings.marginRight || 0) + 'px', right: '-' + (column.settings.marginRight || 0) + 'px' }"
-                 :class="shouldShowGuide('column', ci, coli) ? ( ((activeColi === coli && activeColCi === ci) || (isDragging && dragCi === ci && dragColi === coli && dragType === 'marginRight') || (hoveredType === 'column' && hoveredCi === ci && hoveredColi === coli)) ? 'opacity-100' : 'opacity-0' ) : 'hidden'">
-                 <div class="absolute top-0 right-0 h-full border-r border-dashed border-[#9c27b0]/20"></div>
-            </div>
             <div class="absolute left-0 right-0 pointer-events-none z-0 bg-[#0091ea]/5 transition-opacity"
                  :style="{ height: (column.settings.paddingTop || 0) + 'px', top: '0px' }"
                  :class="shouldShowGuide('column', ci, coli) ? ( ((activeColi === coli && activeColCi === ci) || (isDragging && dragCi === ci && dragColi === coli && dragType === 'paddingTop') || (hoveredType === 'column' && hoveredCi === ci && hoveredColi === coli)) ? 'opacity-100' : 'opacity-0' ) : 'hidden'">
@@ -115,9 +105,9 @@
             </div>
 
             <div class="absolute left-0.5 top-1/2 -translate-y-1/2 pointer-events-auto flex flex-col gap-0.5 items-start">
-                <div class="handle-purple-h group/chml" @mousedown.stop.prevent="startDrag($event, 'marginLeft', ci, coli)">
+                <div class="handle-purple-h group/chml" @mousedown.stop.prevent="startDrag($event, 'columnSpacingLeft', ci, coli)">
                     <i class="fa fa-bars" style="transform: rotate(90deg);"></i>
-                    <div class="lazy-tooltip opacity-0 group-hover/chml:opacity-100" :class="{'opacity-100!': isDragging && dragType === 'marginLeft' && dragCi === ci && dragColi === coli}">@{{ column.settings.marginLeft || 0 }}px</div>
+                    <div class="lazy-tooltip opacity-0 group-hover/chml:opacity-100" :class="{'opacity-100!': isDragging && dragType === 'columnSpacingLeft' && dragCi === ci && dragColi === coli}">@{{ (column.settings.columnSpacingLeft || 0).toFixed(1) }}%</div>
                 </div>
                 <div class="handle-blue-h group/chpl" :class="isDragging ? '' : 'transition-all'" :style="{ transform: 'translateX(' + (Number(column.settings.paddingLeft || 0) + 2) + 'px)' }" @mousedown.stop.prevent="startDrag($event, 'paddingLeft', ci, coli)">
                     <i class="fa fa-bars" style="transform: rotate(90deg);"></i>
@@ -126,9 +116,9 @@
             </div>
 
             <div class="absolute right-0.5 top-1/2 -translate-y-1/2 pointer-events-auto flex flex-col gap-0.5 items-end">
-                <div class="handle-purple-h group/chmr" @mousedown.stop.prevent="startDrag($event, 'marginRight', ci, coli)">
+                <div class="handle-purple-h group/chmr" @mousedown.stop.prevent="startDrag($event, 'columnSpacingRight', ci, coli)">
                     <i class="fa fa-bars" style="transform: rotate(90deg);"></i>
-                    <div class="lazy-tooltip opacity-0 group-hover/chmr:opacity-100" :class="{'opacity-100!': isDragging && dragType === 'marginRight' && dragCi === ci && dragColi === coli}">@{{ column.settings.marginRight || 0 }}px</div>
+                    <div class="lazy-tooltip opacity-0 group-hover/chmr:opacity-100" :class="{'opacity-100!': isDragging && dragType === 'columnSpacingRight' && dragCi === ci && dragColi === coli}">@{{ (column.settings.columnSpacingRight || 0).toFixed(1) }}%</div>
                 </div>
                 <div class="handle-blue-h group/chpr" :class="isDragging ? '' : 'transition-all'" :style="{ transform: 'translateX(-' + (Number(column.settings.paddingRight || 0) + 2) + 'px)' }" @mousedown.stop.prevent="startDrag($event, 'paddingRight', ci, coli)">
                     <i class="fa fa-bars" style="transform: rotate(90deg);"></i>
@@ -210,4 +200,19 @@
              style="flex-basis:100%;width:100%;height:0;overflow:hidden;"></div>
         </template>
     </component>
+
+    <!-- Left spacing overlay: anchored at column-outer left border, grows inward -->
+    <div v-if="!isPreview"
+         class="absolute top-0 bottom-0 left-0 pointer-events-none z-[5] bg-[#9c27b0]/5 transition-opacity"
+         :style="{ width: (column.settings.columnSpacingLeft || 0) + '%' }"
+         :class="shouldShowGuide('column', ci, coli) ? ( ((activeColi === coli && activeColCi === ci) || (isDragging && dragCi === ci && dragColi === coli && dragType === 'columnSpacingLeft') || (hoveredType === 'column' && hoveredCi === ci && hoveredColi === coli)) ? 'opacity-100' : 'opacity-0' ) : 'hidden'">
+         <div class="absolute top-0 right-0 h-full border-r border-dashed border-[#9c27b0]/20"></div>
+    </div>
+    <!-- Right spacing overlay: anchored at column-outer right border, grows inward -->
+    <div v-if="!isPreview"
+         class="absolute top-0 bottom-0 right-0 pointer-events-none z-[5] bg-[#9c27b0]/5 transition-opacity"
+         :style="{ width: (column.settings.columnSpacingRight || 0) + '%' }"
+         :class="shouldShowGuide('column', ci, coli) ? ( ((activeColi === coli && activeColCi === ci) || (isDragging && dragCi === ci && dragColi === coli && dragType === 'columnSpacingRight') || (hoveredType === 'column' && hoveredCi === ci && hoveredColi === coli)) ? 'opacity-100' : 'opacity-0' ) : 'hidden'">
+         <div class="absolute top-0 left-0 h-full border-l border-dashed border-[#9c27b0]/20"></div>
+    </div>
 </div>

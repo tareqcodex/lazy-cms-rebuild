@@ -589,6 +589,7 @@
             const dragNcoli = ref(null);
             const isColumnDrag = ref(false);
             const isNestedDrag = ref(false);
+            const dragRefWidth = ref(300);
 
             const startDrag = (e, type, ci, coli = null, eli = null, ncoli = null) => {
                 isDragging.value = true;
@@ -616,6 +617,11 @@
                 if (!target.settings[type]) target.settings[type] = 0;
                 startVal.value = target.settings[type] || 0;
 
+                if (type === 'columnSpacingLeft' || type === 'columnSpacingRight') {
+                    const colEl = e.target.closest('.column-outer');
+                    dragRefWidth.value = colEl ? colEl.clientWidth : 300;
+                }
+
                 window.addEventListener('mousemove', handleDrag);
                 window.addEventListener('mouseup', stopDrag);
 
@@ -634,8 +640,14 @@
                 const diffX = e.clientX - startX.value;
                 let newVal = 0;
 
+                // Column spacing: drag in % relative to column width
+                if (dragType.value === 'columnSpacingLeft' || dragType.value === 'columnSpacingRight') {
+                    const pctDiff = (diffX / (dragRefWidth.value || 300)) * 100;
+                    newVal = dragType.value === 'columnSpacingLeft'
+                        ? startVal.value + pctDiff
+                        : startVal.value - pctDiff;
                 // User logic: Dragging DOWN increases padding for both TOP and BOTTOM handles.
-                if (dragType.value.toLowerCase().includes('top') || dragType.value.toLowerCase().includes('bottom')) {
+                } else if (dragType.value.toLowerCase().includes('top') || dragType.value.toLowerCase().includes('bottom')) {
                     newVal = startVal.value + diffY;
                 } else {
                     newVal = startVal.value + diffX;
@@ -948,8 +960,8 @@
                     flexShrink: s.flexShrink !== undefined && s.flexShrink !== '' ? s.flexShrink : 0,
                     minHeight: getUnitVal(s.minHeight, s.minHeightUnit) || `${100 + pTop + pBottom}px`,
                     maxHeight: getUnitVal(s.maxHeight, s.maxHeightUnit) || 'none',
-                    paddingLeft: getUnitVal(s.columnSpacingLeft, s.columnSpacingLeftUnit),
-                    paddingRight: getUnitVal(s.columnSpacingRight, s.columnSpacingRightUnit),
+                    paddingLeft: getUnitVal(s.columnSpacingLeft, '%'),
+                    paddingRight: getUnitVal(s.columnSpacingRight, '%'),
                     marginTop: getUnitVal(s.marginTop, s.marginTopUnit),
                     marginBottom: getUnitVal(s.marginBottom, s.marginBottomUnit),
                     zIndex: s.zIndex || 'auto',
