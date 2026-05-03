@@ -15,6 +15,8 @@
             const editingContext = ref({ type: null, ci: null, coli: null });
             const activePanelTab = ref('general');
             const activeColPanelTab = ref('general');
+            const siteWidth = ref("{{ get_cms_option('theme_site_width', '1200px') }}");
+            if (!isNaN(siteWidth.value)) siteWidth.value += 'px';
 
             const isDragging = ref(false);
             const dragType = ref(null);
@@ -922,7 +924,7 @@
                 const isSpaceDistribution = ['space-between', 'space-around', 'space-evenly'].includes(s.justifyContent);
                 return {
                     display: 'flex',
-                    maxWidth: s.contentWidth === '100%' ? '100%' : '1220px',
+                    maxWidth: s.contentWidth === '100%' ? '100%' : siteWidth.value,
                     width: '100%',
                     flexGrow: s.flexGrow !== undefined && s.flexGrow !== '' ? s.flexGrow : 1,
                     flexShrink: s.flexShrink !== undefined && s.flexShrink !== '' ? s.flexShrink : 0,
