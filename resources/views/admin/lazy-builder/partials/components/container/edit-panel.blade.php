@@ -64,20 +64,20 @@
             </div>
 
             <!-- Interior Content Width -->
-        <div v-if="!{{ isset($isNestedRow) && $isNestedRow ? 'true' : 'false' }}">
-            <div class="flex justify-between items-center mb-2">
-                <label class="text-[11px] font-bold text-[#444]">Interior Content Width</label>
-                <i class="fa fa-question-circle text-[10px] text-slate-300"></i>
+            <div>
+                <div class="flex justify-between items-center mb-2">
+                    <label class="text-[11px] font-bold text-[#444]">Interior Content Width</label>
+                    <i class="fa fa-question-circle text-[10px] text-slate-300"></i>
+                </div>
+                <div class="flex bg-slate-100 rounded overflow-hidden">
+                    <button @click="{{ $base }}.settings.contentWidth = '100%'" 
+                            :class="{{ $base }}.settings.contentWidth === '100%' ? 'bg-slate-800 text-white shadow-inner' : 'text-slate-500 hover:bg-slate-200'"
+                            class="flex-1 py-1.5 text-[10px] font-medium transition-colors">100% Width</button>
+                    <button @click="{{ $base }}.settings.contentWidth = 'site'" 
+                            :class="{{ $base }}.settings.contentWidth === 'site' ? 'bg-slate-800 text-white shadow-inner' : 'text-slate-500 hover:bg-slate-200'"
+                            class="flex-1 py-1.5 text-[10px] font-medium transition-colors">Site Width</button>
+                </div>
             </div>
-            <div class="flex bg-slate-100 rounded overflow-hidden">
-                <button @click="{{ $base }}.settings.contentWidth = '100%'" 
-                        :class="{{ $base }}.settings.contentWidth === '100%' ? 'bg-slate-800 text-white shadow-inner' : 'text-slate-500 hover:bg-slate-200'"
-                        class="flex-1 py-1.5 text-[10px] font-medium transition-colors">100% Width</button>
-                <button @click="{{ $base }}.settings.contentWidth = 'site'" 
-                        :class="{{ $base }}.settings.contentWidth === 'site' ? 'bg-slate-800 text-white shadow-inner' : 'text-slate-500 hover:bg-slate-200'"
-                        class="flex-1 py-1.5 text-[10px] font-medium transition-colors">Site Width</button>
-            </div>
-        </div>
 
         <!-- Height -->
         <div v-if="!{{ isset($isNestedRow) && $isNestedRow ? 'true' : 'false' }}">

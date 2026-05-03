@@ -75,13 +75,13 @@
                             <!-- Nested Row (Nested Columns) -->
                             <div v-else class="space-y-0.5">
                                 <div class="flex items-center gap-2 px-4 py-1.5 hover:bg-slate-50 cursor-pointer group/line"
-                                     @click="editingContext={type:'element', ci:ci, coli:coli, eli:eli}; activeTab='settings'">
+                                     @click="editingContext={type:'nested-row', ci:ci, coli:coli, eli:eli}; activeTab='settings'">
                                     <i class="fa fa-caret-down text-[10px] text-slate-400"></i>
                                     <span class="text-[11px] font-bold text-slate-600 flex-1">Nested Row</span>
                                     <div class="flex items-center gap-2 opacity-0 group-hover/line:opacity-100 transition-opacity">
                                         <i @click.stop="openElementModal(ci, coli, 'design', false, eli + 1)" class="fa fa-plus text-[9px] text-slate-400 hover:text-[#0091ea]" title="Add Below"></i>
                                         <i @click.stop="openElementModal(ci, coli, 'nested', true, eli)" class="fa fa-plus-square text-[9px] text-slate-400 hover:text-[#0091ea]" title="Add Nested Column"></i>
-                                        <i @click.stop="editingContext={type:'element', ci:ci, coli:coli, eli:eli}; activeTab='settings'" class="fa fa-pen text-[9px] text-slate-400 hover:text-[#0091ea]" title="Edit"></i>
+                                        <i @click.stop="editingContext={type:'nested-row', ci:ci, coli:coli, eli:eli}; activeTab='settings'" class="fa fa-pen text-[9px] text-slate-400 hover:text-[#0091ea]" title="Edit"></i>
                                         <i @click.stop="duplicateElement(ci, coli, eli)" class="fa fa-copy text-[9px] text-slate-400 hover:text-[#0091ea]" title="Duplicate"></i>
                                         <i @click.stop="col.elements.splice(eli, 1)" class="fa fa-trash-alt text-[9px] text-slate-400 hover:text-red-500" title="Delete"></i>
                                     </div>
