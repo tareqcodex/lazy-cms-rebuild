@@ -52,10 +52,8 @@ return new class extends Migration
             $table->integer('menu_order')->default(0);
             $table->timestamp('published_at')->nullable();
             
-            // SEO Meta
-            $table->string('seo_title')->nullable();
-            $table->text('seo_description')->nullable();
-            $table->string('seo_keywords')->nullable();
+            // SEO Meta (New JSON structure)
+            $table->json('seo_meta')->nullable();
 
             $table->softDeletes();
             $table->timestamps();
