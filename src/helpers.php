@@ -419,6 +419,7 @@ if (!function_exists('remove_lazy_filter')) {
 
 if (!function_exists('lazy_lang_switcher')) {
     function lazy_lang_switcher($showFlags = true) {
+        if (!\Illuminate\Support\Facades\Schema::hasTable('cms_languages')) return '';
         $languages = \Acme\CmsDashboard\Models\Language::where('status', true)->get();
         if ($languages->count() <= 1) return '';
         
@@ -459,6 +460,7 @@ if (!function_exists('lazy_lang_switcher')) {
 
 if (!function_exists('lazy_lang_dropdown')) {
     function lazy_lang_dropdown() {
+        if (!\Illuminate\Support\Facades\Schema::hasTable('cms_languages')) return '';
         $activeLangs = \Acme\CmsDashboard\Models\Language::where('status', true)->get();
         if ($activeLangs->count() <= 1) return '';
         
@@ -562,6 +564,7 @@ if (!function_exists('lazy_lang_dropdown')) {
 
 if (!function_exists('lazy_mobile_lang_switcher')) {
     function lazy_mobile_lang_switcher() {
+        if (!\Illuminate\Support\Facades\Schema::hasTable('cms_languages')) return '';
         $activeLangs = \Acme\CmsDashboard\Models\Language::where('status', true)->get();
         if ($activeLangs->count() <= 1) return '';
         

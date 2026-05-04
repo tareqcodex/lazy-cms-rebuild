@@ -11,8 +11,10 @@ class LocalizationMiddleware
 {
     public function handle(Request $request, Closure $next)
     {
-        $locale = $request->segment(1);
-        
+        if (!\Illuminate\Support\Facades\Schema::hasTable('cms_languages')) {
+            return $next($request);
+        }
+
         $supportedLocales = Language::where('status', true)->pluck('code')->toArray();
 
         if (in_array($locale, $supportedLocales)) {
