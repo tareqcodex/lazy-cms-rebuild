@@ -49,7 +49,7 @@ return new class extends Migration
             $table->string('featured_image')->nullable();
             $table->string('editor_type')->default('classic'); // classic, block
             $table->string('template')->nullable();
-            $table->integer('order')->default(0);
+            $table->integer('menu_order')->default(0);
             $table->timestamp('published_at')->nullable();
             
             // SEO Meta
