@@ -313,10 +313,13 @@
                 }
             };
 
-            // Reset tabs when context changes to ensure panels show content initially
-            watch(editingContext, (newCtx) => {
-                if (newCtx.type === 'container') activePanelTab.value = 'general';
-                if (newCtx.type === 'column' || newCtx.type === 'nested-column') activeColPanelTab.value = 'general';
+            // Reset tabs to general only when switching to a different entity
+            watch(editingContext, (newCtx, oldCtx) => {
+                const sameEntity = newCtx.type === oldCtx?.type && newCtx.ci === oldCtx?.ci && newCtx.coli === oldCtx?.coli && newCtx.ncoli === oldCtx?.ncoli;
+                if (!sameEntity) {
+                    if (newCtx.type === 'container') activePanelTab.value = 'general';
+                    if (newCtx.type === 'column' || newCtx.type === 'nested-column') activeColPanelTab.value = 'general';
+                }
             }, { deep: true });
 
             const selectLayout = (layoutData) => {
@@ -651,12 +654,35 @@
                     target = layout.value[ci];
                 }
 
-                if (!target.settings[type]) target.settings[type] = 0;
-                startVal.value = target.settings[type] || 0;
-
                 if (type === 'columnSpacingLeft' || type === 'columnSpacingRight') {
                     const colEl = e.target.closest('.column-outer');
-                    dragRefWidth.value = colEl ? colEl.clientWidth : 300;
+                    const containerEl = colEl ? colEl.parentElement : null;
+                    dragRefWidth.value = containerEl ? containerEl.clientWidth : (colEl ? colEl.clientWidth : 300);
+                    if (target.settings[type] === undefined || target.settings[type] === null || target.settings[type] === '') {
+                        const rawGap = layout.value[ci]?.settings?.columnGap;
+                        target.settings[type] = (rawGap !== undefined && rawGap !== '' && rawGap !== null) ? Number(rawGap) : 3;
+                    }
+                } else if (type === 'paddingLeft' || type === 'paddingRight') {
+                    const colEl = e.target.closest('.column-outer');
+                    const rowEl = colEl ? null : e.target.closest('.container-row');
+                    dragRefWidth.value = colEl ? colEl.clientWidth : (rowEl ? rowEl.clientWidth : 300);
+                    if (!target.settings[type]) target.settings[type] = 0;
+                } else {
+                    if (!target.settings[type]) target.settings[type] = 0;
+                }
+
+                startVal.value = target.settings[type] || 0;
+
+                // Open settings panel and switch to design tab for the dragged entity
+                if (isNestedDrag.value) {
+                    setEditingContext('nested-column', ci, coli, eli, ncoli);
+                    activeColPanelTab.value = 'design';
+                } else if (isColumnDrag.value) {
+                    setEditingContext('column', ci, coli);
+                    activeColPanelTab.value = 'design';
+                } else {
+                    setEditingContext('container', ci);
+                    activePanelTab.value = 'design';
                 }
 
                 window.addEventListener('mousemove', handleDrag);
@@ -705,7 +731,18 @@
                     target = layout.value[dragCi.value];
                 }
 
-                target.settings[dragType.value] = Math.max(0, newVal);
+                if (dragType.value === 'columnSpacingLeft' || dragType.value === 'columnSpacingRight') {
+                    const colBasis = parseFloat(target.basis) || 100;
+                    const otherKey = dragType.value === 'columnSpacingLeft' ? 'columnSpacingRight' : 'columnSpacingLeft';
+                    const otherSpacing = Number(target.settings[otherKey] || 0);
+                    target.settings[dragType.value] = Math.max(0, Math.min(newVal, colBasis - otherSpacing));
+                } else if (dragType.value === 'paddingLeft' || dragType.value === 'paddingRight') {
+                    const otherKey = dragType.value === 'paddingLeft' ? 'paddingRight' : 'paddingLeft';
+                    const otherPadding = Number(target.settings[otherKey] || 0);
+                    target.settings[dragType.value] = Math.max(0, Math.min(newVal, dragRefWidth.value - otherPadding));
+                } else {
+                    target.settings[dragType.value] = Math.max(0, newVal);
+                }
             };
 
             const stopDrag = () => {
@@ -951,8 +988,8 @@
                     backgroundSize: s.bgType === 'image' ? (s.bgImageSize || 'auto') : undefined,
                     backgroundAttachment: s.bgType === 'image' && s.bgImageParallax === 'fixed' ? 'fixed' : undefined,
                     backgroundBlendMode: s.bgType === 'image' && s.bgImageBlendMode !== 'normal' ? s.bgImageBlendMode : undefined,
-                    minHeight: s.height === 'full' ? '100vh' : (s.minHeight ? s.minHeight : (s.height === 'custom' ? 'unset' : '100px')),
-                    height: s.height === 'full' ? '100vh' : (s.height === 'custom' ? (s.customHeight || 'auto') : 'auto'),
+                    minHeight: s.height === 'full' ? '100vh' : (s.height === 'custom' ? (s.customHeight || 'auto') : (s.minHeight || '100px')),
+                    height: 'auto',
                     display: 'flex',
                     flexDirection: 'column'
                 };
@@ -984,15 +1021,15 @@
                     flexGrow: 1,
                     flexShrink: 0,
                     overflow: s.overflow && s.overflow !== 'default' ? s.overflow : undefined,
-                    minHeight: innerMinHeight,
+                    minHeight: innerHeight === '100%' ? '100%' : innerMinHeight,
                     maxHeight: s.maxHeight || undefined,
-                    height: innerHeight,
+                    height: 'auto',
                     flexDirection: 'row',
                     flexWrap: !s.flexWrap || s.flexWrap === 'default' ? 'wrap' : s.flexWrap,
                     alignItems: alignItems,
                     alignContent: alignContent,
                     justifyContent: s.justifyContent || 'flex-start',
-                    columnGap: isSpaceDistribution ? '0' : (s.columnGap || '20px')
+                    // columnGap removed in favor of percentage-based column padding
                 };
             };
 
@@ -1005,14 +1042,6 @@
                 const gap = parseInt(container.settings.columnGap || '20px');
                 if (basis === 'auto') {
                     flexBasis = 'auto';
-                } else if (typeof basis === 'string' && basis.includes('%')) {
-                    if (count === 1) {
-                        flexBasis = basis;
-                    } else {
-                        // Precise calculation: calc(basis% - (gap * (n-1)/n))
-                        const subtract = (gap * (count - 1)) / count;
-                        flexBasis = `calc(${basis} - ${subtract}px)`;
-                    }
                 } else {
                     flexBasis = basis;
                 }
@@ -1028,14 +1057,25 @@
 
                 const hasDefinedHeight = containerHeight === 'full' || containerHeight === 'custom';
                 
+                const rawGap = container.settings.columnGap;
+                const globalGap = (rawGap !== undefined && rawGap !== '' && rawGap !== null) ? rawGap : 3;
+
+                const pLeft = (s.columnSpacingLeft !== undefined && s.columnSpacingLeft !== '' && s.columnSpacingLeft !== null) 
+                              ? s.columnSpacingLeft + '%' 
+                              : globalGap + '%';
+                
+                const pRight = (s.columnSpacingRight !== undefined && s.columnSpacingRight !== '' && s.columnSpacingRight !== null) 
+                               ? s.columnSpacingRight + '%' 
+                               : globalGap + '%';
+
                 const style = {
                     flexBasis: flexBasis,
                     maxWidth: flexBasis === 'auto' ? 'none' : flexBasis,
                     flexGrow: s.flexGrow !== undefined && s.flexGrow !== '' ? s.flexGrow : (isStretch ? 1 : 0),
                     flexShrink: s.flexShrink !== undefined && s.flexShrink !== '' ? s.flexShrink : 0,
                     maxHeight: getUnitVal(s.maxHeight, s.maxHeightUnit) || undefined,
-                    paddingLeft: getUnitVal(s.columnSpacingLeft, '%'),
-                    paddingRight: getUnitVal(s.columnSpacingRight, '%'),
+                    paddingLeft: pLeft,
+                    paddingRight: pRight,
                     marginTop: getUnitVal(s.marginTop, s.marginTopUnit),
                     marginBottom: getUnitVal(s.marginBottom, s.marginBottomUnit),
                     zIndex: s.zIndex || 'auto',
@@ -1048,10 +1088,10 @@
                 // Final refined height/align logic:
                 // Final refined height/align logic:
                 if (isStretch) {
-                    style.height = (containerHeight === 'full' || containerHeight === 'custom') ? '100%' : 'auto';
                     style.flexGrow = 1;
                     style.alignSelf = 'stretch';
                     style.minHeight = isEmpty ? '100px' : '100%';
+                    style.height = 'auto';
                 } else {
                     style.height = 'auto';
                     style.flexGrow = 0;
@@ -1104,8 +1144,8 @@
                     paddingRight: getUnitVal(s.paddingRight, s.paddingRightUnit),
                     marginLeft: getUnitVal(s.marginLeft, s.marginLeftUnit),
                     marginRight: getUnitVal(s.marginRight, s.marginRightUnit),
-                    minHeight: isStretch ? '100%' : (isEmpty ? '100px' : 'auto'),
-                    height: isStretch ? '100%' : 'auto',
+                    minHeight: isEmpty ? `calc(100px + ${getUnitVal(s.paddingTop, s.paddingTopUnit) || '0px'} + ${getUnitVal(s.paddingBottom, s.paddingBottomUnit) || '0px'})` : 'auto',
+                    height: 'auto',
                     paddingBottom: getUnitVal(s.paddingBottom, s.paddingBottomUnit),
                     flex: isStretch ? '1 1 auto' : '0 1 auto',
                     display: 'flex',

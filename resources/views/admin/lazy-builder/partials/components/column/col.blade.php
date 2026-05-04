@@ -214,14 +214,14 @@
     <!-- Left spacing overlay: anchored at column-outer left border, grows inward -->
     <div v-if="!isPreview"
          class="absolute top-0 bottom-0 left-0 pointer-events-none z-[5] bg-[#9c27b0]/5 transition-opacity"
-         :style="{ width: (column.settings.columnSpacingLeft || 0) + '%' }"
+         :style="{ width: ((column.settings.columnSpacingLeft || 0) * 100 / (parseFloat(column.basis) || 100)) + '%' }"
          :class="shouldShowGuide('column', ci, coli) ? ( ((activeColi === coli && activeColCi === ci) || (isDragging && dragCi === ci && dragColi === coli && dragType === 'columnSpacingLeft')) ? 'opacity-100' : 'opacity-0' ) : 'hidden'">
          <div class="absolute top-0 right-0 h-full border-r border-dashed border-[#9c27b0]/20"></div>
     </div>
     <!-- Right spacing overlay: anchored at column-outer right border, grows inward -->
     <div v-if="!isPreview"
          class="absolute top-0 bottom-0 right-0 pointer-events-none z-[5] bg-[#9c27b0]/5 transition-opacity"
-         :style="{ width: (column.settings.columnSpacingRight || 0) + '%' }"
+         :style="{ width: ((column.settings.columnSpacingRight || 0) * 100 / (parseFloat(column.basis) || 100)) + '%' }"
          :class="shouldShowGuide('column', ci, coli) ? ( ((activeColi === coli && activeColCi === ci) || (isDragging && dragCi === ci && dragColi === coli && dragType === 'columnSpacingRight')) ? 'opacity-100' : 'opacity-0' ) : 'hidden'">
          <div class="absolute top-0 left-0 h-full border-l border-dashed border-[#9c27b0]/20"></div>
     </div>

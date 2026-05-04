@@ -56,7 +56,6 @@
         'align-items: ' . $alignItems . ' !important',
         'justify-content: ' . $justifyContent,
         'align-content: ' . $alignContentVal . ' !important',
-        'column-gap: ' . $colGap,
     ];
 
     if ($heightMode !== 'auto') {

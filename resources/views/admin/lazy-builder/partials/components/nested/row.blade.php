@@ -17,7 +17,7 @@
             
             <!-- Edit Row -->
             <div class="w-6 h-6 flex items-center justify-center hover:bg-white/20 rounded cursor-pointer relative group/etool" 
-                 @click.stop="setEditingContext('nested-row', ci, coli, eli)">,StartLine:20,TargetContent:
+                 @click.stop="setEditingContext('nested-row', ci, coli, eli)">
                 <i class="fa fa-pen text-white text-[10px]"></i>
                 <div class="lazy-tooltip-v2">Edit Row</div>
             </div>
@@ -88,7 +88,7 @@
 
                         <!-- Edit -->
                         <div class="w-6 h-6 flex items-center justify-center hover:bg-white/20 rounded cursor-pointer relative group/etool" 
-                             @click.stop="setEditingContext('nested-column', ci, coli, eli, ncoli)">,StartLine:91,TargetContent:
+                             @click.stop="setEditingContext('nested-column', ci, coli, eli, ncoli)">
                             <i class="fa fa-pen text-white text-[10px]"></i>
                             <div class="lazy-tooltip-v2">Column Settings</div>
                         </div>
@@ -118,6 +118,16 @@
 
                 <!-- Overlays -->
                 <div v-if="!isPreview" class="absolute inset-0 pointer-events-none z-0">
+                    <div class="absolute left-0 right-0 pointer-events-none z-0 bg-[#9c27b0]/5 transition-opacity"
+                         :style="{ height: (ncol.settings.marginTop || 0) + 'px', top: '-' + (ncol.settings.marginTop || 0) + 'px' }"
+                         :class="shouldShowGuide('nested-column', ci, coli, eli, ncoli) ? ( ((activeColi === ncoli && activeColCi === eli) || (isDragging && dragNcoli === ncoli && dragType === 'marginTop')) ? 'opacity-100' : 'opacity-0' ) : 'hidden'">
+                         <div class="absolute top-0 left-0 w-full border-t border-dashed border-[#9c27b0]/20"></div>
+                    </div>
+                    <div class="absolute left-0 right-0 pointer-events-none z-0 bg-[#9c27b0]/5 transition-opacity"
+                         :style="{ height: (ncol.settings.marginBottom || 0) + 'px', bottom: '-' + (ncol.settings.marginBottom || 0) + 'px' }"
+                         :class="shouldShowGuide('nested-column', ci, coli, eli, ncoli) ? ( ((activeColi === ncoli && activeColCi === eli) || (isDragging && dragNcoli === ncoli && dragType === 'marginBottom')) ? 'opacity-100' : 'opacity-0' ) : 'hidden'">
+                         <div class="absolute bottom-0 left-0 w-full border-b border-dashed border-[#9c27b0]/20"></div>
+                    </div>
                     <div class="absolute left-0 right-0 pointer-events-none z-0 bg-[#ff9800]/5 transition-opacity"
                          :style="{ height: (ncol.settings.paddingTop || 0) + 'px', top: '0px' }"
                          :class="shouldShowGuide('nested-column', ci, coli, eli, ncoli) ? ( (isDragging && dragType === 'paddingTop' && dragNcoli === ncoli) ? 'opacity-100' : 'opacity-0' ) : 'hidden'">
@@ -134,10 +144,16 @@
                 <div v-if="!isPreview" class="absolute inset-0 pointer-events-none z-[1500] transition-opacity"
                      :class="shouldShowGuide('nested-column', ci, coli, eli, ncoli) ? ( ((activeColi === ncoli && activeColCi === eli) || (isDragging && dragNcoli === ncoli)) ? 'opacity-100' : 'opacity-0' ) : 'hidden'">
                     
-                    <div class="absolute top-0 left-1/2 -translate-x-1/2 pointer-events-auto">
-                        <div class="handle-orange group/nh" 
+                    <div class="absolute top-0.5 left-1/2 -translate-x-1/2 pointer-events-auto flex gap-0.5 items-start">
+                        <div class="handle-purple group/nchmt"
+                             @mousedown.stop.prevent="startDrag($event, 'marginTop', ci, coli, eli, ncoli)">
+                            <i class="fa fa-bars"></i>
+                            <div class="lazy-tooltip-v2 !opacity-100 !visible" v-if="isDragging && dragType === 'marginTop' && dragNcoli === ncoli">@{{ ncol.settings.marginTop || 0 }}px</div>
+                            <div class="lazy-tooltip-v2 opacity-0 group-hover/nchmt:opacity-100" v-else>@{{ ncol.settings.marginTop || 0 }}px</div>
+                        </div>
+                        <div class="handle-orange group/nh"
                              :class="isDragging ? '' : 'transition-all'"
-                             :style="{ transform: 'translateY(' + (ncol.settings.paddingTop || 0) + 'px)' }"
+                             :style="{ transform: 'translateY(' + (Number(ncol.settings.paddingTop || 0) + 2) + 'px)' }"
                              @mousedown.stop.prevent="startDrag($event, 'paddingTop', ci, coli, eli, ncoli)">
                             <i class="fa fa-bars"></i>
                             <div class="lazy-tooltip-v2 !opacity-100 !visible" v-if="isDragging && dragType === 'paddingTop' && dragNcoli === ncoli">@{{ ncol.settings.paddingTop || 0 }}px</div>
@@ -145,7 +161,15 @@
                         </div>
                     </div>
 
-                    <div class="absolute bottom-0.5 left-1/2 -translate-x-1/2 pointer-events-auto">
+                    <div class="absolute bottom-0.5 left-1/2 -translate-x-1/2 pointer-events-auto flex gap-0.5 items-end">
+                        <div class="handle-purple group/nchmb"
+                             :class="isDragging ? '' : 'transition-all'"
+                             :style="{ transform: 'translateY(' + (ncol.settings.marginBottom || 0) + 'px)' }"
+                             @mousedown.stop.prevent="startDrag($event, 'marginBottom', ci, coli, eli, ncoli)">
+                            <i class="fa fa-bars"></i>
+                            <div class="lazy-tooltip-v2 !opacity-100 !visible" v-if="isDragging && dragType === 'marginBottom' && dragNcoli === ncoli">@{{ ncol.settings.marginBottom || 0 }}px</div>
+                            <div class="lazy-tooltip-v2 opacity-0 group-hover/nchmb:opacity-100" v-else>@{{ ncol.settings.marginBottom || 0 }}px</div>
+                        </div>
                         <div class="handle-orange group/nh"
                              :class="isDragging ? '' : 'transition-all'"
                              @mousedown.stop.prevent="startDrag($event, 'paddingBottom', ci, coli, eli, ncoli)">
@@ -188,7 +212,7 @@
                                 <!-- Always Visible Part: Edit & Add -->
                                 <div class="flex items-center">
                                     <div class="w-7 h-7 flex items-center justify-center hover:bg-white/20 rounded cursor-pointer relative group/etool" 
-                                         @click.stop="setEditingContext('element', ci, coli, eli, ncoli, nestedEli)">,StartLine:190,TargetContent:
+                                         @click.stop="setEditingContext('element', ci, coli, eli, ncoli, nestedEli)">
                                         <i class="fa fa-pen text-[10px]"></i>
                                         <div class="lazy-tooltip-v2 opacity-0 group-hover/etool:opacity-100 z-[100] whitespace-nowrap">Edit</div>
                                     </div>

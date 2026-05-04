@@ -52,12 +52,18 @@
     $shouldStretch = ($colAlignment === 'stretch') 
                      || (in_array($colAlignment, ['', 'default', null], true) && $containerAlign === 'stretch');
 
+    $globalGap = $container['settings']['columnGap'] ?? 3;
+    $pLeft = (isset($s['columnSpacingLeft']) && $s['columnSpacingLeft'] !== '') ? $s['columnSpacingLeft'] . '%' : $globalGap . '%';
+    $pRight = (isset($s['columnSpacingRight']) && $s['columnSpacingRight'] !== '') ? $s['columnSpacingRight'] . '%' : $globalGap . '%';
+
     $outerStyles = [
         "flex-basis: {$flexBasis}",
         "flex-grow: " . ($shouldStretch ? '1' : ($s['flexGrow'] ?? '0')),
         "flex-shrink: " . ($s['flexShrink'] ?? '0'),
         "max-width: {$maxWidth}",
         "min-height: " . ($shouldStretch ? ($isEmpty ? '100px' : '100% !important') : 'auto'),
+        "padding-left: {$pLeft}",
+        "padding-right: {$pRight}",
         'display: flex !important',
         'flex-direction: column !important',
     ];
