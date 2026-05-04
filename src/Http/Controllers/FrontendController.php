@@ -35,9 +35,11 @@ class FrontendController extends Controller
 
     public function index($locale = null)
     {
-        if ($locale) {
+        $isMultiLang = get_cms_option('multi_language_enabled', 0);
+        if ($locale && $isMultiLang) {
             app()->setLocale($locale);
         }
+        
         $homePageId = get_cms_option('home_page_id');
         
         if ($homePageId) {
@@ -70,10 +72,13 @@ class FrontendController extends Controller
 
     public function archive($slug)
     {
-        $supportedLocales = \Acme\CmsDashboard\Models\Language::where('status', true)->pluck('code')->toArray();
-        $firstSegment = request()->segment(1);
-        if (in_array($firstSegment, $supportedLocales)) {
-            app()->setLocale($firstSegment);
+        $isMultiLang = get_cms_option('multi_language_enabled', 0);
+        if ($isMultiLang) {
+            $supportedLocales = \Acme\CmsDashboard\Models\Language::where('status', true)->pluck('code')->toArray();
+            $firstSegment = request()->segment(1);
+            if (in_array($firstSegment, $supportedLocales)) {
+                app()->setLocale($firstSegment);
+            }
         }
         
         $routeName = request()->route()->getName();
@@ -102,9 +107,14 @@ class FrontendController extends Controller
 
     public function single($typeOrSlug, $slug = null)
     {
-        $supportedLocales = \Acme\CmsDashboard\Models\Language::where('status', true)->pluck('code')->toArray();
-        $firstSegment = request()->segment(1);
-        $isLocale = in_array($firstSegment, $supportedLocales);
+        $isMultiLang = get_cms_option('multi_language_enabled', 0);
+        $isLocale = false;
+
+        if ($isMultiLang) {
+            $supportedLocales = \Acme\CmsDashboard\Models\Language::where('status', true)->pluck('code')->toArray();
+            $firstSegment = request()->segment(1);
+            $isLocale = in_array($firstSegment, $supportedLocales);
+        }
         
         $type = null;
         $postSlug = null;

@@ -153,8 +153,12 @@
             <div class="w-full lg:w-[280px] shrink-0 space-y-5">
                 
                 <!-- Multilingual Metabox -->
-                @php $activeLanguages = \Acme\CmsDashboard\Models\Language::where('status', true)->get(); @endphp
+                @php 
+                    $isMultiLang = get_cms_option('multi_language_enabled', 0);
+                    $activeLanguages = \Acme\CmsDashboard\Models\Language::where('status', true)->get(); 
+                @endphp
 
+                @if($isMultiLang)
                 <div class="wp-metabox mb-6" style="margin-bottom: 24px !important; margin-top: 10px !important;">
                     <div class="wp-metabox-header"><span>Language</span></div>
                     <div class="wp-metabox-content p-3">
@@ -189,6 +193,9 @@
                         @endif
                     </div>
                 </div>
+                @else
+                    <input type="hidden" name="lang_code" value="{{ get_cms_option('default_language', 'en') }}">
+                @endif
 
                 <!-- Publish Metabox -->
                 <div class="wp-metabox mb-6" style="margin-bottom: 24px !important; margin-top: 10px !important;">
