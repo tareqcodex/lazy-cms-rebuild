@@ -157,38 +157,38 @@
     .container-row {
         position: relative;
         transition: all 0.2s;
-        border: 2px solid #bcdff1; /* persistent light blue border */
-        margin-top: -2px;
         display: block;
         width: 100%;
         z-index: 10;
+        outline: 2px solid #bcdff1;
+        outline-offset: -2px;
     }
     .container-row:hover, .container-active {
-        border-color: var(--primary) !important;
-        z-index: 10;
+        outline: 2px solid var(--primary) !important;
+        z-index: 11;
     }
 
     /* Column Styles */
     .column-outer {
         position: relative;
-        transition: border 0.2s;
-        border: 2px solid transparent;
-        margin-left: -2px;
+        transition: all 0.2s;
         z-index: 5;
         display: flex;
         flex-direction: column;
-        flex-shrink: 0; /* Bootstrap-like: don't shrink below content */
+        flex-shrink: 0;
+        outline: 2px solid transparent;
+        outline-offset: -2px;
     }
     .column-outer:hover {
-        border: 2px solid #bcdff1 !important;
+        outline: 2px solid #bcdff1 !important;
         z-index: 6;
     }
     .column-active {
-        border: 2px solid var(--primary) !important;
+        outline: 2px solid var(--primary) !important;
         z-index: 7;
     }
     .preview-mode .column-outer {
-        border-color: transparent !important;
+        outline: none !important;
     }
 
     /* Padding/Margin Handles */
@@ -198,7 +198,6 @@
         opacity: 0;
         transition: opacity 0.2s;
     }
-    .container-row:hover .container-handles > div,
     .container-active .container-handles > div {
         opacity: 1;
     }
@@ -259,7 +258,7 @@
     }
     .container-row:hover .container-right-panel,
     .container-active .container-right-panel,
-    .column-box:hover .column-left-panel,
+    .column-outer:hover .column-left-panel,
     .column-active .column-left-panel {
         opacity: 1;
     }

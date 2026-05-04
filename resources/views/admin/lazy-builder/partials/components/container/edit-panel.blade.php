@@ -102,7 +102,7 @@
                 <i class="fa fa-question-circle text-[10px] text-slate-300"></i>
             </div>
             <div class="grid grid-cols-2 gap-2">
-                <button @click="{{ $base }}.settings.alignItems = 'flex-start'" 
+                <button @click="{{ $base }}.settings.alignItems = 'flex-start'"
                         :class="{{ $base }}.settings.alignItems === 'flex-start' ? 'bg-[#0091ea] text-white' : 'bg-slate-100 text-slate-400 hover:bg-slate-200'"
                         class="py-2 rounded transition-colors flex items-center justify-center relative group/btn">
                     <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor">
@@ -112,7 +112,7 @@
                     </svg>
                     <div class="lazy-tooltip-v2 opacity-0 group-hover/btn:opacity-100 z-[100] whitespace-nowrap">Align Top</div>
                 </button>
-                <button @click="{{ $base }}.settings.alignItems = 'center'" 
+                <button @click="{{ $base }}.settings.alignItems = 'center'"
                         :class="{{ $base }}.settings.alignItems === 'center' ? 'bg-[#0091ea] text-white' : 'bg-slate-100 text-slate-400 hover:bg-slate-200'"
                         class="py-2 rounded transition-colors flex items-center justify-center relative group/btn">
                     <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor">
@@ -122,7 +122,7 @@
                     </svg>
                     <div class="lazy-tooltip-v2 opacity-0 group-hover/btn:opacity-100 z-[100] whitespace-nowrap">Align Center</div>
                 </button>
-                <button @click="{{ $base }}.settings.alignItems = 'flex-end'" 
+                <button @click="{{ $base }}.settings.alignItems = 'flex-end'"
                         :class="{{ $base }}.settings.alignItems === 'flex-end' ? 'bg-[#0091ea] text-white' : 'bg-slate-100 text-slate-400 hover:bg-slate-200'"
                         class="py-2 rounded transition-colors flex items-center justify-center relative group/btn">
                     <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor">
@@ -132,7 +132,7 @@
                     </svg>
                     <div class="lazy-tooltip-v2 opacity-0 group-hover/btn:opacity-100 z-[100] whitespace-nowrap">Align Bottom</div>
                 </button>
-                <button @click="{{ $base }}.settings.alignItems = 'stretch'" 
+                <button @click="{{ $base }}.settings.alignItems = 'stretch'"
                         :class="{{ $base }}.settings.alignItems === 'stretch' ? 'bg-[#0091ea] text-white' : 'bg-slate-100 text-slate-400 hover:bg-slate-200'"
                         class="py-2 rounded transition-colors flex items-center justify-center relative group/btn">
                     <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor">
@@ -151,8 +151,8 @@
             </div>
             <div class="grid grid-cols-3 gap-2">
                 <!-- 1. Stretch (Default) -->
-                <button @click="{{ $base }}.settings.alignContent = 'stretch'" 
-                        :class="{{ $base }}.settings.alignContent === 'stretch' ? 'bg-[#0091ea] text-white' : 'bg-slate-100 text-slate-400 hover:bg-slate-200'"
+                <button @click="{{ $base }}.settings.rowAlignContent = 'stretch'"
+                        :class="{{ $base }}.settings.rowAlignContent === 'stretch' ? 'bg-[#0091ea] text-white' : 'bg-slate-100 text-slate-400 hover:bg-slate-200'"
                         class="py-2 rounded transition-colors flex items-center justify-center relative group/btn">
                     <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor">
                         <rect x="4" y="3" width="16" height="3" rx="0.5"/>
@@ -164,8 +164,8 @@
                 </button>
 
                 <!-- 2. Align Top (flex-start) -->
-                <button @click="{{ $base }}.settings.alignContent = 'flex-start'" 
-                        :class="{{ $base }}.settings.alignContent === 'flex-start' ? 'bg-[#0091ea] text-white' : 'bg-slate-100 text-slate-400 hover:bg-slate-200'"
+                <button @click="{{ $base }}.settings.rowAlignContent = 'flex-start'"
+                        :class="{{ $base }}.settings.rowAlignContent === 'flex-start' ? 'bg-[#0091ea] text-white' : 'bg-slate-100 text-slate-400 hover:bg-slate-200'"
                         class="py-2 rounded transition-colors flex items-center justify-center relative group/btn">
                     <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor">
                         <rect x="5" y="4" width="14" height="2" rx="0.5"/>
@@ -175,8 +175,8 @@
                 </button>
 
                 <!-- 3. Align Center (center) -->
-                <button @click="{{ $base }}.settings.alignContent = 'center'" 
-                        :class="{{ $base }}.settings.alignContent === 'center' ? 'bg-[#0091ea] text-white' : 'bg-slate-100 text-slate-400 hover:bg-slate-200'"
+                <button @click="{{ $base }}.settings.rowAlignContent = 'center'"
+                        :class="{{ $base }}.settings.rowAlignContent === 'center' ? 'bg-[#0091ea] text-white' : 'bg-slate-100 text-slate-400 hover:bg-slate-200'"
                         class="py-2 rounded transition-colors flex items-center justify-center relative group/btn">
                     <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor">
                         <rect x="5" y="11" width="14" height="2" rx="0.5"/>
@@ -187,8 +187,8 @@
                 </button>
 
                 <!-- 4. Align Bottom (flex-end) -->
-                <button @click="{{ $base }}.settings.alignContent = 'flex-end'" 
-                        :class="{{ $base }}.settings.alignContent === 'flex-end' ? 'bg-[#0091ea] text-white' : 'bg-slate-100 text-slate-400 hover:bg-slate-200'"
+                <button @click="{{ $base }}.settings.rowAlignContent = 'flex-end'"
+                        :class="{{ $base }}.settings.rowAlignContent === 'flex-end' ? 'bg-[#0091ea] text-white' : 'bg-slate-100 text-slate-400 hover:bg-slate-200'"
                         class="py-2 rounded transition-colors flex items-center justify-center relative group/btn">
                     <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor">
                         <rect x="7" y="12" width="10" height="4" rx="0.5"/>
@@ -198,8 +198,8 @@
                 </button>
 
                 <!-- 5. Space Between (space-between) -->
-                <button @click="{{ $base }}.settings.alignContent = 'space-between'" 
-                        :class="{{ $base }}.settings.alignContent === 'space-between' ? 'bg-[#0091ea] text-white' : 'bg-slate-100 text-slate-400 hover:bg-slate-200'"
+                <button @click="{{ $base }}.settings.rowAlignContent = 'space-between'"
+                        :class="{{ $base }}.settings.rowAlignContent === 'space-between' ? 'bg-[#0091ea] text-white' : 'bg-slate-100 text-slate-400 hover:bg-slate-200'"
                         class="py-2 rounded transition-colors flex items-center justify-center relative group/btn">
                     <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor">
                         <rect x="5" y="3" width="14" height="2" rx="0.5"/>
@@ -211,8 +211,8 @@
                 </button>
 
                 <!-- 6. Space Around (space-around) -->
-                <button @click="{{ $base }}.settings.alignContent = 'space-around'" 
-                        :class="{{ $base }}.settings.alignContent === 'space-around' ? 'bg-[#0091ea] text-white' : 'bg-slate-100 text-slate-400 hover:bg-slate-200'"
+                <button @click="{{ $base }}.settings.rowAlignContent = 'space-around'"
+                        :class="{{ $base }}.settings.rowAlignContent === 'space-around' ? 'bg-[#0091ea] text-white' : 'bg-slate-100 text-slate-400 hover:bg-slate-200'"
                         class="py-2 rounded transition-colors flex items-center justify-center relative group/btn">
                     <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor">
                         <rect x="5" y="6" width="14" height="2" rx="0.5"/>
@@ -224,8 +224,8 @@
                 </button>
 
                 <!-- 7. Space Evenly (space-evenly) -->
-                <button @click="{{ $base }}.settings.alignContent = 'space-evenly'" 
-                        :class="{{ $base }}.settings.alignContent === 'space-evenly' ? 'bg-[#0091ea] text-white' : 'bg-slate-100 text-slate-400 hover:bg-slate-200'"
+                <button @click="{{ $base }}.settings.rowAlignContent = 'space-evenly'"
+                        :class="{{ $base }}.settings.rowAlignContent === 'space-evenly' ? 'bg-[#0091ea] text-white' : 'bg-slate-100 text-slate-400 hover:bg-slate-200'"
                         class="py-2 rounded transition-colors flex items-center justify-center relative group/btn">
                     <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor">
                         <rect x="5" y="4" width="14" height="2" rx="0.5"/>

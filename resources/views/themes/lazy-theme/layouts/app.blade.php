@@ -106,7 +106,13 @@
         }
 
         /* Force Outer Container to be 100% for Backgrounds */
-        .lazy-container, 
+        .lazy-container {
+            width: 100% !important;
+            max-width: none !important;
+            padding-left: 0 !important;
+            padding-right: 0 !important;
+        }
+
         .main-header,
         .main-footer,
         section.w-full {

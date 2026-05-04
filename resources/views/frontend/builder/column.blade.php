@@ -7,12 +7,25 @@
     }
 
     $flexBasis = $basisRaw;
+    $totalCols = count($container['columns'] ?? [1]);
+    $gapVal = intval($container['settings']['columnGap'] ?? 20);
+    
     if ($basisRaw === 'auto') {
         $flexBasis = 'auto';
     } elseif (is_string($basisRaw) && strpos($basisRaw, '%') !== false) {
-        $flexBasis = "calc({$basisRaw} - 15px)";
+        if ($totalCols === 1) {
+            $flexBasis = $basisRaw;
+        } else {
+            $subtract = ($gapVal * ($totalCols - 1)) / $totalCols;
+            $flexBasis = "calc({$basisRaw} - {$subtract}px)";
+        }
     } elseif (is_numeric($basisRaw)) {
-        $flexBasis = "calc({$basisRaw}% - 15px)";
+        if ($totalCols === 1) {
+            $flexBasis = "{$basisRaw}%";
+        } else {
+            $subtract = ($gapVal * ($totalCols - 1)) / $totalCols;
+            $flexBasis = "calc({$basisRaw}% - {$subtract}px)";
+        }
     }
 
     $flexGrow = (isset($s['flexGrow']) && $s['flexGrow'] !== '') ? $s['flexGrow'] : 0;
@@ -29,23 +42,43 @@
         $visibilityClasses = ' lazy-hide-all';
     }
 
+    $containerAlign = $container['settings']['alignItems'] ?? 'stretch';
+    $colAlignment = (!empty($s['alignment']) && $s['alignment'] !== 'default') ? $s['alignment'] : 'default';
+    $heightMode = $container['settings']['height'] ?? 'auto';
+    $hasDefinedHeight = in_array($heightMode, ['full', 'custom'], true);
+    $isEmpty = empty($column['elements']);
+    
+    // Comprehensive stretch detection logic
+    $shouldStretch = ($colAlignment === 'stretch') 
+                     || (in_array($colAlignment, ['', 'default', null], true) && $containerAlign === 'stretch');
+
     $outerStyles = [
         "flex-basis: {$flexBasis}",
-        "flex-grow: {$flexGrow}",
-        "flex-shrink: {$flexShrink}",
+        "flex-grow: " . ($shouldStretch ? '1' : ($s['flexGrow'] ?? '0')),
+        "flex-shrink: " . ($s['flexShrink'] ?? '0'),
         "max-width: {$maxWidth}",
+        "min-height: " . ($shouldStretch ? ($isEmpty ? '100px' : '100% !important') : 'auto'),
+        'display: flex !important',
+        'flex-direction: column !important',
     ];
 
-    if (!empty($s['alignment']) && $s['alignment'] !== 'default') {
-        $outerStyles[] = 'align-self: ' . $s['alignment'];
+    if ($shouldStretch) {
+        $outerStyles[] = 'align-self: stretch !important';
+        $outerStyles[] = 'flex-grow: 1 !important';
+        // Use min-height: 100% for better browser support in auto-height contexts
+        $outerStyles[] = 'min-height: ' . ($isEmpty ? '100px' : '100% !important');
+    } else {
+        $outerStyles[] = 'align-self: ' . ($colAlignment === 'default' ? $containerAlign : $colAlignment) . ' !important';
+        $outerStyles[] = 'height: auto';
     }
+
     if (isset($s['marginTop']) && $s['marginTop'] !== '') $outerStyles[] = 'margin-top: ' . $s['marginTop'] . ($s['marginTopUnit'] ?? 'px');
     if (isset($s['marginBottom']) && $s['marginBottom'] !== '') $outerStyles[] = 'margin-bottom: ' . $s['marginBottom'] . ($s['marginBottomUnit'] ?? 'px');
 
-    // Inner: padding, layout, typography, background, border, shadow
     $innerStyles = [
-        'height: 100%',
-        'min-height: 8px',
+        'min-height: ' . ($shouldStretch ? '100% !important' : '8px'),
+        'flex: ' . ($shouldStretch ? '1 1 auto !important' : '0 1 auto'),
+        'flex-grow: ' . ($shouldStretch ? '1 !important' : '0'),
         'padding-top: '    . ($s['paddingTop']    ?? 10) . ($s['paddingTopUnit'] ?? 'px'),
         'padding-bottom: ' . ($s['paddingBottom'] ?? 10) . ($s['paddingBottomUnit'] ?? 'px'),
         'padding-left: '   . ($s['paddingLeft']   ?? 10) . ($s['paddingLeftUnit'] ?? 'px'),
@@ -166,7 +199,7 @@
     style="{{ implode('; ', $outerStyles) }}">
     
     @if($link)
-        <a href="{{ $link }}" target="{{ $s['linkTarget'] ?? '_self' }}" style="text-decoration: none; color: inherit; display: flex; flex-direction: column; height: 100%; width: 100%;">
+        <a href="{{ $link }}" target="{{ $s['linkTarget'] ?? '_self' }}" style="text-decoration: none; color: inherit; display: flex !important; flex-direction: column !important; flex-grow: 1 !important; height: 100% !important; width: 100%;">
     @endif
 
     <div class="lazy-column-inner" style="{{ implode('; ', $innerStyles) }}">
@@ -174,6 +207,8 @@
             @foreach($column['elements'] as $el)
                 @if($el['type'] === 'heading')
                     @include('cms-dashboard::frontend.builder.elements.heading', ['el' => $el])
+                @elseif($el['type'] === 'title')
+                    @include('cms-dashboard::frontend.builder.elements.title', ['el' => $el])
                 @elseif($el['type'] === 'text')
                     @include('cms-dashboard::frontend.builder.elements.text', ['el' => $el])
                 @elseif($el['type'] === 'row')

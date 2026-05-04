@@ -2,10 +2,10 @@
 <div v-for="(column, coli) in container.columns" :key="column.id"
      class="column-outer relative"
      :class="[(column.settings.hoverType && column.settings.hoverType !== 'none') ? 'hover-effect-' + column.settings.hoverType : '', getVisibilityClasses(column.settings)]"
-     :style="columnOuterStyle(column, container.columns.length)">
+     :style="columnOuterStyle(container, column, container.columns.length)">
 
     
-    <component :is="column.settings.htmlTag || 'div'" class="column-inner group/col relative h-full min-h-full"
+    <component :is="column.settings.htmlTag || 'div'" class="column-inner group/col relative"
          :class="[
             activeColi === coli && activeColCi === ci ? 'column-active' : '', 
             isDragging && dragCi === ci && dragColi === coli ? 'dragging-no-transition' : '',
@@ -14,8 +14,8 @@
             (dragTarget === 'column-' + ci + '-' + coli + '-null-null-null' && dragSource?.type === 'element') ? 'ring-2 ring-blue-400 ring-inset bg-blue-50/30' : '',
             column.settings.linkUrl ? 'cursor-pointer' : ''
          ]"
-         :style="columnInnerStyle(column)"
-         @click.stop="if(column.settings.linkUrl && isPreview){ window.open(column.settings.linkUrl, '_blank'); } else { activeColi = coli; activeColCi = ci; editingContext={type:'column', ci:ci, coli:coli} }"
+         :style="columnInnerStyle(column, container)"
+         @click.stop="if(column.settings.linkUrl && isPreview){ window.open(column.settings.linkUrl, '_blank'); } else { setEditingContext('column', ci, coli) }"
          @mouseenter="setHover('column', ci, coli)"
          @mouseleave="setHover(null)"
          @dragover="onDragOver($event, 'column', ci, coli)"
@@ -25,7 +25,7 @@
         <div class="column-left-panel transition-opacity" v-if="!isPreview"
              :class="(activeColi === coli && activeColCi === ci) ? 'opacity-100' : 'opacity-0 group-hover/col:opacity-100'">
             <div class="panel-inner shadow-xl group/panel">
-                <div class="panel-btn" @click.stop="editingCi = ci; activeColi = coli; activeColCi = ci; editingContext={type:'column', ci:ci, coli:coli}; activeTab='settings'">
+                <div class="panel-btn" @click.stop="setEditingContext('column', ci, coli)">
                     <i class="fa fa-pen"></i><div class="lazy-tooltip">Column Options</div>
                 </div>
                 <div class="panel-btn" @click.stop="openColumnModal(ci, 'edit')">
@@ -46,40 +46,40 @@
         <div v-if="!isPreview" class="absolute inset-0 pointer-events-none z-0">
             <div class="absolute left-0 right-0 pointer-events-none z-0 bg-[#9c27b0]/5 transition-opacity"
                  :style="{ height: (column.settings.marginTop || 0) + 'px', top: '-' + (column.settings.marginTop || 0) + 'px' }"
-                 :class="shouldShowGuide('column', ci, coli) ? ( ((activeColi === coli && activeColCi === ci) || (isDragging && dragCi === ci && dragColi === coli && dragType === 'marginTop') || (hoveredType === 'column' && hoveredCi === ci && hoveredColi === coli)) ? 'opacity-100' : 'opacity-0' ) : 'hidden'">
+                 :class="shouldShowGuide('column', ci, coli) ? ( ((activeColi === coli && activeColCi === ci) || (isDragging && dragCi === ci && dragColi === coli && dragType === 'marginTop')) ? 'opacity-100' : 'opacity-0' ) : 'hidden'">
                  <div class="absolute top-0 left-0 w-full border-t border-dashed border-[#9c27b0]/20"></div>
             </div>
             <div class="absolute left-0 right-0 pointer-events-none z-0 bg-[#9c27b0]/5 transition-opacity"
                  :style="{ height: (column.settings.marginBottom || 0) + 'px', bottom: '-' + (column.settings.marginBottom || 0) + 'px' }"
-                 :class="shouldShowGuide('column', ci, coli) ? ( ((activeColi === coli && activeColCi === ci) || (isDragging && dragCi === ci && dragColi === coli && dragType === 'marginBottom') || (hoveredType === 'column' && hoveredCi === ci && hoveredColi === coli)) ? 'opacity-100' : 'opacity-0' ) : 'hidden'">
+                 :class="shouldShowGuide('column', ci, coli) ? ( ((activeColi === coli && activeColCi === ci) || (isDragging && dragCi === ci && dragColi === coli && dragType === 'marginBottom')) ? 'opacity-100' : 'opacity-0' ) : 'hidden'">
                  <div class="absolute bottom-0 left-0 w-full border-b border-dashed border-[#9c27b0]/20"></div>
             </div>
             <div class="absolute left-0 right-0 pointer-events-none z-0 bg-[#0091ea]/5 transition-opacity"
                  :style="{ height: (column.settings.paddingTop || 0) + 'px', top: '0px' }"
-                 :class="shouldShowGuide('column', ci, coli) ? ( ((activeColi === coli && activeColCi === ci) || (isDragging && dragCi === ci && dragColi === coli && dragType === 'paddingTop') || (hoveredType === 'column' && hoveredCi === ci && hoveredColi === coli)) ? 'opacity-100' : 'opacity-0' ) : 'hidden'">
+                 :class="shouldShowGuide('column', ci, coli) ? ( ((activeColi === coli && activeColCi === ci) || (isDragging && dragCi === ci && dragColi === coli && dragType === 'paddingTop')) ? 'opacity-100' : 'opacity-0' ) : 'hidden'">
                  <div class="absolute bottom-0 left-0 w-full border-b border-dashed border-[#0091ea]/20"></div>
             </div>
             <div class="absolute left-0 right-0 pointer-events-none z-0 bg-[#0091ea]/5 transition-opacity"
                  :style="{ height: (column.settings.paddingBottom || 0) + 'px', bottom: '0px' }"
-                 :class="shouldShowGuide('column', ci, coli) ? ( ((activeColi === coli && activeColCi === ci) || (isDragging && dragCi === ci && dragColi === coli && dragType === 'paddingBottom') || (hoveredType === 'column' && hoveredCi === ci && hoveredColi === coli)) ? 'opacity-100' : 'opacity-0' ) : 'hidden'">
+                 :class="shouldShowGuide('column', ci, coli) ? ( ((activeColi === coli && activeColCi === ci) || (isDragging && dragCi === ci && dragColi === coli && dragType === 'paddingBottom')) ? 'opacity-100' : 'opacity-0' ) : 'hidden'">
                  <div class="absolute top-0 left-0 w-full border-t border-dashed border-[#0091ea]/20"></div>
             </div>
             <div class="absolute top-0 bottom-0 pointer-events-none z-0 bg-[#0091ea]/5 transition-opacity"
                  :style="{ width: (column.settings.paddingLeft || 0) + 'px', left: '0px' }"
-                 :class="shouldShowGuide('column', ci, coli) ? ( ((activeColi === coli && activeColCi === ci) || (isDragging && dragCi === ci && dragColi === coli && dragType === 'paddingLeft') || (hoveredType === 'column' && hoveredCi === ci && hoveredColi === coli)) ? 'opacity-100' : 'opacity-0' ) : 'hidden'">
+                 :class="shouldShowGuide('column', ci, coli) ? ( ((activeColi === coli && activeColCi === ci) || (isDragging && dragCi === ci && dragColi === coli && dragType === 'paddingLeft')) ? 'opacity-100' : 'opacity-0' ) : 'hidden'">
                  <div class="absolute top-0 right-0 h-full border-r border-dashed border-[#0091ea]/20"></div>
             </div>
             <div class="absolute top-0 bottom-0 pointer-events-none z-0 bg-[#0091ea]/5 transition-opacity"
                  :style="{ width: (column.settings.paddingRight || 0) + 'px', right: '0px' }"
-                 :class="shouldShowGuide('column', ci, coli) ? ( ((activeColi === coli && activeColCi === ci) || (isDragging && dragCi === ci && dragColi === coli && dragType === 'paddingRight') || (hoveredType === 'column' && hoveredCi === ci && hoveredColi === coli)) ? 'opacity-100' : 'opacity-0' ) : 'hidden'">
+                 :class="shouldShowGuide('column', ci, coli) ? ( ((activeColi === coli && activeColCi === ci) || (isDragging && dragCi === ci && dragColi === coli && dragType === 'paddingRight')) ? 'opacity-100' : 'opacity-0' ) : 'hidden'">
                  <div class="absolute top-0 left-0 h-full border-l border-dashed border-[#0091ea]/20"></div>
             </div>
         </div>
 
 
         <!-- Column Handles -->
-        <div v-if="!isPreview" class="absolute inset-0 pointer-events-none z-[200] transition-opacity"
-             :class="shouldShowGuide('column', ci, coli) ? ( ((activeColi === coli && activeColCi === ci) || (isDragging && dragCi === ci && dragColi === coli) || (hoveredType === 'column' && hoveredCi === ci && hoveredColi === coli)) ? 'opacity-100' : 'opacity-0' ) : 'hidden'">
+        <div v-if="!isPreview" class="absolute inset-0 pointer-events-none z-[1500] transition-opacity"
+             :class="shouldShowGuide('column', ci, coli) ? ( ((activeColi === coli && activeColCi === ci) || (isDragging && dragCi === ci && dragColi === coli)) ? 'opacity-100' : 'opacity-0' ) : 'hidden'">
             
             <div class="absolute top-0.5 left-1/2 -translate-x-1/2 pointer-events-auto flex gap-0.5 items-start">
                 <div class="handle-purple group/chmt" @mousedown.stop.prevent="startDrag($event, 'marginTop', ci, coli)">
@@ -127,10 +127,9 @@
             </div>
         </div>
 
-        <!-- Add Element Button: CENTERED if empty -->
-        <div v-if="!isPreview && column.elements.length === 0" 
-             class="absolute inset-0 flex items-center justify-center z-10 transition-opacity"
-             :class="((activeColCi === ci && activeColi === coli) || (isDragging && dragCi === ci && dragColi === coli) || (hoveredType === 'column' && hoveredCi === ci && hoveredColi === coli)) ? 'opacity-100' : 'opacity-0'">
+        <!-- Add Element Button: ABSOLUTE CENTER if only nested rows or empty -->
+        <div v-if="!isPreview && !column.elements.some(el => el.type !== 'row')" 
+             class="absolute inset-0 flex items-center justify-center z-10 transition-opacity pointer-events-none opacity-100">
             <button @click.stop="openElementModal(ci, coli, 'design')" 
                     class="w-8 h-8 bg-[#0091ea] text-white rounded shadow-lg flex items-center justify-center hover:scale-110 transition-all relative group/coladdbtn pointer-events-auto">
                 <i class="fa fa-plus text-base pointer-events-none"></i>
@@ -141,57 +140,68 @@
         <template v-for="(el, eli) in column.elements" :key="el.id">
         <div v-if="el.type === 'row' && column.settings.contentLayout === 'row'"
              style="flex-basis:100%;width:100%;height:0;overflow:hidden;"></div>
-        <div class="relative group/el"
+        <div class="relative group/el mb-2"
+             @click.stop="setEditingContext('element', ci, coli, eli)"
              :class="[
                 (column.settings.contentLayout === 'row' && el.type !== 'row') ? '' : 'w-full',
                 dragTarget === 'element-' + ci + '-' + coli + '-' + eli + '-null-null' && dragPosition === 'top' ? 'border-t-2 border-t-blue-500' : '',
                 dragTarget === 'element-' + ci + '-' + coli + '-' + eli + '-null-null' && dragPosition === 'bottom' ? 'border-b-2 border-b-blue-500' : ''
              ]"
-             :style="el.type === 'row' ? { flex: '0 0 100%', width: '100%', maxWidth: '100%' } : {}"
+             :style="el.type === 'row' ? { width: '100%', maxWidth: '100%' } : {}"
              @dragover="onDragOver($event, 'element', ci, coli, eli)"
              @drop="onDrop($event, 'element', ci, coli, eli)">
             
-            @include('cms-dashboard::admin.lazy-builder.partials.components.elements.heading')
-            @include('cms-dashboard::admin.lazy-builder.partials.components.elements.text')
-            @include('cms-dashboard::admin.lazy-builder.partials.components.nested.row')
+            @includeIf('cms-dashboard::admin.lazy-builder.partials.components.elements.heading')
+            @includeIf('cms-dashboard::admin.lazy-builder.partials.components.elements.title')
+            @includeIf('cms-dashboard::admin.lazy-builder.partials.components.elements.text')
+            @includeIf('cms-dashboard::admin.lazy-builder.partials.components.elements.image')
+            @includeIf('cms-dashboard::admin.lazy-builder.partials.components.elements.button')
+            @includeIf('cms-dashboard::admin.lazy-builder.partials.components.elements.video')
+            @includeIf('cms-dashboard::admin.lazy-builder.partials.components.elements.spacer')
+            @includeIf('cms-dashboard::admin.lazy-builder.partials.components.nested.row')
 
-            <!-- Element Toolbar (Top-Center, Constrained Inside) -->
-            <div class="absolute top-0 left-0 w-full flex justify-center opacity-0 group-hover/el:opacity-100 transition-all duration-200 z-[1010] hover:z-[1100] pointer-events-none p-1" v-if="!isPreview && el.type !== 'row'">
-                <div class="flex items-center bg-[#9c27b0] text-white rounded shadow-xl h-7 px-1.5 gap-0.5 pointer-events-auto">
-                    <!-- Drag -->
-                    <div class="w-7 h-7 flex items-center justify-center hover:bg-white/20 rounded cursor-move relative group/etool" 
-                         draggable="true" @dragstart="onDragStart($event, 'element', ci, coli, eli)" @dragend="onDragEnd">
-                        <i class="fa fa-arrows-alt text-[10px]"></i>
-                        <div class="lazy-tooltip-v2 opacity-0 group-hover/etool:opacity-100 z-[100] whitespace-nowrap">Move</div>
+            <!-- Custom Registered Blocks -->
+            @foreach($customElements ?? [] as $type => $custEl)
+                <div v-if="el.type === '{{ $type }}'">
+                    @includeIf($custEl['view'])
+                </div>
+            @endforeach
+
+            <!-- Element Toolbar (Top-Center, Compact & Expandable) -->
+            <div class="absolute top-0 left-1/2 -translate-x-1/2 flex justify-center opacity-0 group-hover/el:opacity-100 transition-all duration-200 z-[1010] hover:z-[1100] pointer-events-none p-1" v-if="!isPreview && el.type !== 'row'">
+                <div class="flex items-center bg-[#9c27b0] text-white rounded shadow-xl h-7 px-1 pointer-events-auto group/etbar overflow-hidden max-w-[60px] hover:max-w-[250px] transition-all duration-300 ease-in-out">
+                    
+                    <!-- Always Visible Part: Edit & Add -->
+                    <div class="flex items-center">
+                        <div class="w-7 h-7 flex items-center justify-center hover:bg-white/20 rounded cursor-pointer relative group/etool" 
+                             @click.stop="setEditingContext('element', ci, coli, eli)">
+                            <i class="fa fa-pen text-[10px]"></i>
+                            <div class="lazy-tooltip-v2 opacity-0 group-hover/etool:opacity-100 z-[100] whitespace-nowrap">Edit</div>
+                        </div>
+                        <div class="w-7 h-7 flex items-center justify-center hover:bg-white/20 rounded cursor-pointer relative group/etool" 
+                             @click.stop="openElementModal(ci, coli, 'design', false, eli + 1)">
+                            <i class="fa fa-plus text-[10px]"></i>
+                            <div class="lazy-tooltip-v2 opacity-0 group-hover/etool:opacity-100 z-[100] whitespace-nowrap">Add Below</div>
+                        </div>
                     </div>
-                    <!-- Duplicate -->
-                    <div class="w-7 h-7 flex items-center justify-center hover:bg-white/20 rounded cursor-pointer relative group/etool" 
-                         @click.stop="duplicateElement(ci, coli, eli)">
-                        <i class="fa fa-copy text-[10px]"></i>
-                        <div class="lazy-tooltip-v2 opacity-0 group-hover/etool:opacity-100 z-[100] whitespace-nowrap">Duplicate</div>
-                    </div>
-                    <!-- Edit -->
-                    <div class="w-7 h-7 flex items-center justify-center hover:bg-white/20 rounded cursor-pointer relative group/etool" 
-                         @click.stop="editingContext={type:'element', ci:ci, coli:coli, eli:eli, ncoli:null, neli:null}; activeTab='settings'">
-                        <i class="fa fa-pen text-[10px]"></i>
-                        <div class="lazy-tooltip-v2 opacity-0 group-hover/etool:opacity-100 z-[100] whitespace-nowrap">Edit</div>
-                    </div>
-                    <!-- Add After -->
-                    <div class="w-7 h-7 flex items-center justify-center hover:bg-white/20 rounded cursor-pointer relative group/etool" 
-                         @click.stop="openElementModal(ci, coli, 'design', false, eli + 1)">
-                        <i class="fa fa-plus text-[10px]"></i>
-                        <div class="lazy-tooltip-v2 opacity-0 group-hover/etool:opacity-100 z-[100] whitespace-nowrap">Add Element Below</div>
-                    </div>
-                    <!-- Save -->
-                    <div class="w-7 h-7 flex items-center justify-center hover:bg-white/20 rounded cursor-pointer relative group/etool">
-                        <i class="fa fa-hdd text-[10px]"></i>
-                        <div class="lazy-tooltip-v2 opacity-0 group-hover/etool:opacity-100 z-[100] whitespace-nowrap">Save to Library</div>
-                    </div>
-                    <!-- Delete -->
-                    <div class="w-7 h-7 flex items-center justify-center hover:bg-white/20 rounded cursor-pointer relative group/etool" 
-                         @click.stop="column.elements.splice(eli, 1)">
-                        <i class="fa fa-trash-alt text-[10px]"></i>
-                        <div class="lazy-tooltip-v2 opacity-0 group-hover/etool:opacity-100 z-[100] whitespace-nowrap">Delete</div>
+
+                    <!-- Expandable Part: Move, Duplicate, Delete -->
+                    <div class="flex items-center border-l border-white/20 ml-1 pl-1 opacity-0 group-hover/etbar:opacity-100 transition-opacity duration-300">
+                        <div class="w-7 h-7 flex items-center justify-center hover:bg-white/20 rounded cursor-move relative group/etool" 
+                             draggable="true" @dragstart="onDragStart($event, 'element', ci, coli, eli)" @dragend="onDragEnd">
+                            <i class="fa fa-arrows-alt text-[10px]"></i>
+                            <div class="lazy-tooltip-v2 opacity-0 group-hover/etool:opacity-100 z-[100] whitespace-nowrap">Move</div>
+                        </div>
+                        <div class="w-7 h-7 flex items-center justify-center hover:bg-white/20 rounded cursor-pointer relative group/etool" 
+                             @click.stop="duplicateElement(ci, coli, eli)">
+                            <i class="fa fa-copy text-[10px]"></i>
+                            <div class="lazy-tooltip-v2 opacity-0 group-hover/etool:opacity-100 z-[100] whitespace-nowrap">Duplicate</div>
+                        </div>
+                        <div class="w-7 h-7 flex items-center justify-center hover:bg-red-500 rounded cursor-pointer relative group/etool text-red-100 hover:text-white" 
+                             @click.stop="column.elements.splice(eli, 1)">
+                            <i class="fa fa-trash-alt text-[10px]"></i>
+                            <div class="lazy-tooltip-v2 opacity-0 group-hover/etool:opacity-100 z-[100] whitespace-nowrap">Delete</div>
+                        </div>
                     </div>
                 </div>
             </div>
@@ -205,14 +215,14 @@
     <div v-if="!isPreview"
          class="absolute top-0 bottom-0 left-0 pointer-events-none z-[5] bg-[#9c27b0]/5 transition-opacity"
          :style="{ width: (column.settings.columnSpacingLeft || 0) + '%' }"
-         :class="shouldShowGuide('column', ci, coli) ? ( ((activeColi === coli && activeColCi === ci) || (isDragging && dragCi === ci && dragColi === coli && dragType === 'columnSpacingLeft') || (hoveredType === 'column' && hoveredCi === ci && hoveredColi === coli)) ? 'opacity-100' : 'opacity-0' ) : 'hidden'">
+         :class="shouldShowGuide('column', ci, coli) ? ( ((activeColi === coli && activeColCi === ci) || (isDragging && dragCi === ci && dragColi === coli && dragType === 'columnSpacingLeft')) ? 'opacity-100' : 'opacity-0' ) : 'hidden'">
          <div class="absolute top-0 right-0 h-full border-r border-dashed border-[#9c27b0]/20"></div>
     </div>
     <!-- Right spacing overlay: anchored at column-outer right border, grows inward -->
     <div v-if="!isPreview"
          class="absolute top-0 bottom-0 right-0 pointer-events-none z-[5] bg-[#9c27b0]/5 transition-opacity"
          :style="{ width: (column.settings.columnSpacingRight || 0) + '%' }"
-         :class="shouldShowGuide('column', ci, coli) ? ( ((activeColi === coli && activeColCi === ci) || (isDragging && dragCi === ci && dragColi === coli && dragType === 'columnSpacingRight') || (hoveredType === 'column' && hoveredCi === ci && hoveredColi === coli)) ? 'opacity-100' : 'opacity-0' ) : 'hidden'">
+         :class="shouldShowGuide('column', ci, coli) ? ( ((activeColi === coli && activeColCi === ci) || (isDragging && dragCi === ci && dragColi === coli && dragType === 'columnSpacingRight')) ? 'opacity-100' : 'opacity-0' ) : 'hidden'">
          <div class="absolute top-0 left-0 h-full border-l border-dashed border-[#9c27b0]/20"></div>
     </div>
 </div>

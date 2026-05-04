@@ -1,4 +1,4 @@
-<div v-if="el.type === 'row'" class="nested-row-outer-wrapper w-full basis-full shrink-0 relative py-8 px-4 bg-slate-50/20 border border-slate-100 rounded-lg mb-10 mt-6 group/nrow shadow-sm"
+<div v-if="el.type === 'row'" class="nested-row-outer-wrapper w-full basis-full shrink-0 relative py-4 px-4 bg-slate-50/20 border border-slate-100 rounded-lg mb-2 mt-2 group/nrow shadow-sm"
      @mouseenter="setHover('nested-row', ci, coli, eli)"
      @mouseleave="setHover(null)">
     <!-- Header/Label for the nested row container -->
@@ -17,7 +17,7 @@
             
             <!-- Edit Row -->
             <div class="w-6 h-6 flex items-center justify-center hover:bg-white/20 rounded cursor-pointer relative group/etool" 
-                 @click.stop="editingContext={type:'nested-row', ci:ci, coli:coli, eli:eli}; activeTab='settings'">
+                 @click.stop="setEditingContext('nested-row', ci, coli, eli)">,StartLine:20,TargetContent:
                 <i class="fa fa-pen text-white text-[10px]"></i>
                 <div class="lazy-tooltip-v2">Edit Row</div>
             </div>
@@ -45,14 +45,14 @@
         </div>
     </div>
 
-    <div :style="containerInnerStyle(el)" class="w-full relative min-h-[80px]">
+    <div :style="containerInnerStyle(el)" class="w-full relative">
         <div v-for="(ncol, ncoli) in el.columns" 
              class="column-outer relative"
              :class="[(ncol.settings.hoverType && ncol.settings.hoverType !== 'none') ? 'hover-effect-' + ncol.settings.hoverType : '', getVisibilityClasses(ncol.settings)]"
-             :style="columnOuterStyle(ncol, el.columns.length)">
+             :style="columnOuterStyle(el, ncol, el.columns.length)">
              
             <!-- Nested Column Inner (Handles Background, Padding, Border, Shadow) -->
-            <div class="column-inner group/ncol-inner relative h-full min-h-full"
+            <div class="column-inner group/ncol-inner relative"
                  :class="[
                     activeColi === ncoli && activeColCi === eli ? 'nested-column-active' : '',
                     isDragging && dragCi === ci && dragColi === coli && dragEli === eli && dragNcoli === ncoli ? 'dragging-no-transition' : '',
@@ -61,8 +61,8 @@
                     (dragTarget === 'nested-column-' + ci + '-' + coli + '-' + eli + '-' + ncoli + '-null' && dragSource?.type === 'element') ? 'ring-2 ring-blue-400 ring-inset bg-blue-50/30' : '',
                     ncol.settings.linkUrl ? 'cursor-pointer' : ''
                  ]"
-                 :style="columnInnerStyle(ncol)"
-                 @click.stop="activeColi = ncoli; activeColCi = eli; editingContext={type:'nested-column', ci:ci, coli:coli, eli:eli, ncoli:ncoli}"
+                 :style="columnInnerStyle(ncol, el)"
+                 @click.stop="setEditingContext('nested-column', ci, coli, eli, ncoli)"
                  @mouseenter="setHover('nested-column', ci, coli, eli, ncoli)"
                  @mouseleave="setHover(null)"
                  @dragover="onDragOver($event, 'nested-column', ci, coli, eli, ncoli)"
@@ -88,7 +88,7 @@
 
                         <!-- Edit -->
                         <div class="w-6 h-6 flex items-center justify-center hover:bg-white/20 rounded cursor-pointer relative group/etool" 
-                             @click.stop="editingContext={type:'nested-column', ci:ci, coli:coli, eli:eli, ncoli:ncoli}; activeTab='settings'">
+                             @click.stop="setEditingContext('nested-column', ci, coli, eli, ncoli)">,StartLine:91,TargetContent:
                             <i class="fa fa-pen text-white text-[10px]"></i>
                             <div class="lazy-tooltip-v2">Column Settings</div>
                         </div>
@@ -120,19 +120,19 @@
                 <div v-if="!isPreview" class="absolute inset-0 pointer-events-none z-0">
                     <div class="absolute left-0 right-0 pointer-events-none z-0 bg-[#ff9800]/5 transition-opacity"
                          :style="{ height: (ncol.settings.paddingTop || 0) + 'px', top: '0px' }"
-                         :class="shouldShowGuide('nested-column', ci, coli, eli, ncoli) ? ( (isDragging && dragType === 'paddingTop' && dragNcoli === ncoli) || (hoveredType === 'nested-column' && hoveredCi === ci && hoveredColi === coli && hoveredEli === eli && hoveredNcoli === ncoli) ? 'opacity-100' : 'opacity-0' ) : 'hidden'">
+                         :class="shouldShowGuide('nested-column', ci, coli, eli, ncoli) ? ( (isDragging && dragType === 'paddingTop' && dragNcoli === ncoli) ? 'opacity-100' : 'opacity-0' ) : 'hidden'">
                          <div class="absolute bottom-0 left-0 w-full border-b border-dashed border-[#ff9800]/30"></div>
                     </div>
                     <div class="absolute left-0 right-0 pointer-events-none z-0 bg-[#ff9800]/5 transition-opacity"
                          :style="{ height: (ncol.settings.paddingBottom || 0) + 'px', bottom: '0px' }"
-                         :class="shouldShowGuide('nested-column', ci, coli, eli, ncoli) ? ( (isDragging && dragType === 'paddingBottom' && dragNcoli === ncoli) || (hoveredType === 'nested-column' && hoveredCi === ci && hoveredColi === coli && hoveredEli === eli && hoveredNcoli === ncoli) ? 'opacity-100' : 'opacity-0' ) : 'hidden'">
+                         :class="shouldShowGuide('nested-column', ci, coli, eli, ncoli) ? ( (isDragging && dragType === 'paddingBottom' && dragNcoli === ncoli) ? 'opacity-100' : 'opacity-0' ) : 'hidden'">
                          <div class="absolute top-0 left-0 w-full border-t border-dashed border-[#ff9800]/30"></div>
                     </div>
                 </div>
 
                 <!-- Nested Column Handles -->
-                <div v-if="!isPreview" class="absolute inset-0 pointer-events-none z-[600] transition-opacity"
-                     :class="shouldShowGuide('nested-column', ci, coli, eli, ncoli) ? ( ((activeColi === ncoli && activeColCi === eli) || (isDragging && dragNcoli === ncoli) || (hoveredType === 'nested-column' && hoveredCi === ci && hoveredColi === coli && hoveredEli === eli && hoveredNcoli === ncoli)) ? 'opacity-100' : 'opacity-0' ) : 'hidden'">
+                <div v-if="!isPreview" class="absolute inset-0 pointer-events-none z-[1500] transition-opacity"
+                     :class="shouldShowGuide('nested-column', ci, coli, eli, ncoli) ? ( ((activeColi === ncoli && activeColCi === eli) || (isDragging && dragNcoli === ncoli)) ? 'opacity-100' : 'opacity-0' ) : 'hidden'">
                     
                     <div class="absolute top-0 left-1/2 -translate-x-1/2 pointer-events-auto">
                         <div class="handle-orange group/nh" 
@@ -163,8 +163,9 @@
                     </button>
                 </div>
                 
-                <div v-for="(nestedEl, nestedEli) in ncol.elements" :key="nestedEl.id" 
-                     class="relative group/nel"
+                 <div v-for="(nestedEl, nestedEli) in ncol.elements" :key="nestedEl.id" 
+                      class="relative group/nel"
+                      @click.stop="setEditingContext('element', ci, coli, eli, ncoli, nestedEli)"
                      :class="[
                         (ncol.settings.contentLayout === 'row' && nestedEl.type !== 'row') ? '' : 'w-full',
                         dragTarget === 'element-' + ci + '-' + coli + '-' + eli + '-' + ncoli + '-' + nestedEli && dragPosition === 'top' ? 'border-t-2 border-t-blue-500' : '',
@@ -180,33 +181,41 @@
                             <div v-html="nestedEl.settings.content || 'Text'" class="text-xs"></div>
                         </div>
 
-                        <!-- Nested Element Toolbar -->
-                        <div class="absolute top-0 left-0 w-full flex justify-center opacity-0 group-hover/nel:opacity-100 transition-all duration-200 z-[1010] hover:z-[1100] pointer-events-none p-0.5" v-if="!isPreview">
-                            <div class="flex items-center bg-[#9c27b0] text-white rounded shadow-xl h-6 px-1 gap-0.5 pointer-events-auto">
-                                <div class="w-5 h-5 flex items-center justify-center hover:bg-white/20 rounded cursor-move relative group/etool" 
-                                     draggable="true" @dragstart="onDragStart($event, 'element', ci, coli, eli, ncoli, nestedEli)" @dragend="onDragEnd">
-                                    <i class="fa fa-arrows-alt text-[8px]"></i>
-                                    <div class="lazy-tooltip-v2 opacity-0 group-hover/etool:opacity-100 z-[100] whitespace-nowrap">Move</div>
+                        <!-- Nested Element Toolbar (Top-Center, Compact & Expandable) -->
+                        <div class="absolute top-0 left-1/2 -translate-x-1/2 flex justify-center opacity-0 group-hover/nel:opacity-100 transition-all duration-200 z-[1010] hover:z-[1100] pointer-events-none p-1" v-if="!isPreview">
+                            <div class="flex items-center bg-[#9c27b0] text-white rounded shadow-xl h-7 px-1 pointer-events-auto group/netbar overflow-hidden max-w-[60px] hover:max-w-[250px] transition-all duration-300 ease-in-out">
+                                
+                                <!-- Always Visible Part: Edit & Add -->
+                                <div class="flex items-center">
+                                    <div class="w-7 h-7 flex items-center justify-center hover:bg-white/20 rounded cursor-pointer relative group/etool" 
+                                         @click.stop="setEditingContext('element', ci, coli, eli, ncoli, nestedEli)">,StartLine:190,TargetContent:
+                                        <i class="fa fa-pen text-[10px]"></i>
+                                        <div class="lazy-tooltip-v2 opacity-0 group-hover/etool:opacity-100 z-[100] whitespace-nowrap">Edit</div>
+                                    </div>
+                                    <div class="w-7 h-7 flex items-center justify-center hover:bg-white/20 rounded cursor-pointer relative group/etool" 
+                                         @click.stop="openElementModal(ci, coli, 'design', true, eli, ncoli, nestedEli + 1)">
+                                        <i class="fa fa-plus text-[10px]"></i>
+                                        <div class="lazy-tooltip-v2 opacity-0 group-hover/etool:opacity-100 z-[100] whitespace-nowrap">Add Below</div>
+                                    </div>
                                 </div>
-                                <div class="w-5 h-5 flex items-center justify-center hover:bg-white/20 rounded cursor-pointer relative group/etool" 
-                                     @click.stop="duplicateNestedElement(ci, coli, eli, ncoli, nestedEli)">
-                                    <i class="fa fa-copy text-[8px]"></i>
-                                    <div class="lazy-tooltip-v2 opacity-0 group-hover/etool:opacity-100 z-[100] whitespace-nowrap">Duplicate</div>
-                                </div>
-                                <div class="w-5 h-5 flex items-center justify-center hover:bg-white/20 rounded cursor-pointer relative group/etool" 
-                                     @click.stop="editingContext={type:'element', ci:ci, coli:coli, eli:eli, ncoli:ncoli, neli:nestedEli}; activeTab='settings'">
-                                    <i class="fa fa-pen text-[8px]"></i>
-                                    <div class="lazy-tooltip-v2 opacity-0 group-hover/etool:opacity-100 z-[100] whitespace-nowrap">Edit</div>
-                                </div>
-                                <div class="w-5 h-5 flex items-center justify-center hover:bg-white/20 rounded cursor-pointer relative group/etool" 
-                                     @click.stop="openElementModal(ci, coli, 'design', true, eli, ncoli, nestedEli + 1, ['design'])">
-                                    <i class="fa fa-plus text-[8px]"></i>
-                                    <div class="lazy-tooltip-v2 opacity-0 group-hover/etool:opacity-100 z-[100] whitespace-nowrap text-[8px]">Add Below</div>
-                                </div>
-                                <div class="w-5 h-5 flex items-center justify-center hover:bg-white/20 rounded cursor-pointer relative group/etool text-white hover:text-red-200" 
-                                     @click.stop="ncol.elements.splice(nestedEli, 1)">
-                                    <i class="fa fa-trash-alt text-[8px]"></i>
-                                    <div class="lazy-tooltip-v2 opacity-0 group-hover/etool:opacity-100 z-[100] whitespace-nowrap">Delete</div>
+
+                                <!-- Expandable Part: Move, Duplicate, Delete -->
+                                <div class="flex items-center border-l border-white/20 ml-1 pl-1 opacity-0 group-hover/netbar:opacity-100 transition-opacity duration-300">
+                                    <div class="w-7 h-7 flex items-center justify-center hover:bg-white/20 rounded cursor-move relative group/etool" 
+                                         draggable="true" @dragstart="onDragStart($event, 'element', ci, coli, eli, ncoli, nestedEli)" @dragend="onDragEnd">
+                                        <i class="fa fa-arrows-alt text-[10px]"></i>
+                                        <div class="lazy-tooltip-v2 opacity-0 group-hover/etool:opacity-100 z-[100] whitespace-nowrap">Move</div>
+                                    </div>
+                                    <div class="w-7 h-7 flex items-center justify-center hover:bg-white/20 rounded cursor-pointer relative group/etool" 
+                                         @click.stop="duplicateNestedElement(ci, coli, eli, ncoli, nestedEli)">
+                                        <i class="fa fa-copy text-[10px]"></i>
+                                        <div class="lazy-tooltip-v2 opacity-0 group-hover/etool:opacity-100 z-[100] whitespace-nowrap">Duplicate</div>
+                                    </div>
+                                    <div class="w-7 h-7 flex items-center justify-center hover:bg-red-500 rounded cursor-pointer relative group/etool text-red-100 hover:text-white" 
+                                         @click.stop="ncol.elements.splice(nestedEli, 1)">
+                                        <i class="fa fa-trash-alt text-[10px]"></i>
+                                        <div class="lazy-tooltip-v2 opacity-0 group-hover/etool:opacity-100 z-[100] whitespace-nowrap">Delete</div>
+                                    </div>
                                 </div>
                             </div>
                         </div>

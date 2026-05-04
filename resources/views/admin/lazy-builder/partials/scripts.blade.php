@@ -12,7 +12,7 @@
             const editingCi = ref(null);
             const activeColi = ref(null);
             const activeColCi = ref(null);
-            const editingContext = ref({ type: null, ci: null, coli: null });
+            const editingContext = ref({ type: null, ci: null, coli: null, eli: null, ncoli: null, neli: null, tab: 'content' });
             const activePanelTab = ref('general');
             const activeColPanelTab = ref('general');
             const siteWidth = ref("{{ get_cms_option('theme_site_width', '1200px') }}");
@@ -99,6 +99,7 @@
                 { type: 'heading', name: 'Heading', icon: 'fa fa-heading' },
                 { type: 'text', name: 'Text Block', icon: 'fa fa-paragraph' },
                 { type: 'image', name: 'Image', icon: 'fa fa-image' },
+                { type: 'title', name: 'Modern Title', icon: 'fa fa-heading' },
                 { type: 'button', name: 'Button', icon: 'fa fa-rectangle-ad' },
                 { type: 'video', name: 'Video', icon: 'fa fa-play-circle' },
                 { type: 'spacer', name: 'Spacer', icon: 'fa fa-arrows-alt-v' },
@@ -124,6 +125,14 @@
                     el.type.toLowerCase().includes(query)
                 );
             });
+
+            // Dynamic Custom Elements Registration
+            const customElements = @json($customElements ?? []);
+            if (Object.keys(customElements).length > 0) {
+                Object.values(customElements).forEach(el => {
+                    availableElements.push(el);
+                });
+            }
 
             // Initialize layout
             onMounted(() => {
@@ -272,17 +281,43 @@
 
             const columnModalType = ref('new'); // 'new' or 'edit'
 
-            const openColumnModal = (index = null, type = 'new') => {
-                columnModalTarget.value = index;
-                columnModalType.value = type;
-                showColumnModal.value = true;
+            const clearEditingContext = () => {
+                editingContext.value = { type: null, ci: null, coli: null, eli: null, ncoli: null, neli: null, tab: 'content' };
+                editingCi.value = null;
+                activeColi.value = null;
+                activeColCi.value = null;
+                activeTab.value = 'navigator';
+            };
+
+            const setEditingContext = (type, ci = null, coli = null, eli = null, ncoli = null, neli = null) => {
+                editingContext.value = {
+                    type, ci, coli, eli, ncoli, neli,
+                    tab: editingContext.value.tab || 'content'
+                };
+                activeTab.value = 'settings';
+                
+                // Reset highlights
+                editingCi.value = null;
+                activeColi.value = null;
+                activeColCi.value = null;
+
+                // For canvas highlighting
+                if (type === 'container') {
+                    editingCi.value = ci;
+                } else if (type === 'column') {
+                    activeColi.value = coli;
+                    activeColCi.value = ci;
+                } else if (type === 'nested-column') {
+                    activeColi.value = ncoli;
+                    activeColCi.value = eli;
+                }
             };
 
             // Reset tabs when context changes to ensure panels show content initially
-            watch(() => editingContext.value.type, (newType) => {
-                if (newType === 'container') activePanelTab.value = 'general';
-                if (newType === 'column' || newType === 'nested-column') activeColPanelTab.value = 'general';
-            });
+            watch(editingContext, (newCtx) => {
+                if (newCtx.type === 'container') activePanelTab.value = 'general';
+                if (newCtx.type === 'column' || newCtx.type === 'nested-column') activeColPanelTab.value = 'general';
+            }, { deep: true });
 
             const selectLayout = (layoutData) => {
                 const columns = layoutData.config.split('-').map(part => {
@@ -320,7 +355,7 @@
                             bgImageRepeat: 'no-repeat', bgImageSize: 'auto', bgImageFading: false,
                             bgImageParallax: 'none', bgImageBlendMode: 'normal',
                             contentWidth: 'site', height: 'auto', customHeight: '',
-                            alignItems: 'stretch', alignContent: 'flex-start', justifyContent: 'flex-start',
+                            alignItems: 'stretch', alignContent: '', justifyContent: 'flex-start',
                             flexWrap: 'wrap', columnGap: '', htmlTag: 'div',
                             menuAnchor: '', visibility: { mobile: true, tablet: true, desktop: true },
                             status: 'published', cssClass: '',
@@ -791,11 +826,15 @@
 
             const editingColumn = computed(() => {
                 const ctx = editingContext.value;
-                if (ctx.ci === null || !layout.value[ctx.ci]) return null;
+                if (ctx.ci === null || ctx.ci === undefined || !layout.value[ctx.ci]) return null;
+                const container = layout.value[ctx.ci];
+
                 if (ctx.type === 'column') {
-                    return layout.value[ctx.ci].columns[ctx.coli] || null;
+                    if (ctx.coli === null || ctx.coli === undefined) return null;
+                    return container.columns[ctx.coli] || null;
                 } else if (ctx.type === 'nested-column') {
-                    const row = layout.value[ctx.ci].columns[ctx.coli].elements[ctx.eli];
+                    if (ctx.coli === null || ctx.coli === undefined || ctx.eli === null || ctx.eli === undefined || ctx.ncoli === null || ctx.ncoli === undefined) return null;
+                    const row = container.columns[ctx.coli].elements[ctx.eli];
                     return (row && row.columns) ? row.columns[ctx.ncoli] : null;
                 }
                 return null;
@@ -912,8 +951,8 @@
                     backgroundSize: s.bgType === 'image' ? (s.bgImageSize || 'auto') : undefined,
                     backgroundAttachment: s.bgType === 'image' && s.bgImageParallax === 'fixed' ? 'fixed' : undefined,
                     backgroundBlendMode: s.bgType === 'image' && s.bgImageBlendMode !== 'normal' ? s.bgImageBlendMode : undefined,
-                    minHeight: s.height === 'full' ? '100vh' : (s.minHeight || '100px'),
-                    height: s.height === 'full' ? 'auto' : (s.height === 'custom' ? (s.customHeight || 'auto') : 'auto'),
+                    minHeight: s.height === 'full' ? '100vh' : (s.minHeight ? s.minHeight : (s.height === 'custom' ? 'unset' : '100px')),
+                    height: s.height === 'full' ? '100vh' : (s.height === 'custom' ? (s.customHeight || 'auto') : 'auto'),
                     display: 'flex',
                     flexDirection: 'column'
                 };
@@ -922,56 +961,103 @@
             const containerInnerStyle = (container) => {
                 const s = container.settings;
                 const isSpaceDistribution = ['space-between', 'space-around', 'space-evenly'].includes(s.justifyContent);
+                const alignItems = s.alignItems || 'stretch';
+                const innerMinHeight = s.minHeight ? s.minHeight : '100px';
+                // Use height:100% so flex-grow fills the outer container for custom/full height
+                const innerHeight = (s.height === 'custom' || s.height === 'full') ? '100%' : 'auto';
+                
+                // Align-content logic:
+                // - Auto height: flex-start
+                // - Fixed height: Default to 'stretch' so rows fill the container,
+                //   allowing internal align-items (Top/Center/Bottom/Stretch) to work.
+                let alignContent = 'stretch';
+                if (!s.height || s.height === 'auto') {
+                    alignContent = 'flex-start';
+                } else {
+                    alignContent = s.rowAlignContent || 'stretch';
+                }
+
                 return {
                     display: 'flex',
-                    maxWidth: s.contentWidth === '100%' ? '100%' : siteWidth.value,
+                    ...(container.type !== 'row' ? { maxWidth: s.contentWidth === '100%' ? '100%' : siteWidth.value } : {}),
                     width: '100%',
-                    flexGrow: s.flexGrow !== undefined && s.flexGrow !== '' ? s.flexGrow : 1,
-                    flexShrink: s.flexShrink !== undefined && s.flexShrink !== '' ? s.flexShrink : 0,
+                    flexGrow: 1,
+                    flexShrink: 0,
                     overflow: s.overflow && s.overflow !== 'default' ? s.overflow : undefined,
-                    minHeight: s.minHeight || '100px',
+                    minHeight: innerMinHeight,
                     maxHeight: s.maxHeight || undefined,
-                    alignItems: s.alignItems || 'stretch',
-                    alignContent: s.alignContent || 'flex-start',
-                    justifyContent: s.justifyContent || 'flex-start',
+                    height: innerHeight,
+                    flexDirection: 'row',
                     flexWrap: !s.flexWrap || s.flexWrap === 'default' ? 'wrap' : s.flexWrap,
+                    alignItems: alignItems,
+                    alignContent: alignContent,
+                    justifyContent: s.justifyContent || 'flex-start',
                     columnGap: isSpaceDistribution ? '0' : (s.columnGap || '20px')
                 };
             };
 
-            const columnOuterStyle = (column, totalColumns) => {
+            const columnOuterStyle = (container, column, count) => {
                 const s = column.settings;
-                const basis = column.basis || (100 / totalColumns) + '%';
+                const containerAlign = container?.settings?.alignItems || 'stretch';
+                const basis = column.basis || (100 / count) + '%';
                 
                 let flexBasis;
+                const gap = parseInt(container.settings.columnGap || '20px');
                 if (basis === 'auto') {
                     flexBasis = 'auto';
                 } else if (typeof basis === 'string' && basis.includes('%')) {
-                    // Account for flex container gap so columns don't wrap
-                    flexBasis = `calc(${basis} - 15px)`;
+                    if (count === 1) {
+                        flexBasis = basis;
+                    } else {
+                        // Precise calculation: calc(basis% - (gap * (n-1)/n))
+                        const subtract = (gap * (count - 1)) / count;
+                        flexBasis = `calc(${basis} - ${subtract}px)`;
+                    }
                 } else {
                     flexBasis = basis;
                 }
 
                 const pTop = Number(s.paddingTop) || 0;
                 const pBottom = Number(s.paddingBottom) || 0;
+                
+                const elements = column.elements || [];
+                const isEmpty = elements.length === 0;
+                const colAlign = (s.alignment && s.alignment !== 'default') ? s.alignment : containerAlign;
+                const isStretch = colAlign === 'stretch';
+                const containerHeight = container?.settings?.height || 'auto';
+
+                const hasDefinedHeight = containerHeight === 'full' || containerHeight === 'custom';
+                
                 const style = {
                     flexBasis: flexBasis,
                     maxWidth: flexBasis === 'auto' ? 'none' : flexBasis,
-                    flexGrow: s.flexGrow !== undefined && s.flexGrow !== '' ? s.flexGrow : 0,
+                    flexGrow: s.flexGrow !== undefined && s.flexGrow !== '' ? s.flexGrow : (isStretch ? 1 : 0),
                     flexShrink: s.flexShrink !== undefined && s.flexShrink !== '' ? s.flexShrink : 0,
-                    minHeight: getUnitVal(s.minHeight, s.minHeightUnit) || `${100 + pTop + pBottom}px`,
-                    maxHeight: getUnitVal(s.maxHeight, s.maxHeightUnit) || 'none',
+                    maxHeight: getUnitVal(s.maxHeight, s.maxHeightUnit) || undefined,
                     paddingLeft: getUnitVal(s.columnSpacingLeft, '%'),
                     paddingRight: getUnitVal(s.columnSpacingRight, '%'),
                     marginTop: getUnitVal(s.marginTop, s.marginTopUnit),
                     marginBottom: getUnitVal(s.marginBottom, s.marginBottomUnit),
                     zIndex: s.zIndex || 'auto',
                     display: 'flex',
-                    flexDirection: 'column'
+                    flexDirection: 'column',
+                    alignItems: 'stretch',
+                    alignSelf: isStretch ? 'stretch' : colAlign
                 };
-
-                if (s.alignment && s.alignment !== 'default') style.alignSelf = s.alignment;
+                
+                // Final refined height/align logic:
+                // Final refined height/align logic:
+                if (isStretch) {
+                    style.height = (containerHeight === 'full' || containerHeight === 'custom') ? '100%' : 'auto';
+                    style.flexGrow = 1;
+                    style.alignSelf = 'stretch';
+                    style.minHeight = isEmpty ? '100px' : '100%';
+                } else {
+                    style.height = 'auto';
+                    style.flexGrow = 0;
+                    style.alignSelf = colAlign;
+                    style.minHeight = getUnitVal(s.minHeight, s.minHeightUnit) || (isEmpty ? '100px' : 'auto');
+                }
 
                 // Visibility
                 if (s.visibility) {
@@ -986,8 +1072,9 @@
                 return style;
             };
 
-            const columnInnerStyle = (column) => {
+            const columnInnerStyle = (column, container) => {
                 const s = column.settings;
+                const containerAlign = container?.settings?.alignItems || 'stretch';
                 const pTop = Number(s.paddingTop) || 0;
                 const pBottom = Number(s.paddingBottom) || 0;
                 
@@ -1002,25 +1089,34 @@
                     shadowStr = `${inst}${x}px ${y}px ${b}px ${sp}px ${c}`;
                 }
 
+                const elements = column.elements || [];
+                const isEmpty = elements.length === 0;
+                const colAlign = (s.alignment && s.alignment !== 'default') ? s.alignment : containerAlign;
+                const isStretch = colAlign === 'stretch';
+                const containerHeight = container?.settings?.height || 'auto';
+                const hasDefinedHeight = containerHeight === 'full' || containerHeight === 'custom';
+
                 const style = {
                     backgroundColor: s.bgColor || 'transparent',
                     color: s.textColor || 'inherit',
                     paddingTop: getUnitVal(s.paddingTop, s.paddingTopUnit),
-                    paddingBottom: getUnitVal(s.paddingBottom, s.paddingBottomUnit),
                     paddingLeft: getUnitVal(s.paddingLeft, s.paddingLeftUnit),
                     paddingRight: getUnitVal(s.paddingRight, s.paddingRightUnit),
                     marginLeft: getUnitVal(s.marginLeft, s.marginLeftUnit),
                     marginRight: getUnitVal(s.marginRight, s.marginRightUnit),
-                    minHeight: 'auto',
-                    height: '100%',
-                    flexGrow: 1,
+                    minHeight: isStretch ? '100%' : (isEmpty ? '100px' : 'auto'),
+                    height: isStretch ? '100%' : 'auto',
+                    paddingBottom: getUnitVal(s.paddingBottom, s.paddingBottomUnit),
+                    flex: isStretch ? '1 1 auto' : '0 1 auto',
                     display: 'flex',
                     flexDirection: 'column',
-                    borderTopWidth: getUnitVal(s.borderSizeTop),
-                    borderBottomWidth: getUnitVal(s.borderSizeBottom),
-                    borderLeftWidth: getUnitVal(s.borderSizeLeft),
+                    borderTopWidth: getUnitVal(s.borderSizeTop) || '0px',
+                    borderBottomWidth: getUnitVal(s.borderSizeBottom) || '0px',
+                    borderLeftWidth: getUnitVal(s.borderSizeLeft) || '0px',
+                    borderRightWidth: getUnitVal(s.borderSizeRight) || '0px',
                     borderStyle: 'solid',
                     borderColor: s.borderColor || '#eee',
+                    boxSizing: 'border-box',
                     borderTopLeftRadius: getUnitVal(s.borderRadiusTopLeft, s.borderRadiusTopLeftUnit),
                     borderTopRightRadius: getUnitVal(s.borderRadiusTopRight, s.borderRadiusTopRightUnit),
                     borderBottomRightRadius: getUnitVal(s.borderRadiusBottomRight, s.borderRadiusBottomRightUnit),
@@ -1033,24 +1129,23 @@
                     textAlign: s.textAlign || undefined,
                     cursor: s.linkUrl ? 'pointer' : 'default'
                 };
-                // content layout
-                if (s.contentLayout) {
-                    if (s.contentLayout === 'block') {
-                        style.display = 'block';
+                // content layout — default is 'column' if not explicitly set
+                const contentLayout = s.contentLayout || 'column';
+                if (contentLayout === 'block') {
+                    style.display = 'block';
+                } else {
+                    style.display = 'flex';
+                    style.flexDirection = contentLayout === 'row' ? 'row' : 'column';
+                    style.flexWrap = 'wrap';
+                    const gW = s.gapWidth ? s.gapWidth + 'px' : '0px';
+                    const gH = s.gapHeight ? s.gapHeight + 'px' : '0px';
+                    if (s.gapWidth || s.gapHeight) style.gap = gH + ' ' + gW;
+                    if (contentLayout === 'row') {
+                        if (s.contentAlignH) style.justifyContent = s.contentAlignH;
+                        if (s.contentAlignV) style.alignItems = s.contentAlignV;
                     } else {
-                        style.display = 'flex';
-                        style.flexDirection = s.contentLayout === 'row' ? 'row' : 'column';
-                        style.flexWrap = 'wrap';
-                        const gW = s.gapWidth ? s.gapWidth + 'px' : '0px';
-                        const gH = s.gapHeight ? s.gapHeight + 'px' : '0px';
-                        if (s.gapWidth || s.gapHeight) style.gap = gH + ' ' + gW;
-                        if (s.contentLayout === 'row') {
-                            if (s.contentAlignH) style.justifyContent = s.contentAlignH;
-                            if (s.contentAlignV) style.alignItems = s.contentAlignV;
-                        } else {
-                            if (s.contentAlignV) style.justifyContent = s.contentAlignV;
-                            if (s.contentAlignH) style.alignItems = s.contentAlignH;
-                        }
+                        if (s.contentAlignV) style.justifyContent = s.contentAlignV;
+                        if (s.contentAlignH) style.alignItems = s.contentAlignH;
                     }
                 }
                 
@@ -1102,6 +1197,12 @@
             const currentTargetEli = ref(null);
             const currentTargetNcoli = ref(null);
             const currentTargetNeli = ref(null);
+
+            const openColumnModal = (index = null, type = 'new') => {
+                columnModalTarget.value = index;
+                columnModalType.value = type;
+                showColumnModal.value = true;
+            };
 
             const openElementModal = (ci, coli = null, defaultTab = 'design', restricted = false, eli = null, ncoli = null, neli = null, allowedTabs = ['design', 'nested']) => {
                 currentTargetCi.value = ci;
@@ -1183,7 +1284,17 @@
                     type: type,
                     settings: {
                         visibility: { mobile: true, tablet: true, desktop: true },
-                        ...(type === 'heading' ? { title: 'New Heading', textAlign: 'left' } : { content: '<p>New text here...</p>' })
+                        ...(type === 'heading' ? { title: 'New Heading', textAlign: 'left' } : {}),
+                        ...(type === 'title' ? { 
+                            title: 'Modern Title', titleColor: '#222', fontSize: 36, fontSizeUnit: 'px', fontWeight: '800', textAlign: 'center',
+                            useLink: false, linkUrl: '', linkColor: '#0091ea', linkHoverColor: '#007cc0',
+                            separator: 'default', separatorColor: '#0091ea', dividerWidth: 60, dividerHeight: 3,
+                            paddingTop: 20, paddingBottom: 20, marginTop: 0, marginBottom: 0, marginLeft: 0, marginRight: 0,
+                            visibility: { mobile: true, tablet: true, desktop: true }
+                        } : {}),
+                        ...(type === 'text' ? { content: '<p>New text here...</p>' } : {}),
+                        ...(type === 'button' ? { text: 'Click Me', url: '#', style: 'primary' } : {}),
+                        ...(type === 'image' ? { url: '', alt: '' } : {}),
                     }
                 };
 
@@ -1212,6 +1323,7 @@
             return {
                 layout, isPreview, isSaving, activeTab, activePanelTab, activeColPanelTab, device, availableElements,
                 activeCi, editingCi, activeColi, activeColCi, editingContext,
+                clearEditingContext, setEditingContext,
                 showColumnModal, columnModalType, columnLayouts, openColumnModal, selectLayout,
                 showElementModal, elementModalTab, elementModalRestricted, elementModalAllowedTabs, openElementModal, selectNestedLayout,
                 editingColumn, editingElement,

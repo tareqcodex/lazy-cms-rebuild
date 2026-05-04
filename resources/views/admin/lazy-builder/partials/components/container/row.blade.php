@@ -8,7 +8,7 @@
         getVisibilityClasses(container.settings)
      ]"
      :style="containerStyle(container, ci)"
-     @click="activeCi = ci"
+     @click.stop="activeCi = ci"
      @mouseenter="setHover('container', ci)"
      @mouseleave="setHover(null)"
      @dragover="onDragOver($event, 'container', ci)"
@@ -18,32 +18,32 @@
     <div v-if="!isPreview">
         <div class="absolute left-0 right-0 pointer-events-auto z-0 bg-[#9c27b0]/10 transition-opacity"
              :style="{ height: (container.settings.marginTop || 0) + 'px', top: '-' + (container.settings.marginTop || 0) + 'px' }"
-             :class="shouldShowGuide('container', ci) ? ( (editingCi === ci || (isDragging && dragCi === ci && dragType === 'marginTop' && !isColumnDrag) || (hoveredType === 'container' && hoveredCi === ci)) ? 'opacity-100' : 'opacity-0' ) : 'hidden'">
+             :class="shouldShowGuide('container', ci) ? ( (editingCi === ci || (isDragging && dragCi === ci && dragType === 'marginTop' && !isColumnDrag)) ? 'opacity-100' : 'opacity-0' ) : 'hidden'">
              <div class="absolute top-0 left-0 w-full border-t border-dashed border-[#9c27b0]/40"></div>
         </div>
         <div class="absolute left-0 right-0 pointer-events-auto z-0 bg-[#9c27b0]/10 transition-opacity"
              :style="{ height: (container.settings.marginBottom || 0) + 'px', bottom: '-' + (container.settings.marginBottom || 0) + 'px' }"
-             :class="shouldShowGuide('container', ci) ? ( (editingCi === ci || (isDragging && dragCi === ci && dragType === 'marginBottom' && !isColumnDrag) || (hoveredType === 'container' && hoveredCi === ci)) ? 'opacity-100' : 'opacity-0' ) : 'hidden'">
+             :class="shouldShowGuide('container', ci) ? ( (editingCi === ci || (isDragging && dragCi === ci && dragType === 'marginBottom' && !isColumnDrag)) ? 'opacity-100' : 'opacity-0' ) : 'hidden'">
              <div class="absolute bottom-0 left-0 w-full border-b border-dashed border-[#9c27b0]/40"></div>
         </div>
         <div class="absolute left-0 right-0 pointer-events-auto z-0 bg-[#0091ea]/5 transition-opacity"
              :style="{ height: (container.settings.paddingTop || 0) + 'px', top: '0px' }"
-             :class="shouldShowGuide('container', ci) ? ( (editingCi === ci || (isDragging && dragCi === ci && dragType === 'paddingTop' && !isColumnDrag) || (hoveredType === 'container' && hoveredCi === ci)) ? 'opacity-100' : 'opacity-0' ) : 'hidden'">
+             :class="shouldShowGuide('container', ci) ? ( (editingCi === ci || (isDragging && dragCi === ci && dragType === 'paddingTop' && !isColumnDrag)) ? 'opacity-100' : 'opacity-0' ) : 'hidden'">
              <div class="absolute bottom-0 left-0 w-full border-b border-dashed border-[#0091ea]/30"></div>
         </div>
         <div class="absolute left-0 right-0 pointer-events-auto z-0 bg-[#0091ea]/5 transition-opacity"
              :style="{ height: (container.settings.paddingBottom || 0) + 'px', bottom: '0px' }"
-             :class="shouldShowGuide('container', ci) ? ( (editingCi === ci || (isDragging && dragCi === ci && dragType === 'paddingBottom' && !isColumnDrag) || (hoveredType === 'container' && hoveredCi === ci)) ? 'opacity-100' : 'opacity-0' ) : 'hidden'">
+             :class="shouldShowGuide('container', ci) ? ( (editingCi === ci || (isDragging && dragCi === ci && dragType === 'paddingBottom' && !isColumnDrag)) ? 'opacity-100' : 'opacity-0' ) : 'hidden'">
              <div class="absolute top-0 left-0 w-full border-t border-dashed border-[#0091ea]/30"></div>
         </div>
         <div class="absolute top-0 bottom-0 pointer-events-auto z-0 bg-[#0091ea]/5 transition-opacity"
              :style="{ width: (container.settings.paddingLeft || 0) + 'px', left: '0px' }"
-             :class="shouldShowGuide('container', ci) ? ( (editingCi === ci || (isDragging && dragCi === ci && dragType === 'paddingLeft' && !isColumnDrag) || (hoveredType === 'container' && hoveredCi === ci)) ? 'opacity-100' : 'opacity-0' ) : 'hidden'">
+             :class="shouldShowGuide('container', ci) ? ( (editingCi === ci || (isDragging && dragCi === ci && dragType === 'paddingLeft' && !isColumnDrag)) ? 'opacity-100' : 'opacity-0' ) : 'hidden'">
              <div class="absolute top-0 right-0 h-full border-r border-dashed border-[#0091ea]/30"></div>
         </div>
         <div class="absolute top-0 bottom-0 pointer-events-auto z-0 bg-[#0091ea]/5 transition-opacity"
              :style="{ width: (container.settings.paddingRight || 0) + 'px', right: '0px' }"
-             :class="shouldShowGuide('container', ci) ? ( (editingCi === ci || (isDragging && dragCi === ci && dragType === 'paddingRight' && !isColumnDrag) || (hoveredType === 'container' && hoveredCi === ci)) ? 'opacity-100' : 'opacity-0' ) : 'hidden'">
+             :class="shouldShowGuide('container', ci) ? ( (editingCi === ci || (isDragging && dragCi === ci && dragType === 'paddingRight' && !isColumnDrag)) ? 'opacity-100' : 'opacity-0' ) : 'hidden'">
              <div class="absolute top-0 left-0 h-full border-l border-dashed border-[#0091ea]/30"></div>
         </div>
     </div>
@@ -92,7 +92,7 @@
                 <div class="panel-btn" @click.stop="saveLayout"><i class="fa fa-hdd"></i><div class="lazy-tooltip">Save</div></div>
                 <div class="panel-btn" @click.stop="duplicateContainer(ci)"><i class="fa fa-copy"></i><div class="lazy-tooltip">Duplicate</div></div>
             </div>
-            <div class="panel-btn" @click.stop="editingCi = (editingCi === ci ? null : ci); editingContext={type:'container', ci:ci}; activeTab='settings'">
+            <div class="panel-btn" @click.stop="setEditingContext('container', ci)">
                 <i class="fa fa-pen"></i><div class="lazy-tooltip">Edit</div>
             </div>
             <div class="panel-btn" @click.stop="addContainer(ci + 1)"><i class="fa fa-plus-square"></i><div class="lazy-tooltip">Add</div></div>
@@ -100,7 +100,7 @@
     </div>
 
     <!-- Container Content Box -->
-    <div class="mx-auto w-full flex relative flex-1 min-h-[100px]" :style="containerInnerStyle(container)">
+    <div class="mx-auto w-full flex relative" :style="containerInnerStyle(container)">
         
         <div v-if="container.columns.length === 0 && !isPreview" 
              class="absolute inset-0 flex items-center justify-center z-[100] transition-opacity"

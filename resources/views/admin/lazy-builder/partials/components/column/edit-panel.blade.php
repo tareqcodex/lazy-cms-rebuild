@@ -40,7 +40,13 @@
                         <i class="fa fa-question-circle text-[10px]"></i>
                     </div>
                 </div>
-                <div class="grid grid-cols-2 gap-2">
+                <div class="grid grid-cols-5 gap-1">
+                    <button @click="{{ $c }}.alignment = 'default'"
+                            :class="({{ $c }}.alignment === 'default' || !{{ $c }}.alignment) ? 'bg-[#0091ea] text-white' : 'bg-slate-100 text-slate-400 hover:bg-slate-200'"
+                            class="py-2 rounded transition-colors flex items-center justify-center relative group/btn">
+                        <i class="fa fa-undo-alt text-[12px]"></i>
+                        <div class="lazy-tooltip-v2 opacity-0 group-hover/btn:opacity-100 z-[100] whitespace-nowrap">Default</div>
+                    </button>
                     <button @click="{{ $c }}.alignment = 'flex-start'"
                             :class="{{ $c }}.alignment === 'flex-start' ? 'bg-[#0091ea] text-white' : 'bg-slate-100 text-slate-400 hover:bg-slate-200'"
                             class="py-2 rounded transition-colors flex items-center justify-center relative group/btn">
