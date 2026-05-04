@@ -10,7 +10,8 @@ return new class extends Migration
     {
         Schema::table('posts', function (Blueprint $table) {
             // Drop old unique index
-            $table->dropUnique('posts_slug_type_unique');
+            // Drop old unique index (check for the one that actually exists)
+            $table->dropUnique(['slug', 'type', 'deleted_at']);
             
             // Add new unique index including lang_code
             $table->unique(['slug', 'type', 'lang_code'], 'posts_slug_type_lang_unique');
