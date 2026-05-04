@@ -228,7 +228,15 @@ Route::middleware(['web', \Acme\CmsDashboard\Http\Middleware\PageCacheMiddleware
     Route::get('lang/{locale}', [FrontendController::class, 'setLocale'])->name('frontend.set-locale');
     
     // Add a route for localized homepage like /bn or /fr
-    $supportedLocales = \Acme\CmsDashboard\Models\Language::where('status', true)->pluck('code')->toArray();
+    $supportedLocales = [];
+    try {
+        if (\Illuminate\Support\Facades\Schema::hasTable('cms_languages')) {
+            $supportedLocales = \Acme\CmsDashboard\Models\Language::where('status', true)->pluck('code')->toArray();
+        }
+    } catch (\Exception $e) {
+        $supportedLocales = [];
+    }
+    
     $localePattern = implode('|', $supportedLocales);
     if (!empty($localePattern)) {
         Route::get('/{locale}', [FrontendController::class, 'index'])
