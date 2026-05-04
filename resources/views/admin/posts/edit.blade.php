@@ -40,6 +40,7 @@
                             @php 
                                 $fullUrl = get_lazy_permalink($post);
                                 $displayBase = str_replace($post->slug, '', $fullUrl);
+                                $displayBase = rtrim($displayBase, '/') . '/';
                             @endphp
                             <a id="permalink-full-link" href="{{ $fullUrl }}" target="_blank" class="text-[#2271b1] underline font-medium">{{ $displayBase }}<span id="permalink-slug-display" class="font-medium text-[#2271b1]">{{ $post->slug }}</span>/</a>
                             <button type="button" id="edit-slug-btn" class="wp-btn-secondary bg-[#f6f7f7] text-[12px] h-[24px] ml-1 font-medium text-[#2271b1] border-[#c3c4c7]">Edit</button>

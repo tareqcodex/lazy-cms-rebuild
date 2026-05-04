@@ -36,8 +36,15 @@
                         <span class="text-[#646970] mr-1">Permalink:</span>
                         <span id="permalink-view">
                             @php 
+                                $isMultiLang = get_cms_option('multi_language_enabled', 0);
                                 $selectedLang = request('lang', get_cms_option('default_language', 'en'));
-                                $baseUrl = url($selectedLang === 'en' ? '/' : $selectedLang) . '/';
+                                
+                                $baseUrl = url('/');
+                                if ($isMultiLang && $selectedLang !== 'en') {
+                                    $baseUrl = url($selectedLang);
+                                }
+                                $baseUrl = rtrim($baseUrl, '/') . '/';
+                                
                                 if($type !== 'page') $baseUrl .= $type . '/';
                             @endphp
                             <a id="permalink-full-link" href="#" target="_blank" class="text-[#2271b1] underline font-medium"><span id="permalink-base-display">{{ $baseUrl }}</span><span id="permalink-slug-display" class="text-[#2271b1]">{{ old('slug') }}</span>/</a>

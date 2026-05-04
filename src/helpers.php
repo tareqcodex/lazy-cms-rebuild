@@ -271,15 +271,21 @@ if (!function_exists('get_lazy_permalink')) {
     function get_lazy_permalink($post) {
         if (!$post) return '#';
         
+        $isMultiLang = get_cms_option('multi_language_enabled', 0);
         $postLang = $post->lang_code ?? 'en';
         $homePageId = get_cms_option('home_page_id');
         
-        // Homepage usually doesn't need a slug, just the language prefix
-        if ($post->id == $homePageId) {
-            return ($postLang === 'en') ? url('/') : url('/' . $postLang);
+        // Language prefix logic
+        $langPrefix = '';
+        if ($isMultiLang) {
+            $langPrefix = ($postLang === 'en') ? '' : '/' . $postLang;
         }
 
-        $langPrefix = '/' . $postLang;
+        // Homepage usually doesn't need a slug, just the language prefix
+        if ($post->id == $homePageId) {
+            if (!$isMultiLang) return url('/');
+            return ($postLang === 'en') ? url('/') : url('/' . $postLang);
+        }
 
         if ($post->type === 'page') {
             return url($langPrefix . '/' . $post->slug);
