@@ -11,19 +11,25 @@ class LocalizationMiddleware
 {
     public function handle(Request $request, Closure $next)
     {
-        if (!\Illuminate\Support\Facades\Schema::hasTable('cms_languages')) {
-            return $next($request);
-        }
+        $locale = $request->segment(1);
 
-        $supportedLocales = Language::where('status', true)->pluck('code')->toArray();
+        try {
+            if (!\Illuminate\Support\Facades\Schema::hasTable('cms_languages')) {
+                return $next($request);
+            }
 
-        if (in_array($locale, $supportedLocales)) {
-            App::setLocale($locale);
-        } else {
-            // Check session or default
-            $default = Language::where('is_default', true)->first();
-            $locale = session('locale', $default->code ?? 'en');
-            App::setLocale($locale);
+            $supportedLocales = Language::where('status', true)->pluck('code')->toArray();
+
+            if (in_array($locale, $supportedLocales)) {
+                App::setLocale($locale);
+            } else {
+                // Check session or default
+                $default = Language::where('is_default', true)->first();
+                $locale = session('locale', $default->code ?? 'en');
+                App::setLocale($locale);
+            }
+        } catch (\Exception $e) {
+            // Silently fail and use default if DB not ready
         }
 
         return $next($request);
