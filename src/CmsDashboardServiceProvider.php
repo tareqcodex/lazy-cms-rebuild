@@ -66,6 +66,7 @@ class CmsDashboardServiceProvider extends ServiceProvider
                 \Acme\CmsDashboard\Console\Commands\MakeDashboardPage::class,
                 \Acme\CmsDashboard\Console\Commands\InstallLazyCms::class,
                 \Acme\CmsDashboard\Console\Commands\SeedLazyCms::class,
+                \Acme\CmsDashboard\Console\Commands\UpdateLazyCms::class,
             ]);
         }
     }
