@@ -17,7 +17,14 @@ class UpdateLazyCms extends Command
         $this->info('Running migrations...');
         $this->call('migrate', ['--force' => true]);
 
-        // 2. Publish Assets (Force)
+        // 2. Sync System Data (Permissions, Roles, Menus)
+        $this->info('Syncing system data...');
+        $this->call('db:seed', [
+            '--class' => 'Acme\\CmsDashboard\\Database\\Seeders\\SystemSyncSeeder',
+            '--force' => true
+        ]);
+
+        // 3. Publish Assets (Force)
         $this->info('Updating assets...');
         $this->call('vendor:publish', [
             '--provider' => 'Acme\CmsDashboard\CmsDashboardServiceProvider',

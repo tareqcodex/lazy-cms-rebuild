@@ -45,51 +45,14 @@ class InstallLazyCms extends Command
             DB::table('cms_settings')->updateOrInsert(['key' => $key], ['value' => $value]);
         }
 
-        // 5. Create Default Permissions
-        $this->info('Creating default permissions...');
-        $permissions = [
-            ['name' => 'Manage Content', 'slug' => 'manage_content'],
-            ['name' => 'Manage Users', 'slug' => 'manage_users'],
-            ['name' => 'Manage Roles', 'slug' => 'manage_roles'],
-            ['name' => 'Manage Settings', 'slug' => 'manage_settings'],
-            ['name' => 'Manage Media', 'slug' => 'manage_media'],
-            ['name' => 'Manage Posts', 'slug' => 'manage_posts'],
-            ['name' => 'Manage Pages', 'slug' => 'manage_pages'],
-            ['name' => 'Manage Categories', 'slug' => 'manage_categories'],
-            ['name' => 'Manage Tags', 'slug' => 'manage_tags'],
-        ];
-
-        foreach ($permissions as $p) {
-            \Acme\CmsDashboard\Models\Permission::updateOrCreate(['slug' => $p['slug']], $p);
-        }
-
-        // 6. Create Default Roles
-        $this->info('Creating default roles...');
-        $roles = [
-            ['name' => 'Super Admin', 'slug' => 'super-admin', 'description' => 'Unrestricted access to all system features.'],
-            ['name' => 'Administrator', 'slug' => 'administrator', 'description' => 'Full access to all settings and content.'],
-            ['name' => 'Editor', 'slug' => 'editor', 'description' => 'Can publish and manage posts.'],
-            ['name' => 'Author', 'slug' => 'author', 'description' => 'Can publish and manage their own posts.'],
-            ['name' => 'Subscriber', 'slug' => 'subscriber', 'description' => 'Can only manage their profile.'],
-        ];
-
-        foreach ($roles as $roleData) {
-            $role = Role::updateOrCreate(['slug' => $roleData['slug']], $roleData);
-            
-            if ($role->slug === 'administrator' || $role->slug === 'super-admin') {
-                $allPermissionIds = \Acme\CmsDashboard\Models\Permission::pluck('id')->toArray();
-                $role->permissions()->sync($allPermissionIds);
-            }
-        }
-
-        // 7. Run Menu Seeder
-        $this->info('Seeding default menus...');
+        // 5. Sync System Data (Permissions, Roles, Menus)
+        $this->info('Syncing system data...');
         $this->call('db:seed', [
-            '--class' => 'Acme\\CmsDashboard\\Database\\Seeders\\MenuSeeder',
+            '--class' => 'Acme\\CmsDashboard\\Database\\Seeders\\SystemSyncSeeder',
             '--force' => true
         ]);
 
-        // 8. Create Admin User
+        // 6. Create Admin User
         $this->info('Setting up Administrator user...');
         $email = $this->ask('Enter Admin email', 'admin@admin.com');
         $password = $this->secret('Enter Admin password (min 8 chars)');
