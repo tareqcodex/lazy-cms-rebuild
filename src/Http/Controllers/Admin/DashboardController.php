@@ -345,6 +345,15 @@ class DashboardController extends Controller
         if (get_cms_option('enable_documentation', '1') !== '1') {
             abort(403, 'Documentation is disabled by the administrator.');
         }
-        return view('cms-dashboard::admin.documentation');
+
+        $readmePath = __DIR__ . '/../../../../README.md';
+        $content = '';
+        if (file_exists($readmePath)) {
+            $content = file_get_contents($readmePath);
+            // Simple markdown parsing for the view (or you can use a library if available)
+            // For now, we'll pass the raw content and handle it in the view
+        }
+
+        return view('cms-dashboard::admin.documentation', compact('content'));
     }
 }

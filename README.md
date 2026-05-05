@@ -1,6 +1,6 @@
-# Lazy CMS Rebuild v3.1.4
+# Lazy CMS Rebuild v3.6.0
 
-A powerful, modular, and easy-to-use CMS package for Laravel applications.
+A powerful, modular, and easy-to-use CMS package for Laravel applications with built-in multi-language support and a WordPress-like hook system.
 
 ## 🚀 Installation
 
@@ -15,16 +15,28 @@ To install the package in a fresh Laravel project, follow these steps:
    ```bash
    php artisan lazy-cms:install
    ```
+   *This command handles migrations, asset publishing, storage linking, and default user creation.*
 
-3. **Run Migrations:**
-   ```bash
-   php artisan migrate
-   ```
+---
 
-4. **Seed Default Data:**
-   ```bash
-   php artisan lazy-cms:seed
-   ```
+## 🔄 Updating
+
+When you update the package via composer, run the following command to sync migrations and refresh assets:
+
+```bash
+php artisan lazy-cms:update
+```
+*This command automates: `migrate`, `vendor:publish (force)`, and `optimize:clear`.*
+
+---
+
+## 🌐 Multi-Language Support
+
+Lazy CMS supports dynamic localization. You can enable or disable multi-language support from the Admin Settings.
+
+- **Clean URLs:** When multi-language is disabled, URLs are clean (e.g., `/my-post`).
+- **ISO Prefixes:** When enabled, URLs include the language code (e.g., `/en/my-post`, `/bn/আমার-পোস্ট`).
+- **Dynamic Admin UI:** The language selection metabox automatically hides when multi-language is disabled to keep the UI clean.
 
 ---
 
@@ -41,36 +53,13 @@ To install the package in a fresh Laravel project, follow these steps:
 
 ## ⚓ Hook System
 
-### 1. Actions & Filters
+### Actions & Filters
 Standard usage for modifying core logic or injecting content.
 
-### 2. Removing Hooks
+### Removing Hooks
 ```php
 remove_lazy_action('tag_name', 'callback', $priority);
 remove_lazy_filter('tag_name', 'callback', $priority);
-```
-
----
-
-## 🌐 Headless CMS & REST API
-
-Lazy CMS provides a built-in REST API to power modern frontend frameworks.
-
-### 📍 API Endpoints
-- `GET /api/v1/posts`: List all published posts.
-- `GET /api/v1/posts/{slug}`: Get single post details.
-- `GET /api/v1/settings`: Get public site settings.
-- `GET /api/v1/menus`: Get navigation menus.
-
-### 🪄 Filtering API Data
-You can use hooks in your theme's `functions.php` to modify API responses:
-
-```php
-// Add custom field to API output
-add_lazy_filter('lazy_api_post_data', function($data, $post) {
-    $data['custom_key'] = 'Some dynamic value';
-    return $data;
-});
 ```
 
 ---
@@ -97,9 +86,10 @@ add_lazy_filter('lazy_general_settings_fields', function($fields) {
 
 | Command | Description |
 | :--- | :--- |
-| `php artisan lazy-cms:install` | Prepares the package environment. |
-| `php artisan lazy-cms:seed` | Seeds default data. |
-| `php artisan lazy-cms:theme-init` | Initializes the default theme. |
+| `php artisan lazy-cms:install` | Full installation (Migrations, Assets, User). |
+| `php artisan lazy-cms:update` | Post-update sync (Migrations, Assets, Cache). |
+| `php artisan lazy-cms:seed` | Seeds default demo data. |
+| `php artisan make:lazy-page` | Scaffolds a new dashboard page. |
 
 ---
 
