@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Log In &lsaquo; CMS &#8212; WordPress</title>
-    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="{{ asset('vendor/cms-dashboard/js/tailwind.min.js') }}"></script>
     <style>
         body { background-color: #f0f0f1; display: flex; flex-direction: column; align-items: center; justify-content: center; min-height: 100vh; font-family: -apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Oxygen-Sans,Ubuntu,Cantarell,"Helvetica Neue",sans-serif; }
         .login-box { width: 320px; padding: 26px 24px 34px; font-weight: 400; background: #fff; border: 1px solid #c3c4c7; box-shadow: 0 1px 3px rgba(0,0,0,.04); }
@@ -77,7 +77,7 @@
         @if(get_cms_option('users_can_register', '0') == '1')
             <a href="{{ route('admin.register') }}">Register</a> | 
         @endif
-        <a href="#">Lost your password?</a>
+        <a href="{{ route('admin.password.request') }}">Lost your password?</a>
         <br><br>
         <a href="/">&larr; Go to Site</a>
     </div>

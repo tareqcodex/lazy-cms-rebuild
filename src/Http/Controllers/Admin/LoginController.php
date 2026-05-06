@@ -69,16 +69,25 @@ class LoginController extends Controller
         $user = User::where('email', $request->email)->first();
 
         if ($user) {
-            // Check manual block
+            // Check manual permanent block
             if ($user->is_blocked && !$user->blocked_until) {
                 return back()->withErrors(['email' => 'Your account has been permanently blocked.'])->onlyInput('email');
             }
 
             // Check temporary block
-            if ($user->blocked_until && $user->blocked_until->isFuture()) {
-                $seconds = now()->diffInSeconds($user->blocked_until);
-                $minutes = ceil($seconds / 60);
-                return back()->withErrors(['email' => "Too many failed attempts. Your account is temporarily blocked. Please try again after {$minutes} minutes."])->onlyInput('email');
+            if ($user->blocked_until) {
+                if ($user->blocked_until->isFuture()) {
+                    $diffInSeconds = now()->diffInSeconds($user->blocked_until);
+                    if ($diffInSeconds > 0) {
+                        $minutes = ceil($diffInSeconds / 60);
+                        return back()->withErrors([
+                            'email' => "Too many failed attempts. Your account is temporarily blocked. Please try again after {$minutes} minutes."
+                        ])->onlyInput('email');
+                    }
+                } else {
+                    // Block expired, reset attempts but keep log
+                    $user->update(['login_attempts' => 0, 'blocked_until' => null]);
+                }
             }
         }
 
@@ -160,6 +169,111 @@ class LoginController extends Controller
             }
         } catch (\Exception $e) {}
         return ['name' => 'Unknown', 'code' => null];
+    }
+
+    public function showForgotPasswordForm()
+    {
+        $theme = get_cms_option('login_theme', 'classic');
+
+        if ($theme === 'funny') {
+            return view('cms-dashboard::admin.auth.forgot-password-funny');
+        }
+
+        if ($theme === 'breeze') {
+            return view('cms-dashboard::admin.auth.forgot-password-modern');
+        }
+
+        if ($theme === 'wp') {
+            return view('cms-dashboard::admin.auth.forgot-password-wp');
+        }
+
+        return view('cms-dashboard::admin.auth.forgot-password');
+    }
+
+    public function sendResetLinkEmail(Request $request)
+    {
+        $request->validate(['email' => 'required|email']);
+
+        // Check if user exists
+        $user = \App\Models\User::where('email', $request->email)->first();
+        if (!$user) {
+            return back()->withErrors(['email' => 'We could not find a user with that email address.']);
+        }
+
+        // Create token
+        $token = \Illuminate\Support\Str::random(60);
+        \Illuminate\Support\Facades\DB::table('password_reset_tokens')->updateOrInsert(
+            ['email' => $request->email],
+            [
+                'email' => $request->email,
+                'token' => \Illuminate\Support\Facades\Hash::make($token),
+                'created_at' => now()
+            ]
+        );
+
+        // For now, since we might not have mail configured, we'll log it and show a success message
+        // In a real app, you'd send an email here.
+        \Illuminate\Support\Facades\Log::info("Password reset link for {$request->email}: " . route('admin.password.reset', ['token' => $token, 'email' => $request->email]));
+
+        return back()->with('status', 'We have emailed your password reset link! (Check Laravel logs for the link if mail is not set up)');
+    }
+
+    public function showResetForm(Request $request, $token)
+    {
+        $theme = get_cms_option('login_theme', 'classic');
+        $email = $request->email;
+
+        $viewData = ['token' => $token, 'email' => $email];
+
+        if ($theme === 'funny') {
+            return view('cms-dashboard::admin.auth.reset-password-funny', $viewData);
+        }
+
+        if ($theme === 'breeze') {
+            return view('cms-dashboard::admin.auth.reset-password-modern', $viewData);
+        }
+
+        if ($theme === 'wp') {
+            return view('cms-dashboard::admin.auth.reset-password-wp', $viewData);
+        }
+
+        return view('cms-dashboard::admin.auth.reset-password', $viewData);
+    }
+
+    public function resetPassword(Request $request)
+    {
+        $request->validate([
+            'token' => 'required',
+            'email' => 'required|email',
+            'password' => 'required|min:8|confirmed',
+        ]);
+
+        $record = \Illuminate\Support\Facades\DB::table('password_reset_tokens')
+            ->where('email', $request->email)
+            ->first();
+
+        if (!$record || !\Illuminate\Support\Facades\Hash::check($request->token, $record->token)) {
+            return back()->withErrors(['email' => 'This password reset token is invalid.']);
+        }
+
+        // Check if token expired (1 hour)
+        if (now()->parse($record->created_at)->addHours(1)->isPast()) {
+             return back()->withErrors(['email' => 'This password reset token has expired.']);
+        }
+
+        $user = \App\Models\User::where('email', $request->email)->first();
+        if (!$user) {
+            return back()->withErrors(['email' => 'We could not find a user with that email address.']);
+        }
+
+        $user->update([
+            'password' => \Illuminate\Support\Facades\Hash::make($request->password)
+        ]);
+
+        // Delete token
+        \Illuminate\Support\Facades\DB::table('password_reset_tokens')->where('email', $request->email)->delete();
+
+        return redirect()->route('admin.login')->with('success', 'Your password has been reset successfully!');
     }
 
     public function logout(Request $request)

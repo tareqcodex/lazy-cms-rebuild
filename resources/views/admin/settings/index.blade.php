@@ -2,7 +2,9 @@
     <x-slot name="title">Settings - Lazy CMS</x-slot>
 
     <div class="px-2">
-        <h1 class="text-[23px] font-normal text-[#1d2327] mb-6">Settings</h1>
+        <h1 class="text-[23px] font-normal text-[#1d2327] mb-4">Settings</h1>
+        
+        @include('cms-dashboard::admin.settings.nav')
 
         @if (session('success'))
             <div class="bg-[#edfaef] border-l-4 border-[#46b450] p-3 mb-6 text-[13px] text-[#1d2327]">
@@ -12,6 +14,7 @@
 
         <form action="{{ route('admin.settings.update') }}" method="POST" class="max-w-[800px]">
             @csrf
+            {!! do_lazy_action('lazy_settings_form_top') !!}
 
             <table class="w-full border-separate border-spacing-y-6">
                 <!-- Site Title -->
@@ -49,9 +52,25 @@
                         <input type="email" name="admin_email" id="admin_email"
                             value="{{ $settings['admin_email'] ?? auth()->user()->email }}"
                             class="wp-input w-[400px] h-8 shadow-sm mb-1">
-                        <p class="text-[12px] text-[#646970]">This address is used for admin purposes. If you change
-                            this, an email will be sent to your new address to confirm it. The new address will not
-                            become active until confirmed.</p>
+                        <p class="text-[12px] text-[#646970]">This address is used for admin purposes.</p>
+                    </td>
+                </tr>
+
+                <!-- Homepage Selection -->
+                <tr>
+                    <th scope="row" class="w-[200px] text-left align-top pt-2">
+                        <label for="home_page_id" class="text-[14px] font-semibold text-[#1d2327]">Select your Home page</label>
+                    </th>
+                    <td>
+                        <select name="home_page_id" id="home_page_id" class="wp-input w-[400px] h-8 py-0 shadow-sm mb-1">
+                            <option value="">Latest Blog Posts (Default)</option>
+                            @foreach($pages as $page)
+                                <option value="{{ $page->id }}" {{ ($settings['home_page_id'] ?? '') == $page->id ? 'selected' : '' }}>
+                                    {{ $page->title }}
+                                </option>
+                            @endforeach
+                        </select>
+                        <p class="text-[12px] text-[#646970]">Choose what to display on your site's home page. If none selected, the latest blog posts will be shown.</p>
                     </td>
                 </tr>
 
@@ -67,6 +86,22 @@
                                 {{ ($settings['users_can_register'] ?? '0') == '1' ? 'checked' : '' }}>
                             <span class="text-[14px] text-[#1d2327]">Anyone can register</span>
                         </label>
+                    </td>
+                </tr>
+
+                <!-- Documentation Access -->
+                <tr>
+                    <th scope="row" class="w-[200px] text-left align-top pt-2">
+                        <label class="text-[14px] font-semibold text-[#1d2327]">Enable Documentation</label>
+                    </th>
+                    <td>
+                        <label class="inline-flex items-center cursor-pointer">
+                            <input type="checkbox" name="enable_documentation" id="enable_documentation"
+                                class="w-4 h-4 mr-2"
+                                {{ ($settings['enable_documentation'] ?? '1') == '1' ? 'checked' : '' }}>
+                            <span class="text-[14px] text-[#1d2327]">Show documentation in admin menu and allow access</span>
+                        </label>
+                        <p class="text-[12px] text-[#646970] mt-1">If unchecked, the documentation link will be hidden and direct access will be forbidden.</p>
                     </td>
                 </tr>
 
@@ -159,29 +194,12 @@
                         </select>
                     </td>
                 </tr>
-
-                <!-- Timezone -->
-                <tr>
-                    <th scope="row" class="w-[200px] text-left align-top pt-2">
-                        <label for="timezone" class="text-[14px] font-semibold text-[#1d2327]">Timezone</label>
-                    </th>
-                    <td>
-                        <select name="timezone" id="timezone" class="wp-input w-[250px] h-8 py-0 mb-1">
-                            <option value="UTC+0">UTC+0</option>
-                            <option value="Asia/Dhaka">UTC+6 (Dhaka)</option>
-                        </select>
-                        <p class="text-[12px] text-[#646970]">Choose either a city in the same timezone as you or a UTC
-                            (Coordinated Universal Time) time offset.</p>
-                        <p class="text-[12px] text-[#646970] mt-2">Universal time is <span
-                                class="font-mono">{{ now()->format('Y-m-d H:i:s') }}</span>.</p>
-                    </td>
-                </tr>
             </table>
 
-            @include('cms-dashboard::components.admin.dynamic-fields')
+            {!! do_lazy_action('lazy_settings_form_bottom') !!}
 
-            <div class="mt-8 pt-6 border-t border-[#c3c4c7]">
-                <button type="submit" class="wp-btn-primary h-[32px] px-4 font-semibold">Save Changes</button>
+            <div class="pt-6 border-t border-gray-100 mt-6">
+                <button type="submit" class="wp-btn-primary px-4 h-8 font-semibold">Save Changes</button>
             </div>
         </form>
     </div>
@@ -210,6 +228,23 @@
 
                 // Listen for changes
                 registerCheckbox.addEventListener('change', toggleRegistrationFields);
+                
+                // Media Modal for settings
+                document.querySelectorAll('.open-media-for-setting').forEach(btn => {
+                    btn.addEventListener('click', function() {
+                        const target = this.getAttribute('data-target');
+                        window.openMediaModal(function(media) {
+                            const input = document.getElementById('input-' + target);
+                            if (input) input.value = media.path;
+                            const preview = document.getElementById('media-preview-' + target);
+                            if (preview) {
+                                preview.innerHTML = `<img src="/storage/${media.path}" class="max-w-full max-h-full object-contain">`;
+                                preview.classList.remove('hidden');
+                            }
+                        });
+                    });
+                });
+
             });
         </script>
     @endpush

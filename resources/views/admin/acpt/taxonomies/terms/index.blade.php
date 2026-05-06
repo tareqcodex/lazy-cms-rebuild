@@ -1,5 +1,4 @@
 <x-cms-dashboard::layouts.admin title="Manage {{ $taxonomy->name }} Terms" active-menu="acpt">
-    
     <div class="mb-4 flex justify-between items-center">
         <h1 class="text-[23px] font-normal text-[#1d2327] inline-block mr-3">{{ $taxonomy->name }} Terms</h1>
         
@@ -28,6 +27,9 @@
             @endif
         </div>
     @endif
+
+    <div class="flex flex-col md:flex-row justify-between items-start md:items-center mb-4 gap-4">
+    </div>
 
     <div class="flex flex-col md:flex-row gap-6">
         <!-- Add New Term Column -->
@@ -76,10 +78,10 @@
                 <div class="flex justify-between items-center mb-2">
                     <div class="flex gap-2 items-center">
                         <select name="action" class="wp-input h-8 py-0 text-[13px]">
-                            <option value="-1">Bulk Actions</option>
+                            <option value="-1">Bulk actions</option>
                             <option value="delete">Delete</option>
                         </select>
-                        <button type="submit" class="wp-btn-secondary h-8 px-3">Apply</button>
+                        <button type="submit" class="wp-btn-secondary h-8 leading-[1] text-[13px]">Apply</button>
                     </div>
                     <x-cms-dashboard::admin.pagination :paginator="$terms" />
                 </div>
@@ -109,7 +111,7 @@
                                 <td class="p-3 text-[#646970]">{{ $term->description ?: '—' }}</td>
                                 <td class="p-3 text-[#646970]">{{ $term->slug }}</td>
                                 <td class="p-3 text-center">
-                                    <a href="#" class="text-[#2271b1]">{{ $term->posts_count ?? 0 }}</a>
+                                    <a href="{{ route('admin.posts.index', ['type' => request('cpt') ?: ($taxonomy->post_types[0] ?? 'post'), 'term_id' => $term->id]) }}" class="text-[#2271b1] font-semibold">{{ $term->posts_count ?? 0 }}</a>
                                 </td>
                             </tr>
                             @empty

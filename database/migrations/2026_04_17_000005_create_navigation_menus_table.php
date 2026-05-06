@@ -12,6 +12,9 @@ return new class extends Migration
             $table->id();
             $table->string('name');
             $table->string('slug')->unique()->nullable();
+            $table->string('location')->nullable(); // custom location string
+            $table->boolean('is_header')->default(false);
+            $table->boolean('is_footer')->default(false);
             $table->timestamps();
         });
 
@@ -27,10 +30,6 @@ return new class extends Migration
             $table->string('classes')->nullable();
             $table->integer('order')->default(0);
             $table->timestamps();
-        });
-        
-        Schema::table('navigation_menus', function (Blueprint $table) {
-            $table->string('location')->nullable(); // header, footer, etc.
         });
     }
 

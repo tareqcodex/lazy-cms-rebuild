@@ -16,6 +16,8 @@ return new class extends Migration
             $table->string('ip_address')->unique();
             $table->integer('attempts')->default(0);
             $table->string('reason')->nullable();
+            $table->string('country')->nullable();
+            $table->string('country_code', 10)->nullable();
             $table->timestamps();
         });
     }

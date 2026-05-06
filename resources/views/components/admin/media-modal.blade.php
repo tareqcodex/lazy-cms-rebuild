@@ -83,7 +83,8 @@
                         <img id="detail-thumb" src="" class="w-16 h-16 object-cover bg-white border border-[#c3c4c7]">
                         <div class="text-[12px] break-all">
                             <div id="detail-filename" class="font-bold text-black mt-1">image.jpg</div>
-                            <div id="detail-date" class="text-[#646970] mb-2">April 17, 2026</div>
+                            <div id="detail-date" class="text-[#646970] mb-1">April 17, 2026</div>
+                            <div id="detail-dimensions" class="text-[#646970] mb-2 text-[11px]"></div>
                             <div class="pt-2 border-t border-[#c3c4c7] mt-2 space-y-1">
                                 <div><strong>Main File size:</strong> <span id="detail-orig-size" class="text-[#646970]"></span></div>
                                 <div><strong>Compression Size:</strong> <span id="detail-comp-size" class="text-[#646970]"></span></div>
@@ -101,8 +102,9 @@
                         <div><label class="block text-[12px] text-[#646970] mb-1">Description</label><textarea id="meta-desc" class="wp-input w-full text-[13px] h-16 py-1"></textarea></div>
                         <div><label class="block text-[12px] text-[#646970] mb-1">File URL:</label><input type="text" id="meta-url" readonly class="wp-input w-full text-[12px] h-7 bg-white/50"></div>
                     </div>
-                    <div class="text-right pt-2 border-t border-[#c3c4c7]">
-                        <button type="button" id="save-media-meta-btn" class="wp-btn-secondary text-[12px] h-7">Save Details</button>
+                    <div class="flex items-center justify-between pt-2 border-t border-[#c3c4c7]">
+                        <button type="button" id="save-media-meta-btn" class="wp-btn-primary text-[12px] h-7 px-4">Update</button>
+                        <span id="save-status-msg" class="text-[12px] text-green-600 font-medium opacity-0 transition-opacity duration-300">Saved!</span>
                     </div>
                 </div>
             </div>
@@ -172,13 +174,22 @@
                     'X-Requested-With': 'XMLHttpRequest'
                 }
             })
-            .then(res => res.json())
-            .then(data => {
-                if (data.success) {
+            .then(async res => {
+                const isJson = res.headers.get('content-type')?.includes('application/json');
+                const data = isJson ? await res.json() : null;
+                
+                if (res.ok && data && data.success) {
                     loadLibrary();
+                    // Clear file input
+                    fileInput.value = '';
                 } else {
-                    alert('Upload failed.');
+                    console.error('Upload Error:', data || await res.text());
+                    alert('Upload failed. Check console for details.');
                 }
+            })
+            .catch(err => {
+                console.error('Fetch Error:', err);
+                alert('Network error or server unavailable.');
             })
             .finally(() => {
                 document.getElementById('media-loading-spinner').classList.add('hidden');
@@ -242,6 +253,7 @@
             document.getElementById('detail-thumb').src = `/storage/${item.path}`;
             document.getElementById('detail-filename').innerText = item.filename;
             document.getElementById('detail-date').innerText = new Date(item.created_at).toLocaleDateString('en-US', {month:'long', day:'numeric', year:'numeric'});
+            document.getElementById('detail-dimensions').innerText = (item.width && item.height) ? `Width: ${item.width}px by Height: ${item.height}px` : 'N/A';
             
             const orig = item.original_size || 0;
             const comp = item.compressed_size || orig;
@@ -273,6 +285,12 @@
 
         document.getElementById('save-media-meta-btn').addEventListener('click', function() {
             if (!selectedMedia) return;
+            const btn = this;
+            const originalText = btn.innerText;
+            
+            btn.disabled = true;
+            btn.innerText = 'Saving...';
+
             const data = {
                 alt_text: document.getElementById('meta-alt').value,
                 title: document.getElementById('meta-title').value,
@@ -281,6 +299,7 @@
                 _token: '{{ csrf_token() }}',
                 _method: 'PUT'
             };
+
             fetch(`/admin/media/${selectedMedia.id}`, {
                 method: 'POST',
                 headers: {
@@ -289,7 +308,39 @@
                     'X-Requested-With': 'XMLHttpRequest'
                 },
                 body: JSON.stringify(data)
-            }).then(() => alert('Details saved.'));
+            })
+            .then(res => res.json())
+            .then(response => {
+                if (response.success) {
+                    const updatedItem = response.data;
+                    Object.assign(selectedMedia, updatedItem);
+                    
+                    const gridItem = document.querySelector(`.item-media-${updatedItem.id}`);
+                    if (gridItem) {
+                        const img = gridItem.querySelector('img');
+                        if (img) img.src = `/storage/${updatedItem.path}?v=${new Date().getTime()}`;
+                    }
+
+                    selectItem(selectedMedia, gridItem);
+                    
+                    const statusMsg = document.getElementById('save-status-msg');
+                    statusMsg.classList.remove('opacity-0');
+                    btn.innerText = originalText;
+                    btn.disabled = false;
+                    
+                    setTimeout(() => {
+                        statusMsg.classList.add('opacity-0');
+                    }, 3000);
+                }
+            })
+            .catch(err => {
+                console.error(err);
+                btn.innerText = 'Error!';
+                setTimeout(() => {
+                    btn.innerText = originalText;
+                    btn.disabled = false;
+                }, 2000);
+            });
         });
 
         document.getElementById('delete-media-permanently').addEventListener('click', function() {

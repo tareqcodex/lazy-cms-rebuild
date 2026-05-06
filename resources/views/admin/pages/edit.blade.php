@@ -33,11 +33,15 @@
                     <div id="permalink-container" class="mt-2 text-[13px] flex items-center">
                         <strong class="text-[#646970] mr-1">Permalink:</strong>
                         <span id="permalink-view">
-                            <a id="permalink-full-link" href="{{ url($page->slug) }}" target="_blank" class="text-[#2271b1] hover:underline">{{ url('/') }}/<span id="permalink-slug-display" class="font-medium text-black">{{ $page->slug }}</span>/</a>
-                            <button type="button" id="edit-slug-btn" class="wp-btn-secondary bg-[#f6f7f7] text-[12px] h-[24px] ml-1">Edit</button>
+                            @php 
+                                $fullUrl = get_lazy_permalink($page);
+                                $displayBase = str_replace($page->slug, '', $fullUrl);
+                            @endphp
+                            <a id="permalink-full-link" href="{{ $fullUrl }}" target="_blank" class="text-[#2271b1] underline">{{ $displayBase }}<span id="permalink-slug-display" class="font-medium text-[#2271b1]">{{ $page->slug }}</span>/</a>
+                            <button type="button" id="edit-slug-btn" class="wp-btn-secondary bg-[#f6f7f7] text-[12px] h-[24px] ml-1 text-[#2271b1] border-[#c3c4c7] font-medium">Edit</button>
                         </span>
                         <span id="permalink-edit" class="hidden items-center">
-                            <span class="text-[#646970]">{{ url('/') }}/</span>
+                            <span class="text-[#646970]">{{ $displayBase }}</span>
                             <input type="text" name="slug" id="slug-input" value="{{ $page->slug }}" class="wp-input text-[13px] h-[24px] px-1 mx-1" style="width: 150px;">/
                             <button type="button" id="ok-slug-btn" class="wp-btn-secondary bg-[#f6f7f7] text-[12px] h-[24px] mx-1">OK</button>
                             <a href="#" id="cancel-slug-btn" class="text-[#2271b1] hover:underline ml-1">Cancel</a>
@@ -70,7 +74,7 @@
                         <h2 class="text-[#2c3338] text-[22px] font-bold mb-3">Welcome to the Page Builder</h2>
                         <p class="text-[#646970] text-[14px] mb-8">This post is now using the amazing page builder.</p>
                         
-                        <button type="button" onclick="alert('The actual Page Builder will load here!')" class="wp-btn-primary px-6 py-2 h-auto text-[15px] rounded-md shadow-sm">
+                        <button type="button" @if(isset($page->id)) onclick="window.location.href='{{ route('admin.lazy-builder', $page->id) }}'" @else onclick="alert('Please save the page first to enable the Page Builder.')" @endif class="wp-btn-primary px-6 py-2 h-auto text-[15px] rounded-md shadow-sm">
                             Edit with Page Builder
                         </button>
                     </div>
@@ -123,11 +127,66 @@
                     </div>
                     @endforeach
                 @endif
+
+                @include('cms-dashboard::admin.posts.partials.seo', ['post' => $page])
             </div>
 
             <!-- Right Column: Metaboxes -->
             <div class="w-full lg:w-[280px] shrink-0 space-y-5">
                 
+                <!-- Language & Multilingual Metabox -->
+                @php $activeLanguages = \Acme\CmsDashboard\Models\Language::where('status', true)->get(); @endphp
+                <div class="wp-metabox mb-0">
+                    <div class="wp-metabox-header"><span>Language</span></div>
+                    <div class="wp-metabox-content p-3">
+                        <div class="mb-3">
+                            <label class="block text-[12px] font-bold text-[#1d2327] mb-1">Page Language</label>
+                            <select name="lang_code" class="wp-input w-full text-[13px] h-8 py-0">
+                                @foreach($activeLanguages as $lang)
+                                    <option value="{{ $lang->code }}" {{ $page->lang_code == $lang->code ? 'selected' : '' }}>
+                                        {{ $lang->flag }} {{ $lang->name }}
+                                    </option>
+                                @endforeach
+                            </select>
+                        </div>
+
+                        @if(!$page->origin_id && $activeLanguages->count() > 1)
+                            <hr class="my-3 border-gray-100">
+                            <label class="flex items-center text-[13px] font-bold text-[#1d2327] mb-3 cursor-pointer">
+                                <input type="checkbox" name="make_multilingual_copy" value="1" class="mr-2 rounded-sm border-[#8c8f94] text-[#2271b1]" onchange="document.getElementById('multi-lang-list').classList.toggle('hidden', !this.checked)">
+                                Make more copies?
+                            </label>
+                            
+                            <div id="multi-lang-list" class="hidden space-y-2 pl-6 border-l-2 border-gray-100">
+                                <p class="text-[11px] text-gray-500 mb-2">Clone to:</p>
+                                @php 
+                                    $existingClones = \Acme\CmsDashboard\Models\Page::where('origin_id', $page->id)->pluck('lang_code')->toArray();
+                                @endphp
+                                @foreach($activeLanguages as $lang)
+                                    @if($lang->code !== $page->lang_code && !in_array($lang->code, $existingClones))
+                                    <label class="flex items-center text-[12px] text-[#2c3338] lang-option-{{ $lang->code }}">
+                                        <input type="checkbox" name="copy_to_languages[]" value="{{ $lang->code }}" class="mr-2 rounded-sm border-[#8c8f94] text-[#2271b1]">
+                                        <span class="mr-1">{{ $lang->flag }}</span> {{ $lang->name }}
+                                    </label>
+                                    @endif
+                                @endforeach
+                            </div>
+                        @elseif($page->origin_id)
+                            @php $original = \Acme\CmsDashboard\Models\Page::find($page->origin_id); @endphp
+                            <div class="bg-blue-50 p-2 border border-blue-100 rounded-sm">
+                                <p class="text-[11px] text-blue-700">
+                                    This is the <strong>{{ $activeLanguages->where('code', $page->lang_code)->first()->name ?? $page->lang_code }}</strong> version.
+                                </p>
+                                @if($original)
+                                <p class="text-[10px] mt-1">
+                                    <a href="{{ route('admin.pages.edit', $original) }}" class="text-blue-600 underline font-bold">View Original ({{ strtoupper($original->lang_code) }})</a>
+                                </p>
+                                @endif
+                            </div>
+                        @endif
+                    </div>
+                </div>
+
                 <!-- Publish Metabox -->
                 <div class="wp-metabox mb-0">
                     <div class="wp-metabox-header flex justify-between items-center cursor-pointer">
@@ -135,7 +194,7 @@
                     </div>
                     <div class="wp-metabox-content" style="padding: 10px;">
                         <div class="flex justify-between items-center mb-3">
-                            <button type="button" id="save-draft-btn" class="wp-btn-secondary text-[13px] bg-[#f6f7f7]">Save Draft</button>
+                            <button type="button" id="save-draft-btn" formnovalidate class="wp-btn-secondary text-[13px] bg-[#f6f7f7]">Save Draft</button>
                             <a href="{{ url($page->slug) }}" target="_blank" class="wp-btn-secondary text-[13px] bg-[#f6f7f7]">Preview</a>
                         </div>
                         <div class="text-[13px] text-[#646970] space-y-3 mb-4">
@@ -201,35 +260,6 @@
                     </div>
                 </div>
 
-                <!-- Page Attributes Metabox -->
-                <div class="wp-metabox mb-0">
-                    <div class="wp-metabox-header flex justify-between items-center cursor-pointer">
-                        <span>Page Attributes</span> <svg class="w-4 h-4 text-[#646970]" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 15l7-7 7 7"/></svg>
-                    </div>
-                    <div class="wp-metabox-content" style="padding: 10px;">
-                        <div class="mb-4">
-                            <label class="block text-[13px] font-bold mb-1">Parent</label>
-                            <select name="parent_id" form="page-form" class="wp-input w-full h-[30px] text-[13px] py-0">
-                                <option value="">(no parent)</option>
-                                @foreach($allPages as $p)
-                                    <option value="{{ $p->id }}" {{ $page->parent_id == $p->id ? 'selected' : '' }}>{{ $p->title }}</option>
-                                @endforeach
-                            </select>
-                        </div>
-                        <div class="mb-4">
-                            <label class="block text-[13px] font-bold mb-1">Template</label>
-                            <select name="template" form="page-form" class="wp-input w-full h-[30px] text-[13px] py-0">
-                                <option value="default" {{ $page->template == 'default' || empty($page->template) ? 'selected' : '' }}>Default template</option>
-                                <option value="site-width" {{ $page->template == 'site-width' ? 'selected' : '' }}>Site width</option>
-                                <option value="full-width" {{ $page->template == 'full-width' ? 'selected' : '' }}>100% width</option>
-                            </select>
-                        </div>
-                        <div>
-                            <label class="block text-[13px] font-bold mb-1">Order</label>
-                            <input type="number" name="menu_order" value="{{ $page->menu_order }}" class="wp-input w-20 h-[30px] text-[13px]">
-                        </div>
-                    </div>
-                </div>
 
                 <!-- Featured Image -->
                 <div class="wp-metabox mb-0">
@@ -273,12 +303,28 @@
             });
 
             // Permalink Logic
+            const titleInput = document.getElementById('title-input');
+            const permalinkContainer = document.getElementById('permalink-container');
             const slugDisplay = document.getElementById('permalink-slug-display');
             const slugInput = document.getElementById('slug-input');
             const viewSpan = document.getElementById('permalink-view');
             const editSpan = document.getElementById('permalink-edit');
             const statusHidden = document.getElementById('status-hidden');
             let originalSlug = slugInput?.value || '';
+
+            titleInput?.addEventListener('blur', function() {
+                if (this.value && !slugInput.value) {
+                    let newSlug = generateSlug(this.value);
+                    slugInput.value = newSlug;
+                    if (slugDisplay) slugDisplay.innerText = newSlug;
+                    originalSlug = newSlug;
+                }
+                
+                if (this.value) {
+                    permalinkContainer?.classList.remove('hidden');
+                    permalinkContainer?.classList.add('flex');
+                }
+            });
 
             document.getElementById('edit-slug-btn')?.addEventListener('click', function() {
                 viewSpan?.classList.add('hidden');
@@ -412,6 +458,25 @@
                 statusHidden.value = 'draft';
                 document.getElementById('page-form')?.submit();
             });
+
+            // Language selector logic
+            const langSelect = document.querySelector('select[name="lang_code"]');
+            if (langSelect) {
+                const updateCloneList = () => {
+                    const selectedLang = langSelect.value;
+                    document.querySelectorAll('#multi-lang-list label').forEach(label => {
+                        if (label.classList.contains(`lang-option-${selectedLang}`)) {
+                            label.classList.add('hidden');
+                            label.querySelector('input').checked = false;
+                        } else {
+                            label.classList.remove('hidden');
+                            label.querySelector('input').checked = false;
+                        }
+                    });
+                };
+                langSelect.addEventListener('change', updateCloneList);
+                updateCloneList();
+            }
         });
     </script>
 </x-cms-dashboard::layouts.admin>

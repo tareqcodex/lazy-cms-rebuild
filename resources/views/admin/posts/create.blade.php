@@ -29,17 +29,29 @@
                 <div class="mb-4">
                     <input type="text" name="title" id="title-input" value="{{ old('title') }}" 
                            class="w-full text-[1.7em] leading-normal border border-[#8c8f94] rounded-sm py-[3px] px-[8px] focus:ring-[#2271b1] focus:border-[#2271b1] shadow-none m-0 bg-white" 
-                           placeholder="Add title" required>
+                           placeholder="Add title">
                     
                     @if(!isset($postType) || $postType->is_public)
                     <div id="permalink-container" class="mt-2 text-[13px] {{ old('title') ? 'flex' : 'hidden' }} items-center font-medium">
                         <span class="text-[#646970] mr-1">Permalink:</span>
                         <span id="permalink-view">
-                            <a id="permalink-full-link" href="#" target="_blank" class="text-[#2271b1] underline font-medium">{{ url('/') }}/<span id="permalink-slug-display" class="text-[#2271b1]">{{ old('slug') }}</span>/</a>
-                            <button type="button" id="edit-slug-btn" class="wp-btn-secondary bg-[#f6f7f7] text-[12px] h-[24px] ml-1 font-medium">Edit</button>
+                            @php 
+                                $isMultiLang = get_cms_option('multi_language_enabled', 0);
+                                $selectedLang = request('lang', get_cms_option('default_language', 'en'));
+                                
+                                $baseUrl = url('/');
+                                if ($isMultiLang && $selectedLang !== 'en') {
+                                    $baseUrl = url($selectedLang);
+                                }
+                                $baseUrl = rtrim($baseUrl, '/') . '/';
+                                
+                                if($type !== 'page') $baseUrl .= $type . '/';
+                            @endphp
+                            <a id="permalink-full-link" href="#" target="_blank" class="text-[#2271b1] underline font-medium"><span id="permalink-base-display">{{ $baseUrl }}</span><span id="permalink-slug-display" class="text-[#2271b1]">{{ old('slug') }}</span>/</a>
+                            <button type="button" id="edit-slug-btn" class="wp-btn-secondary bg-[#f6f7f7] text-[12px] h-[24px] ml-1 font-medium text-[#2271b1] border-[#c3c4c7]">Edit</button>
                         </span>
                         <span id="permalink-edit" class="hidden items-center">
-                            <span class="text-[#646970] font-medium">{{ url('/') }}/</span>
+                            <span class="text-[#646970] font-medium" id="permalink-base-edit">{{ $baseUrl }}</span>
                             <input type="text" name="slug" id="slug-input" value="{{ old('slug') }}" class="wp-input text-[13px] h-[24px] px-1 mx-1 font-medium" style="width: 150px;">/
                             <button type="button" id="ok-slug-btn" class="wp-btn-secondary bg-[#f6f7f7] text-[12px] h-[24px] mx-1 font-medium">OK</button>
                             <a href="#" id="cancel-slug-btn" class="text-[#2271b1] underline ml-1 font-medium">Cancel</a>
@@ -140,11 +152,58 @@
                     </div>
                     @endforeach
                 @endif
+
+                @include('cms-dashboard::admin.posts.partials.seo', ['post' => new \Acme\CmsDashboard\Models\Post()])
             </div>
 
             <!-- Right Column: Metaboxes -->
             <div class="w-full lg:w-[280px] shrink-0 space-y-5">
                 
+                <!-- Multilingual Metabox -->
+                @php 
+                    $isMultiLang = get_cms_option('multi_language_enabled', 0);
+                    $activeLanguages = \Acme\CmsDashboard\Models\Language::where('status', true)->get(); 
+                @endphp
+
+                @if($isMultiLang)
+                <div class="wp-metabox mb-6" style="margin-bottom: 24px !important; margin-top: 10px !important;">
+                    <div class="wp-metabox-header"><span>Language</span></div>
+                    <div class="wp-metabox-content p-3">
+                        <div class="mb-3">
+                            <label class="block text-[12px] font-bold text-[#1d2327] mb-1">Post Language</label>
+                            <select name="lang_code" class="wp-input w-full text-[13px] h-8 py-0">
+                                @foreach($activeLanguages as $lang)
+                                    <option value="{{ $lang->code }}" {{ $lang->is_default ? 'selected' : '' }}>
+                                        {{ $lang->flag }} {{ $lang->name }}
+                                    </option>
+                                @endforeach
+                            </select>
+                            <p class="text-[11px] text-gray-500 mt-1">This is the language of the content you are currently writing.</p>
+                        </div>
+
+                        @if($activeLanguages->count() > 1)
+                        <hr class="my-3 border-gray-100">
+                        <label class="flex items-center text-[13px] font-bold text-[#1d2327] mb-3 cursor-pointer">
+                            <input type="checkbox" name="make_multilingual_copy" value="1" class="mr-2 rounded-sm border-[#8c8f94] text-[#2271b1]" onchange="document.getElementById('multi-lang-list').classList.toggle('hidden', !this.checked)">
+                            Make a copy for other languages?
+                        </label>
+
+                        <div id="multi-lang-list" class="hidden space-y-2 pl-6 border-l-2 border-gray-100">
+                            <p class="text-[11px] text-gray-500 mb-2">Select languages to clone this post to:</p>
+                            @foreach($activeLanguages as $lang)
+                                <label class="flex items-center text-[12px] text-[#2c3338] lang-option-{{ $lang->code }}">
+                                    <input type="checkbox" name="copy_to_languages[]" value="{{ $lang->code }}" checked class="mr-2 rounded-sm border-[#8c8f94] text-[#2271b1]">
+                                    <span class="mr-1">{{ $lang->flag }}</span> {{ $lang->name }}
+                                </label>
+                            @endforeach
+                        </div>
+                        @endif
+                    </div>
+                </div>
+                @else
+                    <input type="hidden" name="lang_code" value="{{ get_cms_option('default_language', 'en') }}">
+                @endif
+
                 <!-- Publish Metabox -->
                 <div class="wp-metabox mb-6" style="margin-bottom: 24px !important; margin-top: 10px !important;">
                     <div class="wp-metabox-header flex justify-between items-center cursor-pointer">
@@ -152,7 +211,7 @@
                     </div>
                     <div class="wp-metabox-content" style="padding: 10px;">
                         <div class="flex justify-between items-center mb-3">
-                            <button type="button" id="save-draft-btn" class="wp-btn-secondary text-[13px] bg-[#f6f7f7]">Save Draft</button>
+                            <button type="button" id="save-draft-btn" formnovalidate class="wp-btn-secondary text-[13px] bg-[#f6f7f7]">Save Draft</button>
                             <button type="button" class="wp-btn-secondary text-[13px] bg-[#f6f7f7]">Preview</button>
                         </div>
                         <div class="text-[13px] text-[#646970] space-y-3 mb-4">
@@ -334,42 +393,11 @@
                         <div id="tags-container" class="mt-3 flex flex-wrap gap-2"></div>
                         <input type="hidden" name="tags" id="tags-hidden-input">
                         
-                        <a href="#" class="text-[#2271b1] text-[12px] underline block mt-4">Choose from the most used tags</a>
+                        {{-- Removed: Choose from most used tags --}}
                     </div>
                 </div>
                 @endif
 
-                @if($type === 'page')
-                <!-- Page Attributes Metabox -->
-                <div class="wp-metabox mb-6" style="margin-bottom: 24px !important; margin-top: 10px !important;">
-                    <div class="wp-metabox-header flex justify-between items-center cursor-pointer">
-                        <span>Page Attributes</span> <svg class="w-4 h-4 text-[#646970]" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 15l7-7 7 7"/></svg>
-                    </div>
-                    <div class="wp-metabox-content p-3 space-y-3">
-                        <div>
-                            <label class="block text-[13px] font-bold mb-1">Parent</label>
-                            <select name="parent_id" class="wp-input w-full text-[13px] h-8 py-0">
-                                <option value="">(no parent)</option>
-                                @foreach($pages as $p)
-                                    <option value="{{ $p->id }}">{{ $p->title }}</option>
-                                @endforeach
-                            </select>
-                        </div>
-                        <div>
-                            <label class="block text-[13px] font-bold mb-1">Template</label>
-                            <select name="template" class="wp-input w-full text-[13px] h-8 py-0">
-                                <option value="default" selected>Default template</option>
-                                <option value="site-width">Site width</option>
-                                <option value="full-width">100% width</option>
-                            </select>
-                        </div>
-                        <div>
-                            <label class="block text-[13px] font-bold mb-1">Order</label>
-                            <input type="number" name="menu_order" value="0" class="wp-input w-16 text-[13px] h-8 px-2">
-                        </div>
-                    </div>
-                </div>
-                @endif
 
                 @if(in_array('featured_image', $supports))
                 <!-- Featured Image -->
@@ -424,46 +452,46 @@
         }
 
         if (permalinkContainer && titleInput && slugInput) {
-            titleInput.addEventListener('input', function() {
-                if (!slugInput.value || slugInput.value === generateSlug(this.value.substring(0, this.value.length - 1))) {
+            titleInput.addEventListener('blur', function() {
+                if (this.value) {
                     let newSlug = generateSlug(this.value);
-                    slugInput.value = newSlug;
-                    slugDisplay.innerText = newSlug;
-                    originalSlug = newSlug;
-                    if (this.value) {
-                        permalinkContainer.classList.remove('hidden');
-                        permalinkContainer.classList.add('flex');
+                    if (!slugInput.value) {
+                        slugInput.value = newSlug;
+                        if (slugDisplay) slugDisplay.innerText = newSlug;
+                        originalSlug = newSlug;
                     }
+                    permalinkContainer?.classList.remove('hidden');
+                    permalinkContainer?.classList.add('flex');
                 }
             });
 
             document.getElementById('edit-slug-btn')?.addEventListener('click', function() {
-                viewSpan.classList.add('hidden');
-                editSpan.classList.remove('hidden');
-                slugInput.focus();
+                viewSpan?.classList.add('hidden');
+                editSpan?.classList.remove('hidden');
+                slugInput?.focus();
             });
 
             document.getElementById('ok-slug-btn')?.addEventListener('click', function() {
                 let newSlug = generateSlug(slugInput.value);
                 slugInput.value = newSlug;
-                slugDisplay.innerText = newSlug;
+                if (slugDisplay) slugDisplay.innerText = newSlug;
                 originalSlug = newSlug;
-                viewSpan.classList.remove('hidden');
-                editSpan.classList.add('hidden');
+                viewSpan?.classList.remove('hidden');
+                editSpan?.classList.add('hidden');
             });
 
             document.getElementById('cancel-slug-btn')?.addEventListener('click', (e) => { 
                 e.preventDefault(); 
                 slugInput.value = originalSlug; 
-                viewSpan.classList.remove('hidden'); 
-                editSpan.classList.add('hidden'); 
+                viewSpan?.classList.remove('hidden'); 
+                editSpan?.classList.add('hidden'); 
             });
         }
 
         // Save Draft Logic Override
-        document.getElementById('save-draft-btn').addEventListener('click', function() {
-            statusHidden.value = 'draft';
-            document.getElementById('post-form').submit();
+        document.getElementById('save-draft-btn')?.addEventListener('click', function() {
+            if (statusHidden) statusHidden.value = 'draft';
+            document.getElementById('post-form')?.submit();
         });
 
         // Featured Image UI with Modal
@@ -473,28 +501,28 @@
         const fiPreviewContainer = document.getElementById('fi-preview-container');
         const fiPathHidden = document.getElementById('fi-path-hidden');
 
-        setFiBtn.addEventListener('click', (e) => { 
+        setFiBtn?.addEventListener('click', (e) => { 
             e.preventDefault(); 
             window.openMediaModal(function(media) {
-                fiPathHidden.value = media.path;
-                fiPreview.src = `/storage/${media.path}`;
-                fiPreviewContainer.classList.remove('hidden');
-                setFiBtn.classList.add('hidden');
-                removeFiBtn.classList.remove('hidden');
+                if (fiPathHidden) fiPathHidden.value = media.path;
+                if (fiPreview) fiPreview.src = `/storage/${media.path}`;
+                fiPreviewContainer?.classList.remove('hidden');
+                setFiBtn?.classList.add('hidden');
+                removeFiBtn?.classList.remove('hidden');
             });
         });
 
-        fiPreview.addEventListener('click', (e) => { 
+        fiPreview?.addEventListener('click', (e) => { 
             e.preventDefault(); 
-            setFiBtn.click();
+            setFiBtn?.click();
         });
 
-        removeFiBtn.addEventListener('click', (e) => {
+        removeFiBtn?.addEventListener('click', (e) => {
             e.preventDefault();
-            fiPathHidden.value = '';
-            fiPreviewContainer.classList.add('hidden');
-            setFiBtn.classList.remove('hidden');
-            removeFiBtn.classList.add('hidden');
+            if (fiPathHidden) fiPathHidden.value = '';
+            fiPreviewContainer?.classList.add('hidden');
+            setFiBtn?.classList.remove('hidden');
+            removeFiBtn?.classList.add('hidden');
         });
 
 
@@ -681,12 +709,7 @@
             inputEl.value = '';
         }
 
-        document.addEventListener('keydown', function(e) {
-            if (e.target.classList.contains('cpt-tag-input') && (e.key === ',' || e.key === 'Enter')) {
-                if (e.key === 'Enter') e.preventDefault();
-                addCPTTag(e.target);
-            }
-        });
+        // CPT Tags: Keydown listener removed as per request (only Add button allowed)
 
         document.addEventListener('click', function(e) {
             if (e.target.classList.contains('add-cpt-tag-btn')) {
@@ -740,12 +763,7 @@
         }
 
         addTagBtn?.addEventListener('click', addTagsFromInput);
-        tagInput?.addEventListener('keydown', function(e) {
-            if (e.key === 'Enter') {
-                e.preventDefault();
-                addTagsFromInput();
-            }
-        });
+        // Standard Tags: Keydown listener removed as per request (only Add button allowed)
 
         // Editor Toggle Logic
         const richEditorBtn = document.getElementById('editor-mode-rich');
@@ -798,6 +816,9 @@
             input.value = '1';
             form.appendChild(input);
 
+            const editorTypeInput = document.getElementById('editor_type');
+            if (editorTypeInput) editorTypeInput.value = 'builder';
+
             // Give the button a loading state
             this.innerText = 'Saving & Starting Builder...';
             this.classList.add('opacity-70', 'cursor-not-allowed');
@@ -805,5 +826,35 @@
             form.submit();
         });
 
+        // Language selector logic to hide current lang from clone list
+        const langSelect = document.querySelector('select[name="lang_code"]');
+        if (langSelect) {
+            const updateCloneList = () => {
+                const selectedLang = langSelect.value;
+                
+                // Update Permalink Base Display
+                const siteUrl = "{{ url('/') }}";
+                const postType = "{{ $type }}";
+                let newBase = selectedLang === 'en' ? siteUrl + '/' : siteUrl + '/' + selectedLang + '/';
+                if(postType !== 'page') newBase += postType + '/';
+
+                const baseDisplay = document.getElementById('permalink-base-display');
+                const baseEdit = document.getElementById('permalink-base-edit');
+                if (baseDisplay) baseDisplay.innerText = newBase;
+                if (baseEdit) baseEdit.innerText = newBase;
+
+                document.querySelectorAll('#multi-lang-list label').forEach(label => {
+                    if (label.classList.contains(`lang-option-${selectedLang}`)) {
+                        label.classList.add('hidden');
+                        label.querySelector('input').checked = false;
+                    } else {
+                        label.classList.remove('hidden');
+                        label.querySelector('input').checked = true;
+                    }
+                });
+            };
+            langSelect.addEventListener('change', updateCloneList);
+            updateCloneList(); // Initial run
+        }
     </script>
 </x-cms-dashboard::layouts.admin>

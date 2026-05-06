@@ -20,6 +20,8 @@ return new class extends Migration
             $row->text('caption')->nullable();
             $row->text('description')->nullable();
             $row->unsignedBigInteger('user_id')->nullable();
+            $row->integer('width')->nullable();
+            $row->integer('height')->nullable();
             $row->timestamps();
         });
     }

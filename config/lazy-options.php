@@ -1,73 +1,102 @@
 <?php
 
 return [
-    /*
-    | 1. hooks (Inject into Existing Pages):
-    |    Define fields here to inject them into standard CMS pages.
-    |    Supported Keys (Hooks):
-    |    - 'users-edit'       : User Edit Page
-    |    - 'general-settings' : Main Settings Page
-    |
-    | 2. pages (Create New Standalone Pages):
-    |    Define new administrative pages here. They will appear in the sidebar.
-    |
-    | 3. Field Configuration:
-    |    - 'type'        : text, number, textarea, select, checkbox, image
-    |    - 'label'       : Field title
-    |    - 'desc'        : (Optional) Small italic description
-    |    - 'placeholder' : (Optional) Input placeholder
-    |    - 'default'     : (Optional) Default value
-    |
-    | 4. Frontend Usage (Retrieving Values):
-    |    A. For Global Settings (Hooks & Custom Pages):
-    |       Use: {{ get_cms_option('field_key', 'default_value') }}
-    |       Example: {!! get_cms_option('header_ad_code') !!}
-    |
-    |    B. For Dynamic Custom Fields (ACPT):
-    |       Use: {{ get_custom_field($post, 'field_name', 'default_value') }}
-    |       Example: {{ get_custom_field($post, 'hero_subtitle') }}
-    |
-    |    C. Images:
-    |       Example: <img src="{{ asset(get_cms_option('header_ad_banner')) }}">
-    |
-    */
-
-    // Injections into existing pages
-    
-    // 'hooks' => [
-    //     'general-settings' => [
-    //         'fields' => [
-    //             'languages' => [
-    //                 'type' => 'select',
-    //                 'label' => 'Languages',
-    //                 'options' => [
-    //                     'en' => 'English',
-    //                     'bn' => 'Bangla',
-    //                 ],
-    //                 'default' => 'en'
-    //             ]
-    //         ]
-    //     ],
-     
-    // ],
-
-    // New standalone custom pages
-    'pages' => [
-        'ad-settings' => [
-            'title' => 'Ad Management',
-            'icon' => 'ads_click',
-            'group' => 'Marketing',
+    'hooks' => [
+        'general-settings' => [
+            'fields' => []
+        ],
+        'theme-options' => [
             'fields' => [
-                'header_ad_code' => [
-                    'type' => 'textarea',
-                    'label' => 'Header Ad Code',
-                    'placeholder' => 'Paste your ad code here...',
+                'branding_section' => [
+                    'type'  => 'title',
+                    'label' => 'Site Branding',
                 ],
-                'header_ad_banner' => [
-                    'type' => 'image',
-                    'label' => 'Header Ad Banner',
+                'theme_logo' => [
+                    'type'  => 'media',
+                    'label' => 'Site Logo',
+                ],
+                'theme_favicon' => [
+                    'type'  => 'media',
+                    'label' => 'Site Favicon',
+                ],
+                'theme_site_width' => [
+                    'type'    => 'text',
+                    'label'   => 'Site Width',
+                    'desc'    => 'Controls the overall site width. Enter value including any valid CSS unit, ex: 1200px.',
+                    'default' => '1200px',
+                ],
+                'footer_section' => [
+                    'type'  => 'title',
+                    'label' => 'Footer & Contact Info',
+                ],
+                'footer_about' => [
+                    'type'    => 'textarea',
+                    'label'   => 'Footer About Text',
+                    'default' => 'A minimalist, Astra-inspired theme for Lazy CMS. Clean, fast, and professional design focusing on readability and content delivery.',
+                ],
+                'contact_email' => [
+                    'type'    => 'text',
+                    'label'   => 'Contact Email',
+                    'default' => 'hello@lazypanda.com',
+                ],
+                'contact_address' => [
+                    'type'    => 'text',
+                    'label'   => 'Contact Address',
+                    'default' => '123 CMS Street, Web City, WP 101',
+                ],
+                'social_facebook' => [
+                    'type'  => 'text',
+                    'label' => 'Facebook URL',
+                ],
+                'social_twitter' => [
+                    'type'  => 'text',
+                    'label' => 'Twitter URL',
+                ],
+                'social_instagram' => [
+                    'type'  => 'text',
+                    'label' => 'Instagram URL',
+                ],
+                'social_linkedin' => [
+                    'type'  => 'text',
+                    'label' => 'LinkedIn URL',
+                ],
+                'footer_copyright' => [
+                    'type'    => 'text',
+                    'label'   => 'Footer Copyright Text',
+                    'default' => '© ' . date('Y') . ' Lazy CMS. All rights reserved.',
+                ],
+                'performance_section' => [
+                    'type'  => 'title',
+                    'label' => 'Media & Image Optimization',
+                ],
+                'enable_page_cache' => [
+                    'type'          => 'checkbox',
+                    'label'         => 'Static Caching',
+                    'checkbox_label'=> 'Enable response caching for frontend',
+                    'desc'          => 'Drastically improves speed by caching HTML output. Cache is cleared when you save settings or update content.',
+                    'default'       => '0',
+                ],
+                'image_auto_webp' => [
+                    'type'          => 'checkbox',
+                    'label'         => 'WebP Conversion',
+                    'checkbox_label'=> 'Auto convert uploaded images to WebP',
+                    'desc'          => 'Recommended for better performance and smaller file sizes.',
+                    'default'       => '1',
+                ],
+                'image_quality' => [
+                    'type'    => 'number',
+                    'label'   => 'Image Quality',
+                    'default' => '80',
+                    'desc'    => '(0-100) Lower quality means smaller file sizes. 80 is recommended.',
+                ],
+                'image_max_width' => [
+                    'type'    => 'number',
+                    'label'   => 'Max Image Width',
+                    'default' => '1920',
+                    'desc'    => 'Pixels. Images wider than this will be automatically resized. 1920 is default.',
                 ],
             ]
         ],
-    ]
+    ],
+    'pages' => []
 ];

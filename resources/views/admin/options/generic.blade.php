@@ -63,6 +63,21 @@
                                     @endif
                                     <input type="file" name="{{ $key }}" id="{{ $key }}" class="text-sm text-slate-500 file:mr-4 file:py-1 file:px-4 file:rounded file:border-0 file:text-sm file:font-semibold file:bg-indigo-50 file:text-indigo-700 hover:file:bg-indigo-100">
                                 </div>
+                            @elseif($field['type'] === 'media')
+                                <div class="flex items-center gap-4">
+                                    <div id="media-preview-{{ $key }}" class="w-16 h-16 border rounded bg-slate-50 flex items-center justify-center overflow-hidden {{ empty($settings[$key]) ? 'hidden' : '' }}">
+                                        @if(!empty($settings[$key]))
+                                            <img src="{{ asset('storage/' . $settings[$key]) }}" class="max-w-full max-h-full object-contain">
+                                        @endif
+                                    </div>
+                                    <div class="flex flex-col gap-2">
+                                        <button type="button" class="wp-btn-secondary h-8 px-4 text-[12px] open-media-for-setting" data-target="{{ $key }}">Choose from Library</button>
+                                        <input type="hidden" name="{{ $key }}" id="input-{{ $key }}" value="{{ $settings[$key] ?? '' }}">
+                                        @if(!empty($settings[$key]))
+                                            <button type="button" class="text-[#b32d2e] text-[11px] underline text-left remove-setting-media" data-target="{{ $key }}">Remove</button>
+                                        @endif
+                                    </div>
+                                </div>
                             @endif
                             
                             @if(isset($field['desc']))
@@ -78,4 +93,28 @@
             </div>
         </form>
     </div>
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            document.querySelectorAll('.open-media-for-setting').forEach(btn => {
+                btn.addEventListener('click', function() {
+                    const target = this.getAttribute('data-target');
+                    window.openMediaModal(function(media) {
+                        document.getElementById('input-' + target).value = media.path;
+                        const preview = document.getElementById('media-preview-' + target);
+                        preview.innerHTML = `<img src="/storage/${media.path}" class="max-w-full max-h-full object-contain">`;
+                        preview.classList.remove('hidden');
+                    });
+                });
+            });
+
+            document.querySelectorAll('.remove-setting-media').forEach(btn => {
+                btn.addEventListener('click', function() {
+                    const target = this.getAttribute('data-target');
+                    document.getElementById('input-' + target).value = '';
+                    document.getElementById('media-preview-' + target).classList.add('hidden');
+                    this.remove();
+                });
+            });
+        });
+    </script>
 </x-cms-dashboard::layouts.admin>

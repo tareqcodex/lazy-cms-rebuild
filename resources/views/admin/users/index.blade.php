@@ -12,38 +12,55 @@
                 {{ session('success') }}
             </div>
         @endif
+        
+        @if(session('error'))
+            <div class="bg-[#fcf0f1] border-l-4 border-[#d63638] p-3 mb-6 text-[13px] text-[#1d2327]">
+                {{ session('error') }}
+            </div>
+        @endif
 
-        <div class="tabs-nav mb-4">
-            <ul class="flex gap-2 text-[13px] text-[#1d2327] border-slate-200">
-                <li class="pr-2 border-r border-slate-300"><a href="{{ route('admin.users.index') }}" class="{{ !request('role') ? 'font-bold' : 'text-[#2271b1]' }}">All <span class="text-[#646970] font-normal">({{ $allCount }})</span></a></li>
-                <li class="px-2 border-r border-slate-300"><a href="{{ route('admin.users.index', ['role' => 'administrator']) }}" class="{{ request('role') == 'administrator' ? 'font-bold' : 'text-[#2271b1]' }}">Administrator <span class="text-[#646970] font-normal">({{ $adminCount }})</span></a></li>
-                <li class="px-2 border-r border-slate-300"><a href="{{ route('admin.users.index', ['role' => 'editor']) }}" class="{{ request('role') == 'editor' ? 'font-bold' : 'text-[#2271b1]' }}">Editor <span class="text-[#646970] font-normal">({{ $editorCount }})</span></a></li>
-                <li class="px-2 border-r border-slate-300"><a href="{{ route('admin.users.index', ['role' => 'author']) }}" class="{{ request('role') == 'author' ? 'font-bold' : 'text-[#2271b1]' }}">Author <span class="text-[#646970] font-normal">({{ $authorCount }})</span></a></li>
-                <li class="px-2 border-r border-slate-300"><a href="{{ route('admin.users.index', ['role' => 'subscriber']) }}" class="{{ request('role') == 'subscriber' ? 'font-bold' : 'text-[#2271b1]' }}">Subscriber <span class="text-[#646970] font-normal">({{ $subscriberCount }})</span></a></li>
-                <li class="pl-2"><a href="{{ route('admin.users.index', ['status' => 'blocked']) }}" class="{{ request('status') == 'blocked' ? 'font-bold' : 'text-[#2271b1]' }}">Blocked <span class="text-[#f87171] font-normal">({{ $blockedCount }})</span></a></li>
-            </ul>
-        </div>
-
-        <div class="flex justify-between items-center mb-4">
-            <div class="flex gap-1">
-                <select class="wp-input h-8 text-[13px]">
-                    <option>Bulk Actions</option>
-                    <option>Delete</option>
-                </select>
-                <button class="border border-[#2271b1] text-[#2271b1] px-3 py-1 rounded-[3px] text-[13px] font-semibold hover:bg-[#f0f6fa]">Apply</button>
+        <div class="flex justify-between items-center mb-2">
+            <div class="tabs-nav">
+                <ul class="flex gap-2 text-[13px] text-[#1d2327] border-slate-200">
+                    <li class="pr-2 border-r border-slate-300"><a href="{{ route('admin.users.index') }}" class="{{ !request('role') ? 'font-bold' : 'text-[#2271b1]' }}">All <span class="text-[#646970] font-normal">({{ $allCount }})</span></a></li>
+                    <li class="px-2 border-r border-slate-300"><a href="{{ route('admin.users.index', ['role' => 'administrator']) }}" class="{{ request('role') == 'administrator' ? 'font-bold' : 'text-[#2271b1]' }}">Administrator <span class="text-[#646970] font-normal">({{ $adminCount }})</span></a></li>
+                    <li class="px-2 border-r border-slate-300"><a href="{{ route('admin.users.index', ['role' => 'editor']) }}" class="{{ request('role') == 'editor' ? 'font-bold' : 'text-[#2271b1]' }}">Editor <span class="text-[#646970] font-normal">({{ $editorCount }})</span></a></li>
+                    <li class="px-2 border-r border-slate-300"><a href="{{ route('admin.users.index', ['role' => 'author']) }}" class="{{ request('role') == 'author' ? 'font-bold' : 'text-[#2271b1]' }}">Author <span class="text-[#646970] font-normal">({{ $authorCount }})</span></a></li>
+                    <li class="px-2 border-r border-slate-300"><a href="{{ route('admin.users.index', ['role' => 'subscriber']) }}" class="{{ request('role') == 'subscriber' ? 'font-bold' : 'text-[#2271b1]' }}">Subscriber <span class="text-[#646970] font-normal">({{ $subscriberCount }})</span></a></li>
+                    <li class="pl-2"><a href="{{ route('admin.users.index', ['status' => 'blocked']) }}" class="{{ request('status') == 'blocked' ? 'font-bold' : 'text-[#2271b1]' }}">Blocked <span class="text-[#f87171] font-normal">({{ $blockedCount }})</span></a></li>
+                </ul>
             </div>
 
-            <form action="" method="GET" class="flex gap-1">
-                <input type="search" name="s" value="{{ request('s') }}" class="wp-input h-8 px-2 border border-[#8c8f94] focus:border-[#2271b1] outline-none">
+            <form action="{{ route('admin.users.index') }}" method="GET" class="flex gap-1">
+                <input type="search" name="s" value="{{ request('s') }}" class="wp-input h-8 px-2 border border-[#8c8f94] focus:border-[#2271b1] outline-none" placeholder="Search Users...">
                 <button type="submit" class="border border-[#8c8f94] text-[#2c3338] px-3 py-1 rounded-[3px] text-[13px] font-semibold hover:bg-[#f6f7f7]">Search Users</button>
             </form>
         </div>
 
-        <div class="bg-white border border-[#c3c4c7] shadow-sm">
+        {{-- Hidden Bulk Action Form --}}
+        <form id="user-bulk-form" action="{{ route('admin.users.bulk') }}" method="POST" class="hidden">
+            @csrf
+        </form>
+
+        <div class="flex justify-between items-center mb-2">
+            <div class="flex gap-1 items-center">
+                <select name="action" form="user-bulk-form" class="wp-input h-8 text-[13px]">
+                    <option>Bulk Actions</option>
+                    <option value="delete">Delete</option>
+                    <option value="block">Block</option>
+                    <option value="unblock">Unblock</option>
+                </select>
+                <button type="submit" form="user-bulk-form" class="border border-[#2271b1] text-[#2271b1] px-3 py-1 rounded-[3px] text-[13px] font-semibold hover:bg-[#f0f6fa]">Apply</button>
+            </div>
+            
+            <x-cms-dashboard::admin.pagination :paginator="$users" size="small" />
+        </div>
+
+        <div class="bg-white border border-[#c3c4c7] shadow-sm overflow-x-auto">
             <table class="w-full text-left text-[13px] border-collapse">
                 <thead>
                     <tr class="border-b border-[#c3c4c7] bg-[#f9f9f9]">
-                        <th class="p-2 w-10 text-center"><input type="checkbox"></th>
+                        <th class="p-2 w-10 text-center"><input type="checkbox" id="select-all"></th>
                         <th class="p-2 font-semibold">Username</th>
                         <th class="p-2 font-semibold">Name</th>
                         <th class="p-2 font-semibold">Email</th>
@@ -54,7 +71,7 @@
                 <tbody>
                     @forelse($users as $user)
                         <tr class="border-b border-[#f0f0f1] hover:bg-[#f6f7f7] group">
-                            <td class="p-2 text-center"><input type="checkbox"></td>
+                            <td class="p-2 text-center"><input type="checkbox" name="ids[]" value="{{ $user->id }}" form="user-bulk-form" class="user-checkbox"></td>
                             <td class="p-2 font-semibold">
                                 <div class="flex items-center gap-2">
                                     <img src="https://secure.gravatar.com/avatar/{{ md5($user->email) }}?s=32&d=mm" class="w-8 h-8 rounded">
@@ -104,11 +121,28 @@
         </div>
 
         <div class="mt-4 flex justify-between items-center text-[13px] text-[#2c3338]">
-            <div>{{ $users->total() }} items</div>
-            <div>
-                {{ $users->links() }}
+            <div class="flex items-center space-x-2">
+                <select name="action2" form="user-bulk-form" class="wp-input h-8 text-[13px]">
+                    <option>Bulk Actions</option>
+                    <option value="delete">Delete</option>
+                    <option value="block">Block</option>
+                    <option value="unblock">Unblock</option>
+                </select>
+                <button type="submit" form="user-bulk-form" class="border border-[#2271b1] text-[#2271b1] px-3 py-1 rounded-[3px] text-[13px] font-semibold hover:bg-[#f0f6fa]">Apply</button>
+                <span class="ml-2 text-[#2c3338]">{{ $users->total() }} items</span>
             </div>
+            <x-cms-dashboard::admin.pagination :paginator="$users" />
         </div>
 
     </div>
+
+    @push('scripts')
+    <script>
+        document.getElementById('select-all')?.addEventListener('click', function() {
+            document.querySelectorAll('.user-checkbox').forEach(cb => {
+                cb.checked = this.checked;
+            });
+        });
+    </script>
+    @endpush
 </x-cms-dashboard::layouts.admin>

@@ -1,16 +1,21 @@
-<div id="adminmenuwrap" class="fixed top-8 left-0 bottom-0 w-40 bg-[#1d2327] overflow-y-auto text-[#c3c4c7] z-40 pb-10 custom-scrollbar">
+<div id="adminmenuwrap" class="fixed top-8 left-0 bottom-0 w-40 bg-[#1d2327] overflow-y-auto overflow-x-hidden text-[#c3c4c7] z-40 pb-10 custom-scrollbar" style="scrollbar-width: none; -ms-overflow-style: none;">
     <ul class="pt-0">
         @foreach($menuGroups as $groupName => $menus)
             @if($groupName && $groupName !== 'Main')
                 <li class="mt-2 mb-1 px-3 text-[10px] font-semibold text-[#8c8f94] uppercase tracking-wider">{{ $groupName }}</li>
             @endif
             @foreach($menus as $menu)
-                    @php 
-                        $hasChildren = $menu->children->isNotEmpty(); 
+                    @php
+                        $hasChildren = $menu->children->isNotEmpty();
                         $href = $resolveRoute($menu->route, $menu->title);
-                        
-                        // Check if the current user can access this menu
-                        if (!\Acme\CmsDashboard\View\Components\Admin\Sidebar::canAccess($href)) {
+
+                        // Check menu-level permission (null = always visible)
+                        if ($menu->permission && !auth()->user()->hasPermission($menu->permission)) {
+                            continue;
+                        }
+
+                        // Guard for Documentation visibility
+                        if ($menu->title === 'Help' && get_cms_option('enable_documentation', '1') !== '1') {
                             continue;
                         }
 
@@ -27,6 +32,7 @@
 
                         // Determine if we need separator lines
                         $isComments = ($menu->title === 'Comments');
+                        $isForms    = ($menu->title === 'Forms');
                         $isMenu = ($menu->title === 'Menu');
                         
                         $liClasses = 'group sidebar-item relative';
@@ -39,16 +45,30 @@
                     @endphp
                 <li class="{{ $liClasses }}">
                     <a href="{{ $href }}" class="sidebar-item-link relative flex items-center px-3 py-[8px] transition-colors {{ $isActive ? 'bg-[#2271b1] text-white' : 'hover:bg-[#2c3338] hover:text-[#72aee6] text-[#c3c4c7]' }}">
-                        <div class="w-5 h-5 mr-3 flex items-center justify-center {!! $isActive ? 'text-white' : 'text-[#c3c4c7] group-hover:text-[#72aee6]' !!}">
+                        <div class="w-6 h-6 mr-3 flex items-center justify-center {!! $isActive ? 'text-white' : 'text-[#a7aaad] group-hover:text-[#72aee6]' !!}">
                             @if(str_starts_with($menu->icon, '<svg'))
-                                {!! $menu->icon !!}
+                                <div class="w-5 h-5 flex items-center justify-center">{!! $menu->icon !!}</div>
                             @else
-                                <span class="material-symbols-outlined text-[20px]">{{ $menu->icon ?: 'radio_button_unchecked' }}</span>
+                                <span class="material-symbols-outlined text-[20px] leading-none" style="font-variation-settings: 'FILL' 1, 'wght' 300, 'GRAD' 0, 'opsz' 20;">{{ $menu->icon ?: 'radio_button_unchecked' }}</span>
                             @endif
                         </div>
-                        <span class="text-[14px] leading-none {{ $isActive ? 'font-semibold' : '' }}">{{ $menu->title }}</span>
+                        <span class="text-[14px] leading-none {{ $isActive ? 'font-semibold' : '' }} flex items-center gap-2">
+                            {{ $menu->title }}
+                            @if($isComments)
+                                @php $unreadComments = \Acme\CmsDashboard\Models\Comment::where('is_read', false)->count(); @endphp
+                                @if($unreadComments > 0)
+                                    <span class="bg-[#d63638] text-white text-[10px] font-bold px-1.5 py-0.5 rounded-full min-w-[16px] text-center">{{ $unreadComments }}</span>
+                                @endif
+                            @endif
+                            @if($isForms)
+                                @php $unreadSubmissions = \Acme\CmsDashboard\Models\FormSubmission::where('is_read', false)->count(); @endphp
+                                @if($unreadSubmissions > 0)
+                                    <span class="bg-[#d63638] text-white text-[10px] font-bold px-1.5 py-0.5 rounded-full min-w-[16px] text-center">{{ $unreadSubmissions }}</span>
+                                @endif
+                            @endif
+                        </span>
                         @if($isActive)
-                            <div class="absolute right-0 top-1/2 -translate-y-1/2 w-0 h-0 border-y-[6px] border-y-transparent border-r-[6px] border-r-[#f0f0f1]"></div>
+                            <div class="absolute -right-[1px] top-1/2 -translate-y-1/2 w-0 h-0 border-y-[7px] border-y-transparent border-r-[7px] border-r-[#f0f0f1] z-50"></div>
                         @endif
                     </a>
                     @if($hasChildren)
@@ -57,9 +77,12 @@
                             <div class="bg-[#2c3338] block w-full">
                                 <ul class="py-1">
                                     @foreach($menu->children as $child)
-                                        @php 
+                                        @php
+                                            if ($child->permission && !auth()->user()->hasPermission($child->permission)) {
+                                                continue;
+                                            }
                                             $childHref = $resolveRoute($child->route, $child->title);
-                                            $isChildActive = \Acme\CmsDashboard\View\Components\Admin\Sidebar::isUrlActive($childHref);
+                                            $isChildActive = \Acme\CmsDashboard\View\Components\Admin\Sidebar::isUrlActive($childHref, true);
                                         @endphp
                                         <li>
                                             <a href="{{ $childHref }}" class="block px-3 py-[6px] transition text-[13px] {{ $isChildActive ? 'text-white font-semibold' : 'text-[#c3c4c7] hover:text-[#72aee6]' }}">
@@ -76,6 +99,11 @@
                                 <div class="absolute -left-[6px] top-[10px] w-0 h-0 border-y-[6px] border-y-transparent border-r-[6px] border-r-[#2c3338]"></div>
                                 <ul class="py-1">
                                     @foreach($menu->children as $child)
+                                        @php
+                                            if ($child->permission && !auth()->user()->hasPermission($child->permission)) {
+                                                continue;
+                                            }
+                                        @endphp
                                         <li>
                                             <a href="{{ $resolveRoute($child->route, $child->title) }}" class="block px-3 py-[6px] transition text-[13px] hover:text-[#72aee6] text-[#c3c4c7]">
                                                 {{ $child->title }}
@@ -96,7 +124,8 @@
             $groupedPages = [];
             foreach($customPages as $slug => $page) {
                 $group = $page['group'] ?? 'Custom Options';
-                $groupedPages[$group][$slug] = $page;
+                if (is_array($group)) $group = reset($group); // Safety for array_merge_recursive leftovers
+                $groupedPages[(string)$group][$slug] = $page;
             }
         @endphp
 
@@ -109,23 +138,24 @@
                 @endphp
                 <li class="group sidebar-item relative">
                     <a href="{{ $href }}" class="sidebar-item-link relative flex items-center px-3 py-[8px] transition-colors {{ $isActive ? 'bg-[#2271b1] text-white' : 'hover:bg-[#2c3338] hover:text-[#72aee6] text-[#c3c4c7]' }}">
-                        <div class="w-5 h-5 mr-3 flex items-center justify-center {!! $isActive ? 'text-white' : 'text-[#c3c4c7] group-hover:text-[#72aee6]' !!}">
+                        <div class="w-6 h-6 mr-3 flex items-center justify-center {!! $isActive ? 'text-white' : 'text-[#a7aaad] group-hover:text-[#72aee6]' !!}">
                             @if(isset($page['icon']) && str_starts_with($page['icon'], '<svg'))
-                                {!! $page['icon'] !!}
+                                <div class="w-5 h-5 flex items-center justify-center">{!! $page['icon'] !!}</div>
                             @elseif(isset($page['icon']))
-                                <span class="material-symbols-outlined text-[20px]">{{ $page['icon'] }}</span>
+                                <span class="material-symbols-outlined text-[20px] leading-none" style="font-variation-settings: 'FILL' 1, 'wght' 300, 'GRAD' 0, 'opsz' 20;">{{ $page['icon'] }}</span>
                             @else
-                                <span class="material-symbols-outlined text-[20px]">settings</span>
+                                <span class="material-symbols-outlined text-[20px] leading-none" style="font-variation-settings: 'FILL' 1, 'wght' 300, 'GRAD' 0, 'opsz' 20;">settings</span>
                             @endif
                         </div>
                         <span class="text-[14px] leading-none {{ $isActive ? 'font-semibold' : '' }}">{{ $page['title'] }}</span>
                         @if($isActive)
-                            <div class="absolute right-0 top-1/2 -translate-y-1/2 w-0 h-0 border-y-[6px] border-y-transparent border-r-[6px] border-r-[#f0f0f1]"></div>
+                            <div class="absolute -right-[1px] top-1/2 -translate-y-1/2 w-0 h-0 border-y-[7px] border-y-transparent border-r-[7px] border-r-[#f0f0f1] z-50"></div>
                         @endif
                     </a>
                 </li>
             @endforeach
         @endforeach
+
     </ul>
 </div>
 
@@ -152,11 +182,7 @@
 </script>
 @endpush
 <style>
-/* Thin scrollbar for sidebar */
-.custom-scrollbar::-webkit-scrollbar { width: 5px; }
-.custom-scrollbar::-webkit-scrollbar-track { background: #1d2327; }
-.custom-scrollbar::-webkit-scrollbar-thumb { background: #3c434a; border-radius: 10px; }
-.custom-scrollbar::-webkit-scrollbar-thumb:hover { background: #8c8f94; }
+.custom-scrollbar::-webkit-scrollbar { display: none; }
 </style>
 
 <script>

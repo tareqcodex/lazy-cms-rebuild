@@ -29,17 +29,21 @@
                            class="w-full text-[1.7em] leading-normal border border-[#8c8f94] rounded-sm py-[3px] px-[8px] focus:ring-[#2271b1] focus:border-[#2271b1] shadow-none m-0 bg-white" 
                            placeholder="Add title" required>
                     
-                    <div id="permalink-container" class="mt-2 text-[13px] {{ old('title') ? 'flex' : 'hidden' }} items-center">
-                        <strong class="text-[#646970] mr-1">Permalink:</strong>
+                    <div id="permalink-container" class="mt-2 text-[13px] {{ old('title') ? 'flex' : 'hidden' }} items-center font-medium">
+                        <span class="text-[#646970] mr-1">Permalink:</span>
                         <span id="permalink-view">
-                            <a id="permalink-full-link" href="#" target="_blank" class="text-[#2271b1] hover:underline">{{ url('/') }}/<span id="permalink-slug-display" class="font-medium text-black">{{ old('slug') }}</span>/</a>
-                            <button type="button" id="edit-slug-btn" class="wp-btn-secondary bg-[#f6f7f7] text-[12px] h-[24px] ml-1">Edit</button>
+                            @php 
+                                $selectedLang = request('lang', get_cms_option('default_language', 'en'));
+                                $baseUrl = url($selectedLang === 'en' ? '/' : $selectedLang) . '/';
+                            @endphp
+                            <a id="permalink-full-link" href="#" target="_blank" class="text-[#2271b1] underline font-medium"><span id="permalink-base-display">{{ $baseUrl }}</span><span id="permalink-slug-display" class="text-[#2271b1]">{{ old('slug') }}</span>/</a>
+                            <button type="button" id="edit-slug-btn" class="wp-btn-secondary bg-[#f6f7f7] text-[12px] h-[24px] ml-1 font-medium text-[#2271b1] border-[#c3c4c7]">Edit</button>
                         </span>
                         <span id="permalink-edit" class="hidden items-center">
-                            <span class="text-[#646970]">{{ url('/') }}/</span>
-                            <input type="text" name="slug" id="slug-input" value="{{ old('slug') }}" class="wp-input text-[13px] h-[24px] px-1 mx-1" style="width: 150px;">/
-                            <button type="button" id="ok-slug-btn" class="wp-btn-secondary bg-[#f6f7f7] text-[12px] h-[24px] mx-1">OK</button>
-                            <a href="#" id="cancel-slug-btn" class="text-[#2271b1] hover:underline ml-1">Cancel</a>
+                            <span class="text-[#646970] font-medium" id="permalink-base-edit">{{ $baseUrl }}</span>
+                            <input type="text" name="slug" id="slug-input" value="{{ old('slug') }}" class="wp-input text-[13px] h-[24px] px-1 mx-1 font-medium" style="width: 150px;">/
+                            <button type="button" id="ok-slug-btn" class="wp-btn-secondary bg-[#f6f7f7] text-[12px] h-[24px] mx-1 font-medium">OK</button>
+                            <a href="#" id="cancel-slug-btn" class="text-[#2271b1] underline ml-1 font-medium">Cancel</a>
                         </span>
                     </div>
                 </div>
@@ -115,11 +119,49 @@
                     </div>
                     @endforeach
                 @endif
+                
+                @include('cms-dashboard::admin.posts.partials.seo', ['post' => new \Acme\CmsDashboard\Models\Post()])
             </div>
 
             <!-- Right Column: Metaboxes -->
             <div class="w-full lg:w-[280px] shrink-0 space-y-5">
                 
+                <!-- Multilingual Metabox -->
+                @php $activeLanguages = \Acme\CmsDashboard\Models\Language::where('status', true)->get(); @endphp
+                <div class="wp-metabox mb-0">
+                    <div class="wp-metabox-header"><span>Language</span></div>
+                    <div class="wp-metabox-content p-3">
+                        <div class="mb-3">
+                            <label class="block text-[12px] font-bold text-[#1d2327] mb-1">Page Language</label>
+                            <select name="lang_code" class="wp-input w-full text-[13px] h-8 py-0">
+                                @foreach($activeLanguages as $lang)
+                                    <option value="{{ $lang->code }}" {{ $lang->is_default ? 'selected' : '' }}>
+                                        {{ $lang->flag }} {{ $lang->name }}
+                                    </option>
+                                @endforeach
+                            </select>
+                            <p class="text-[11px] text-gray-500 mt-1">Language of current content.</p>
+                        </div>
+
+                        @if($activeLanguages->count() > 1)
+                        <hr class="my-3 border-gray-100">
+                        <label class="flex items-center text-[13px] font-bold text-[#1d2327] mb-3 cursor-pointer">
+                            <input type="checkbox" name="make_multilingual_copy" value="1" class="mr-2 rounded-sm border-[#8c8f94] text-[#2271b1]" onchange="document.getElementById('multi-lang-list').classList.toggle('hidden', !this.checked)">
+                            Make a copy for other languages?
+                        </label>
+                        
+                        <div id="multi-lang-list" class="hidden space-y-2 pl-6 border-l-2 border-gray-100">
+                            @foreach($activeLanguages as $lang)
+                                <label class="flex items-center text-[12px] text-[#2c3338] lang-option-{{ $lang->code }}">
+                                    <input type="checkbox" name="copy_to_languages[]" value="{{ $lang->code }}" checked class="mr-2 rounded-sm border-[#8c8f94] text-[#2271b1]">
+                                    <span class="mr-1">{{ $lang->flag }}</span> {{ $lang->name }}
+                                </label>
+                            @endforeach
+                        </div>
+                        @endif
+                    </div>
+                </div>
+
                 <!-- Publish Metabox -->
                 <div class="wp-metabox mb-0">
                     <div class="wp-metabox-header flex justify-between items-center cursor-pointer">
@@ -127,7 +169,7 @@
                     </div>
                     <div class="wp-metabox-content" style="padding: 10px;">
                         <div class="flex justify-between items-center mb-3">
-                            <button type="button" id="save-draft-btn" class="wp-btn-secondary text-[13px] bg-[#f6f7f7]">Save Draft</button>
+                            <button type="button" id="save-draft-btn" formnovalidate class="wp-btn-secondary text-[13px] bg-[#f6f7f7]">Save Draft</button>
                             <button type="button" class="wp-btn-secondary text-[13px] bg-[#f6f7f7]">Preview</button>
                         </div>
                         <div class="text-[13px] text-[#646970] space-y-3 mb-4">
@@ -189,35 +231,6 @@
                     </div>
                 </div>
 
-                <!-- Page Attributes Metabox -->
-                <div class="wp-metabox mb-0">
-                    <div class="wp-metabox-header flex justify-between items-center cursor-pointer">
-                        <span>Page Attributes</span> <svg class="w-4 h-4 text-[#646970]" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 15l7-7 7 7"/></svg>
-                    </div>
-                    <div class="wp-metabox-content" style="padding: 10px;">
-                        <div class="mb-4">
-                            <label class="block text-[13px] font-bold mb-1">Parent</label>
-                            <select name="parent_id" class="wp-input w-full h-[30px] text-[13px] py-0">
-                                <option value="">(no parent)</option>
-                                @foreach($allPages as $p)
-                                    <option value="{{ $p->id }}">{{ $p->title }}</option>
-                                @endforeach
-                            </select>
-                        </div>
-                        <div class="mb-4">
-                            <label class="block text-[13px] font-bold mb-1">Template</label>
-                            <select name="template" class="wp-input w-full h-[30px] text-[13px] py-0">
-                                <option value="default" selected>Default template</option>
-                                <option value="site-width">Site width</option>
-                                <option value="full-width">100% width</option>
-                            </select>
-                        </div>
-                        <div>
-                            <label class="block text-[13px] font-bold mb-1">Order</label>
-                            <input type="number" name="menu_order" value="0" class="wp-input w-20 h-[30px] text-[13px]">
-                        </div>
-                    </div>
-                </div>
 
                 <!-- Featured Image -->
                 <div class="wp-metabox mb-0">
@@ -270,11 +283,14 @@
             }
 
             titleInput?.addEventListener('blur', function() {
-                if (!slugInput.value && this.value) {
+                if (this.value && !slugInput.value) {
                     let newSlug = generateSlug(this.value);
                     slugInput.value = newSlug;
-                    slugDisplay.innerText = newSlug;
+                    if (slugDisplay) slugDisplay.innerText = newSlug;
                     originalSlug = newSlug;
+                }
+                
+                if (this.value) {
                     permalinkContainer?.classList.remove('hidden');
                     permalinkContainer?.classList.add('flex');
                 }
@@ -417,6 +433,34 @@
                 this.innerText = 'Saving & Starting Builder...';
                 form?.submit();
             });
+
+            // Language selector logic
+            const langSelect = document.querySelector('select[name="lang_code"]');
+            if (langSelect) {
+                const updateCloneList = () => {
+                    const selectedLang = langSelect.value;
+                    
+                    // Update Permalink Base Display
+                    const siteUrl = "{{ url('/') }}";
+                    const newBase = selectedLang === 'en' ? siteUrl + '/' : siteUrl + '/' + selectedLang + '/';
+                    const baseDisplay = document.getElementById('permalink-base-display');
+                    const baseEdit = document.getElementById('permalink-base-edit');
+                    if (baseDisplay) baseDisplay.innerText = newBase;
+                    if (baseEdit) baseEdit.innerText = newBase;
+
+                    document.querySelectorAll('#multi-lang-list label').forEach(label => {
+                        if (label.classList.contains(`lang-option-${selectedLang}`)) {
+                            label.classList.add('hidden');
+                            label.querySelector('input').checked = false;
+                        } else {
+                            label.classList.remove('hidden');
+                            label.querySelector('input').checked = true;
+                        }
+                    });
+                };
+                langSelect.addEventListener('change', updateCloneList);
+                updateCloneList();
+            }
         });
     </script>
 </x-cms-dashboard::layouts.admin>

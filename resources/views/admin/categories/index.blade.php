@@ -13,12 +13,17 @@
         </div>
     @endif
 
+    <div class="flex flex-col md:flex-row justify-between items-start md:items-center mb-4 gap-4">
+        <!-- Moved tabs or other filters here if needed -->
+    </div>
+
     <div class="flex flex-col md:flex-row gap-6">
         <!-- Add Category Form -->
         <div class="w-full md:w-1/3">
             <h2 class="text-[14px] font-semibold text-[#1d2327] mb-3">Add New Category</h2>
             <form action="{{ route('admin.categories.store') }}" method="POST">
                 @csrf
+                <input type="hidden" name="lang_code" value="{{ app()->getLocale() }}">
                 <div class="mb-4">
                     <label class="block text-[13px] text-[#1d2327] mb-1">Name</label>
                     <input type="text" name="name" class="wp-input w-full" required>
@@ -101,7 +106,7 @@
                             </td>
                             <td class="wp-table-cell text-[#646970]">{{ $cat->description ?: '—' }}</td>
                             <td class="wp-table-cell text-[#646970]">{{ $cat->slug }}</td>
-                            <td class="wp-table-cell text-right"><a href="#" class="text-[#2271b1]">{{ $cat->posts_count }}</a></td>
+                            <td class="wp-table-cell text-right"><a href="{{ route('admin.posts.index', ['cat' => $cat->id]) }}" class="text-[#2271b1] font-semibold">{{ $cat->posts_count }}</a></td>
                         </tr>
                     @empty
                         <tr>

@@ -19,7 +19,7 @@
     @endif
 
     <div class="flex flex-col md:flex-row justify-between items-start md:items-center mb-2 gap-4">
-        <div class="flex items-center text-[13px] text-[#646970]">
+        <div class="flex flex-wrap items-center text-[13px] text-[#646970]">
             <a href="{{ route('admin.posts.index', ['type' => $type]) }}" class="{{ !request('status') ? 'text-black font-semibold' : 'text-[#2271b1]' }}">All <span class="text-[#646970]">({{ $allCount }})</span></a>
             <span class="mx-1 text-[#c3c4c7]">|</span>
             <a href="{{ route('admin.posts.index', ['type' => $type, 'status' => 'published']) }}" class="{{ request('status') == 'published' ? 'text-black font-semibold' : 'text-[#2271b1]' }}">Published <span class="text-[#646970]">({{ $publishedCount }})</span></a>
@@ -30,6 +30,7 @@
                 <a href="{{ route('admin.posts.index', ['type' => $type, 'status' => 'trash']) }}" class="{{ request('status') == 'trash' ? 'text-black font-semibold' : 'text-[#2271b1]' }}">Trash <span class="text-[#646970]">({{ $trashCount }})</span></a>
             @endif
         </div>
+
         
         <form action="{{ route('admin.posts.index') }}" method="GET" class="flex items-center space-x-1 w-full md:w-auto">
             <input type="hidden" name="type" value="{{ $type }}">
@@ -99,6 +100,7 @@
                 <th class="wp-table-header w-8 text-center pb-0"><input type="checkbox" id="cb-select-all-1" class="rounded-sm border-[#8c8f94] text-[#2271b1] focus:ring-[#2271b1]"></th>
                 <th class="wp-table-header text-left">Title</th>
                 <th class="wp-table-header text-left">Author</th>
+                <th class="wp-table-header text-left">Slug</th>
 
                 @if(!in_array('categories', $overriddenTaxonomies))
                     <th class="wp-table-header text-left">Categories</th>
@@ -117,6 +119,7 @@
                     <th class="wp-table-header text-left">Tags</th>
                 @endif
                 <th class="wp-table-header text-center w-8"><svg class="w-4 h-4 mx-auto text-[#8c8f94]" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M18 10c0 3.866-3.582 7-8 7a8.841 8.841 0 01-4.083-.98L2 17l1.338-3.123C2.493 12.767 2 11.434 2 10c0-3.866 3.582-7 8-7s8 3.134 8 7zM7 9H5v2h2V9zm8 0h-2v2h2V9zM9 9h2v2H9V9z" clip-rule="evenodd"></path></svg></th>
+                <th class="wp-table-header text-left">SEO</th>
                 <th class="wp-table-header text-left">Date</th>
             </tr>
         </thead>
@@ -136,12 +139,13 @@
                                 <button form="delete-form-{{ $post->id }}" type="submit" class="text-[#b32d2e] hover:text-[#8a2424] hover:underline cursor-pointer">Trash</button> 
                                 @if(!isset($postType) || $postType->is_public)
                                 <span class="text-[#c3c4c7]">|</span>
-                                <a href="#" class="text-[#2271b1] hover:underline">View</a>
+                                <a href="{{ get_lazy_permalink($post) }}" target="_blank" class="text-[#2271b1] hover:underline">View</a>
                                 @endif
                             @endif
                         </div>
                     </td>
                     <td class="wp-table-cell text-[#2271b1] text-left">{{ $post->user?->name ?? 'admin' }}</td>
+                    <td class="wp-table-cell text-[#646970] text-left">{{ $post->slug }}</td>
                     
                     @if(!in_array('categories', $overriddenTaxonomies))
                     <td class="wp-table-cell text-left">
@@ -179,6 +183,13 @@
                     </td>
                     @endif
                     <td class="wp-table-cell text-center text-[#646970]">-</td>
+                    <td class="wp-table-cell text-left">
+                        @php $score = $post->getSeoScore(); @endphp
+                        <div class="flex items-center gap-1.5" title="SEO Score: {{ $score }}%">
+                            <div class="w-2.5 h-2.5 rounded-full {{ $score >= 70 ? 'bg-[#00a32a]' : ($score >= 40 ? 'bg-[#dba617]' : 'bg-[#d63638]') }}"></div>
+                            <span class="text-[12px] font-medium">{{ $score }}%</span>
+                        </div>
+                    </td>
                     <td class="wp-table-cell text-[#2c3338] text-left">
                         @if($post->trashed())
                             Last Modified<br>
@@ -200,6 +211,7 @@
                 <th class="wp-table-header w-8 text-center pb-0 border-t"><input type="checkbox" id="cb-select-all-2" class="rounded-sm border-[#8c8f94] text-[#2271b1] focus:ring-[#2271b1]"></th>
                 <th class="wp-table-header text-left border-t">Title</th>
                 <th class="wp-table-header text-left border-t">Author</th>
+                <th class="wp-table-header text-left border-t">Slug</th>
                 @if(!in_array('categories', $overriddenTaxonomies))
                     <th class="wp-table-header text-left border-t">Categories</th>
                 @endif
@@ -217,6 +229,7 @@
                     <th class="wp-table-header text-left border-t">Tags</th>
                 @endif
                 <th class="wp-table-header text-center w-8 border-t"><svg class="w-4 h-4 mx-auto text-[#8c8f94]" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M18 10c0 3.866-3.582 7-8 7a8.841 8.841 0 01-4.083-.98L2 17l1.338-3.123C2.493 12.767 2 11.434 2 10c0-3.866 3.582-7 8-7s8 3.134 8 7zM7 9H5v2h2V9zm8 0h-2v2h2V9zM9 9h2v2H9V9z" clip-rule="evenodd"></path></svg></th>
+                <th class="wp-table-header text-left border-t">SEO</th>
                 <th class="wp-table-header text-left border-t">Date</th>
             </tr>
         </tfoot>

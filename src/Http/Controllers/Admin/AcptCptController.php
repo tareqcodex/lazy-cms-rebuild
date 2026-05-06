@@ -41,6 +41,11 @@ class AcptCptController extends Controller
             $query->withoutTrashed();
         }
 
+        // Ensure all active CPTs have their menus synced (prevents 404/missing menu issues after updates)
+        foreach (\Acme\CmsDashboard\Models\PostType::where('is_builtin', false)->where('is_active', 1)->get() as $pt) {
+            $this->syncCptMenus($pt);
+        }
+
         $postTypes = $query->latest()->get();
 
         $allCount = \Acme\CmsDashboard\Models\PostType::where('is_builtin', false)->withoutTrashed()->count();

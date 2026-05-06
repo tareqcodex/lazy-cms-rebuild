@@ -14,16 +14,24 @@ class PostController extends Controller
     public function builder($id)
     {
         $post = Post::findOrFail($id);
-        return view('cms-dashboard::admin.builder.index', compact('post'));
+
+        // Convert shortcodes → JSON so the Vue builder can parse it
+        if (!empty($post->content) && str_contains($post->content, '[lazy_')) {
+            $post->content = json_encode(lazy_shortcodes_to_layout($post->content));
+        }
+
+        return view('cms-dashboard::admin.lazy-builder.index', compact('post'));
     }
 
     public function saveBuilder(Request $request, $id)
     {
         $post = Post::findOrFail($id);
         $post->update([
-            'content' => json_encode($request->input('layout')),
+            'content'     => lazy_layout_to_shortcodes($request->input('layout')),
             'editor_type' => 'builder'
         ]);
+
+        clear_page_cache();
 
         return response()->json(['success' => true, 'message' => 'Page layout saved successfully.']);
     }
@@ -32,7 +40,7 @@ class PostController extends Controller
     {
         $post = Post::findOrFail($id);
         // This would typically return a front-end view that renders the builder JSON
-        return view('cms-dashboard::admin.builder.preview', compact('post'));
+        return view('cms-dashboard::admin.lazy-builder.preview', compact('post'));
     }
 
     public function __construct()
@@ -48,12 +56,32 @@ class PostController extends Controller
         }
     }
 
-    protected function generateUniqueSlug($title, $id = 0, $type = 'post')
+    protected function generateUniqueSlug($title, $id = 0, $type = 'post', $langCode = 'en')
     {
-        $slug = Str::slug($title);
+        // If string contains non-ascii characters OR lang is not english, use native slug logic
+        if ($langCode !== 'en' || preg_match('/[^\x00-\x7F]/', $title)) {
+            // For non-english, we want to keep the native characters but remove symbols
+            $slug = mb_strtolower($title, 'UTF-8');
+            $slug = str_replace(' ', '-', trim($slug));
+            // Keep letters (\p{L}), marks/vowels (\p{M}), numbers (\p{N}), and dashes. Everything else goes.
+            $slug = preg_replace('/[^\p{L}\p{M}\p{N}\-]+/u', '', $slug);
+            $slug = preg_replace('/-+/', '-', $slug); // Remove duplicate dashes
+            $slug = trim($slug, '-');
+        } else {
+            $slug = Str::slug($title);
+        }
+        
+        if (empty($slug)) {
+            $slug = 'post-' . time();
+        }
+
         $originalSlug = $slug;
         $count = 1;
-        while (Post::withTrashed()->where('slug', $slug)->where('type', $type)->where('id', '!=', $id)->exists()) {
+        while (Post::withTrashed()
+            ->where('slug', $slug)
+            ->where('type', $type)
+            ->where('id', '!=', $id)
+            ->exists()) {
             $slug = "{$originalSlug}-{$count}";
             $count++;
         }
@@ -70,7 +98,12 @@ class PostController extends Controller
         $this->checkTypeActive($type);
         $status = $request->query('status');
         
+        $lang = $request->query('lang');
         $query = Post::with(['categories', 'tags', 'taxonomyTerms'])->where('type', $type);
+
+        if ($lang && $lang !== 'all') {
+            $query->where('lang_code', $lang);
+        }
 
         if ($status === 'trash') {
             $query->onlyTrashed();
@@ -82,15 +115,24 @@ class PostController extends Controller
         }
 
         if ($request->filled('s')) {
-            $query->where(function($q) use ($request) {
-                $q->where('title', 'like', '%' . $request->s . '%')
-                  ->orWhere('content', 'like', '%' . $request->s . '%');
-            });
+            $query->where('title', 'like', '%' . $request->s . '%');
         }
 
         if ($request->filled('cat') && $request->cat != '-1') {
             $query->whereHas('categories', function($q) use ($request) {
                 $q->where('categories.id', $request->cat);
+            });
+        }
+
+        if ($request->filled('tag_id')) {
+            $query->whereHas('tags', function($q) use ($request) {
+                $q->where('tags.id', $request->tag_id);
+            });
+        }
+
+        if ($request->filled('term_id')) {
+            $query->whereHas('taxonomyTerms', function($q) use ($request) {
+                $q->where('taxonomy_terms.id', $request->term_id);
             });
         }
 
@@ -109,10 +151,10 @@ class PostController extends Controller
             ->orderBy('month', 'desc')
             ->get();
 
-        $allCount = Post::where('type', $type)->count();
-        $publishedCount = Post::where('type', $type)->where('status', 'published')->count();
-        $draftCount = Post::where('type', $type)->where('status', 'draft')->count();
-        $trashCount = Post::where('type', $type)->onlyTrashed()->count();
+        $allCount = Post::where('type', $type)->where('lang_code', $lang)->count();
+        $publishedCount = Post::where('type', $type)->where('lang_code', $lang)->where('status', 'published')->count();
+        $draftCount = Post::where('type', $type)->where('lang_code', $lang)->where('status', 'draft')->count();
+        $trashCount = Post::where('type', $type)->where('lang_code', $lang)->onlyTrashed()->count();
 
         $postType = \Acme\CmsDashboard\Models\PostType::where('slug', $type)->first();
         
@@ -185,8 +227,10 @@ class PostController extends Controller
         
         $this->validateCustomFields($request);
 
+        $status = $request->input('status', 'draft');
+
         $validated = $request->validate([
-            'title'   => 'required|string|max:255',
+            'title'   => ($status === 'draft' ? 'nullable' : 'required') . '|string|max:255',
             'slug'    => 'nullable|string|max:255',
             'content' => 'nullable|string',
             'excerpt' => 'nullable|string',
@@ -198,10 +242,23 @@ class PostController extends Controller
             'template'       => 'nullable|string',
             'menu_order'     => 'nullable|integer',
             'editor_type'    => 'nullable|string|in:rich,builder',
+            'lang_code'      => 'nullable|string|max:10',
+            'seo'            => 'nullable|array',
+
         ]);
 
-        $slugSource = !empty($validated['slug']) ? $validated['slug'] : $validated['title'];
-        $validated['slug'] = $this->generateUniqueSlug($slugSource, 0, $validated['type']);
+        $validated['seo_meta'] = $request->input('seo');
+        unset($validated['seo']);
+
+        $lang = $validated['lang_code'] ?? null;
+        if (!$lang || $lang === 'all') {
+            $lang = app()->getLocale();
+            $validated['lang_code'] = $lang;
+        }
+
+        $slugSource = !empty($validated['slug']) ? $validated['slug'] : (!empty($validated['title']) ? $validated['title'] : 'no-title');
+        $validated['slug'] = $this->generateUniqueSlug($slugSource, 0, $validated['type'], $lang);
+        if (empty($validated['title'])) $validated['title'] = '(no title)';
         $validated['user_id'] = auth()->id();
 
         if ($request->hasFile('featured_image')) {
@@ -261,19 +318,89 @@ class PostController extends Controller
             }
         }
 
-        if ($request->has('redirect_to_builder')) {
-            return redirect()->route('admin.posts.edit', ['post' => $post, 'start_builder' => 1])->with('success', ucfirst($validated['type']) . ' created successfully.');
+        lazy_log_activity('created', "Created a new {$validated['type']}: {$post->title}", $post);
+
+        // Multilingual Copy Logic
+        if ($request->has('make_multilingual_copy') && $request->has('copy_to_languages')) {
+            foreach ($request->copy_to_languages as $langCode) {
+                $clone = $post->replicate();
+                $clone->lang_code = $langCode;
+                $clone->origin_id = $post->origin_id ?: $post->id;
+                $clone->slug = $post->slug;
+                
+                $clone->title = lazy_translate($post->title, $langCode);
+                
+                // Generate translated slug
+                $clone->slug = $this->generateUniqueSlug($clone->title, 0, $post->type, $langCode);
+                // but let's translate simple text if it's rich editor
+                if ($post->editor_type === 'rich') {
+                    $clone->content = lazy_translate($post->content, $langCode);
+                }
+                
+                if ($post->excerpt) {
+                    $clone->excerpt = lazy_translate($post->excerpt, $langCode);
+                }
+                
+                $clone->save();
+
+                // Sync relationships for the clone
+                if ($request->has('categories')) {
+                    $clone->categories()->sync($request->categories);
+                }
+                if ($request->has('tax_terms')) {
+                    $clone->taxonomyTerms()->sync($request->tax_terms);
+                }
+                if ($request->tags && !in_array('tags', $overriddenTaxonomies)) {
+                    $clone->tags()->sync($tagIds ?? []);
+                }
+                
+                // Copy custom fields
+                if ($request->has('custom_fields')) {
+                    foreach ($request->custom_fields as $fieldId => $value) {
+                        DB::table('post_custom_field_values')->insert([
+                            'post_id' => $clone->id,
+                            'field_id' => $fieldId,
+                            'value' => is_array($value) ? json_encode($value) : $value,
+                            'created_at' => now(), 'updated_at' => now()
+                        ]);
+                    }
+                }
+            }
         }
 
+        if ($request->has('redirect_to_builder')) {
+            clear_page_cache();
+            return redirect()->route('admin.lazy-builder', $post->id)->with('success', ucfirst($validated['type']) . ' created successfully.');
+        }
+
+        clear_page_cache();
         return redirect()->route('admin.posts.edit', $post)->with('success', ucfirst($validated['type']) . ' created successfully.');
     }
 
     public function edit(Post $post)
     {
+        // dd($post->content);
+        $post->load('categories', 'tags', 'taxonomyTerms');
         $type = $post->type;
         $permission = ($type === 'page') ? 'manage_pages' : (($type === 'post') ? 'manage_posts' : 'manage_' . $type);
         if (!auth()->user()->hasPermission($permission)) {
             abort(403, "You do not have permission to edit {$post->type}s.");
+        }
+
+        $locale = request('locale');
+        if ($locale && $locale !== app()->getLocale()) {
+            $translation = $post->translations()->where('locale', $locale)->first();
+            if ($translation) {
+                $post->title = $translation->title;
+                $post->content = $translation->content;
+                $post->excerpt = $translation->excerpt;
+                // We could also merge SEO meta from translation here if needed
+            } else {
+                // For new translation, start with empty content but keep metadata
+                $post->title = '';
+                $post->content = '';
+                $post->excerpt = '';
+            }
         }
         $this->checkTypeActive($post->type);
         $type = $post->type;
@@ -319,6 +446,17 @@ class PostController extends Controller
             ->toArray();
 
         $postType = \Acme\CmsDashboard\Models\PostType::where('slug', $post->type)->first();
+        
+        // Auto-convert JSON to Shortcodes for Rich Editor
+        if ($post->editor_type === 'rich') {
+            $post->content = lazy_layout_to_shortcodes($post->content);
+        } elseif ($post->editor_type === 'builder' && is_string($post->content) && !str_starts_with(trim($post->content), '[')) {
+            // If it's builder mode but content is shortcodes, convert back to JSON for the builder
+            $layout = lazy_shortcodes_to_layout(html_entity_decode($post->content, ENT_QUOTES | ENT_HTML5, 'UTF-8'));
+            if (!empty($layout)) {
+                $post->content = json_encode($layout);
+            }
+        }
 
         return view('cms-dashboard::admin.posts.edit', compact('post', 'pages', 'type', 'supports', 'assignedTaxonomies', 'fieldGroups', 'fieldValues', 'postType', 'overriddenTaxonomies'));
     }
@@ -334,8 +472,10 @@ class PostController extends Controller
         
         $this->validateCustomFields($request);
 
+        $status = $request->input('status', 'draft');
+
         $validated = $request->validate([
-            'title'   => 'required|string|max:255',
+            'title'   => ($status === 'draft' ? 'nullable' : 'required') . '|string|max:255',
             'slug'    => 'nullable|string|max:255',
             'content' => 'nullable|string',
             'excerpt' => 'nullable|string',
@@ -347,10 +487,16 @@ class PostController extends Controller
             'template'       => 'nullable|string',
             'menu_order'     => 'nullable|integer',
             'editor_type'    => 'nullable|string|in:rich,builder',
+            'lang_code'      => 'nullable|string|max:10',
+            'seo'            => 'nullable|array',
         ]);
 
-        $slugSource = !empty($validated['slug']) ? $validated['slug'] : $validated['title'];
-        $validated['slug'] = $this->generateUniqueSlug($slugSource, $post->id, $post->type);
+        $validated['seo_meta'] = $request->input('seo');
+        unset($validated['seo']);
+
+        $slugSource = !empty($validated['slug']) ? $validated['slug'] : (!empty($validated['title']) ? $validated['title'] : 'no-title');
+        $validated['slug'] = $this->generateUniqueSlug($slugSource, $post->id, $post->type, $validated['lang_code'] ?? $post->lang_code);
+        if (empty($validated['title'])) $validated['title'] = '(no title)';
 
         if ($request->hasFile('featured_image')) {
             $validated['featured_image'] = $request->file('featured_image')->store('posts', 'public');
@@ -373,7 +519,116 @@ class PostController extends Controller
                 ->toArray();
         }
 
+        $oldSlug = $post->getOriginal('slug');
+        $prefix = ($post->type === 'post' || $post->type === 'page') ? '' : $post->type . '/';
+        $oldUrl = '/' . ltrim($prefix . $oldSlug, '/');
+
+        // Ensure editor_type is never set to null, which would trigger the DB default 'rich'
+        if (empty($validated['editor_type'])) {
+            $validated['editor_type'] = $post->editor_type ?: 'rich';
+        }
+
+        // Robust Protection: Prevent builder content from being overwritten by empty/HTML content from standard editor
+        $currentContent = $post->content;
+        $isCurrentBuilder = $post->editor_type === 'builder' || (is_string($currentContent) && (str_starts_with($currentContent, '[') || str_starts_with($currentContent, '{')));
+        
+        $targetEditorType = $validated['editor_type'] ?? $post->editor_type;
+        $incomingContent = $validated['content'] ?? '';
+        $isIncomingBuilder = is_string($incomingContent) && (Str::startsWith($incomingContent, '[') || Str::startsWith($incomingContent, '{'));
+
+        // If we are currently in builder mode, and we're staying in builder mode, protect the content
+        if ($isCurrentBuilder && $targetEditorType === 'builder' && !$isIncomingBuilder) {
+            unset($validated['content']);
+        }
+
+        $locale = $request->input('locale');
+        if ($locale && $locale !== app()->getLocale()) {
+            // Save as translation instead of main post
+            $translationData = [
+                'slug'    => Str::slug($validated['title']),
+                'title'   => $validated['title'],
+                'excerpt' => $validated['excerpt'],
+                'meta_title' => $validated['seo_meta']['title'] ?? null,
+                'meta_description' => $validated['seo_meta']['description'] ?? null,
+                'updated_at' => now(),
+            ];
+
+            // Only update content in translation if it's not a builder page OR if we're sending JSON
+            if (isset($validated['content'])) {
+                $translationData['content'] = $validated['content'];
+            }
+            
+            // Also preserve editor_type in translation
+            $translationData['editor_type'] = $targetEditorType;
+
+            $post->translations()->updateOrInsert(
+                ['locale' => $locale],
+                $translationData
+            );
+            
+            lazy_log_activity('updated', "Updated {$locale} translation for {$post->type}: {$post->title}", $post);
+            clear_page_cache();
+            return redirect()->back()->with('success', ucfirst($post->type) . ' translation updated successfully.');
+        }
+
         $post->update($validated);
+
+        // Multilingual Copy Logic (on Update)
+        if ($request->has('make_multilingual_copy') && $request->has('copy_to_languages')) {
+            foreach ($request->copy_to_languages as $langCode) {
+                // Check if already exists to avoid duplicates
+                $rootId = $post->origin_id ?: $post->id;
+                $exists = Post::where('origin_id', $rootId)->where('lang_code', $langCode)->exists();
+                if ($exists) continue;
+
+                $clone = $post->replicate();
+                $clone->lang_code = $langCode;
+                $clone->origin_id = $rootId;
+                $clone->slug = $post->slug;
+
+                // Auto Translate
+                $clone->title = lazy_translate($post->title, $langCode);
+                
+                // Generate translated slug
+                $clone->slug = $this->generateUniqueSlug($clone->title, 0, $post->type, $langCode);
+                if ($post->editor_type === 'rich') {
+                    $clone->content = lazy_translate($post->content, $langCode);
+                }
+
+                if ($post->excerpt) {
+                    $clone->excerpt = lazy_translate($post->excerpt, $langCode);
+                }
+
+                $clone->save();
+
+                // Sync relationships
+                if ($request->has('categories')) $clone->categories()->sync($request->categories);
+                if ($request->has('tax_terms')) $clone->taxonomyTerms()->sync($request->tax_terms);
+                
+                // Copy custom fields
+                $originalFields = DB::table('post_custom_field_values')->where('post_id', $post->id)->get();
+                foreach ($originalFields as $field) {
+                    DB::table('post_custom_field_values')->insert([
+                        'post_id' => $clone->id,
+                        'field_id' => $field->field_id,
+                        'value' => $field->value,
+                        'created_at' => now(), 'updated_at' => now()
+                    ]);
+                }
+            }
+        }
+
+        // Automatic Redirection Logic
+        if ($oldSlug !== $post->slug) {
+            $newUrl = '/' . ltrim($prefix . $post->slug, '/');
+
+            if ($oldUrl !== $newUrl) {
+                \Acme\CmsDashboard\Models\Redirect::updateOrCreate(
+                    ['old_url' => $oldUrl],
+                    ['new_url' => $newUrl, 'status_code' => 301]
+                );
+            }
+        }
 
         // Sync Built-in Categories
         if ($request->has('categories')) {
@@ -417,6 +672,10 @@ class PostController extends Controller
             }
         }
         
+        lazy_log_activity('updated', "Updated {$post->type}: {$post->title}", $post);
+
+        clear_page_cache();
+        
         return redirect()->back()->with('success', ucfirst($post->type) . ' updated successfully.');
     }
 
@@ -428,7 +687,10 @@ class PostController extends Controller
             abort(403, "You do not have permission to delete {$post->type}s.");
         }
         $type = $post->type;
+        $title = $post->title;
         $post->delete();
+        lazy_log_activity('deleted', "Moved {$type} to trash: {$title}", $post);
+        clear_page_cache();
         return redirect()->route('admin.posts.index', ['type' => $type])->with('success', 'Moved to trash.');
     }
 
@@ -436,6 +698,7 @@ class PostController extends Controller
     {
         $post = Post::onlyTrashed()->findOrFail($id);
         $post->restore();
+        clear_page_cache();
         return redirect()->back()->with('success', 'Restored successfully.');
     }
 
@@ -444,6 +707,7 @@ class PostController extends Controller
         $post = Post::onlyTrashed()->findOrFail($id);
         
         $post->forceDelete();
+        clear_page_cache();
         return redirect()->back()->with('success', 'Deleted permanently.');
     }
 
@@ -455,35 +719,58 @@ class PostController extends Controller
         if (!$ids || $action === '-1') return redirect()->back()->with('error', 'Please select items and an action.');
 
         if ($action === 'trash') {
-            Post::whereIn('id', $ids)->delete();
+            $posts = Post::whereIn('id', $ids)->get();
+            foreach ($posts as $post) {
+                $post->delete();
+                lazy_log_activity('deleted', "Moved {$post->type} to trash: {$post->title}", $post);
+            }
+            clear_page_cache();
             return redirect()->back()->with('success', 'Selected items moved to trash.');
         }
 
         if ($action === 'restore') {
-            Post::onlyTrashed()->whereIn('id', $ids)->restore();
+            $posts = Post::onlyTrashed()->whereIn('id', $ids)->get();
+            foreach ($posts as $post) {
+                $post->restore();
+                lazy_log_activity('restored', "Restored {$post->type} from trash: {$post->title}", $post);
+            }
+            clear_page_cache();
             return redirect()->back()->with('success', 'Selected items restored.');
         }
 
         if ($action === 'delete') {
             $posts = Post::onlyTrashed()->whereIn('id', $ids)->get();
             foreach($posts as $p) {
+                $title = $p->title;
+                $type = $p->type;
                 $p->forceDelete();
+                lazy_log_activity('deleted', "Deleted {$type} permanently: {$title}", $p);
             }
+            clear_page_cache();
             return redirect()->back()->with('success', 'Selected items deleted permanently.');
         }
 
         if (in_array($action, ['draft', 'published'])) {
-            Post::whereIn('id', $ids)->update(['status' => $action]);
+            $posts = Post::whereIn('id', $ids)->get();
+            foreach ($posts as $post) {
+                $post->update(['status' => $action]);
+                lazy_log_activity('updated', "Updated {$post->type} status to {$action}: {$post->title}", $post);
+            }
+            clear_page_cache();
             return redirect()->back()->with('success', 'Selected items updated.');
         }
 
+        clear_page_cache();
         return redirect()->back();
     }
 
     protected function validateCustomFields(Request $request)
     {
         $type = $request->input('type');
-        if (!$type) return;
+        $status = $request->input('status');
+        
+        // If saving as draft, skip required validation for custom fields
+        if (!$type || $status === 'draft') return;
 
         $fieldGroups = \Acme\CmsDashboard\Models\FieldGroup::where('is_active', true)
             ->whereJsonContains('rules->post_type', $type)

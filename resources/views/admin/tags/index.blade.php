@@ -13,12 +13,16 @@
         </div>
     @endif
 
+    <div class="flex flex-col md:flex-row justify-between items-start md:items-center mb-4 gap-4">
+    </div>
+
     <div class="flex flex-col md:flex-row gap-6">
         <!-- Add Tag Form -->
         <div class="w-full md:w-1/3">
             <h2 class="text-[14px] font-semibold text-[#1d2327] mb-3">Add New Tag</h2>
             <form action="{{ route('admin.tags.store') }}" method="POST">
                 @csrf
+                <input type="hidden" name="lang_code" value="{{ app()->getLocale() }}">
                 <div class="mb-4">
                     <label class="block text-[13px] text-[#1d2327] mb-1">Name</label>
                     <input type="text" name="name" class="wp-input w-full" required>
@@ -88,7 +92,7 @@
                             </td>
                             <td class="wp-table-cell text-[#646970]">{{ $tag->description ?: '—' }}</td>
                             <td class="wp-table-cell text-[#646970]">{{ $tag->slug }}</td>
-                            <td class="wp-table-cell text-right"><a href="#" class="text-[#2271b1]">{{ $tag->posts_count }}</a></td>
+                            <td class="wp-table-cell text-right"><a href="{{ route('admin.posts.index', ['tag_id' => $tag->id]) }}" class="text-[#2271b1] font-semibold">{{ $tag->posts_count }}</a></td>
                         </tr>
                     @empty
                         <tr>

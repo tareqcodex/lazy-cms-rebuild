@@ -16,7 +16,7 @@ class PostRenderer extends Component
     public function render()
     {
         if ($this->post->editor_type === 'builder') {
-            return view('cms-dashboard::components.builder-renderer');
+            return '<div>{!! get_lazy_content($post->content) !!}</div>';
         }
 
         return view('cms-dashboard::components.rich-renderer');

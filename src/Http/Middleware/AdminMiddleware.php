@@ -34,7 +34,8 @@ class AdminMiddleware
             return redirect()->route('admin.login')->with('error', 'Please login to access the admin panel.');
         }
 
-        if (auth()->user()->is_blocked || (auth()->user()->blocked_until && auth()->user()->blocked_until->isFuture())) {
+        $user = auth()->user()->fresh();
+        if ($user && ($user->is_blocked || ($user->blocked_until && $user->blocked_until->isFuture()))) {
             auth()->logout();
             $request->session()->invalidate();
             $request->session()->regenerateToken();

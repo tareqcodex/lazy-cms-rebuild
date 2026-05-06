@@ -47,6 +47,7 @@ class CustomFieldController extends Controller
                     'name' => $fieldData['name'],
                     'type' => $fieldData['type'] ?? 'text',
                     'instructions' => $fieldData['instructions'] ?? null,
+                    'required' => isset($fieldData['required']),
                     'order' => $order++,
                 ]);
             }
