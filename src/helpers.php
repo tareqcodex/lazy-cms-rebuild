@@ -399,8 +399,20 @@ if (!function_exists('lazy_has_permission')) {
     function lazy_has_permission($user, string $permission): bool
     {
         if (!$user) return false;
-        if (method_exists($user, 'hasPermission')) return $user->hasPermission($permission);
-        return false;
+
+        if (method_exists($user, 'hasPermission')) {
+            return $user->hasPermission($permission);
+        }
+
+        // Fallback: direct DB check — works even without HasCmsPermissions trait
+        try {
+            $role = \Acme\CmsDashboard\Models\Role::find($user->role_id);
+            if (!$role) return false;
+            if (in_array($role->slug, ['super-admin', 'administrator'])) return true;
+            return $role->permissions()->where('slug', $permission)->exists();
+        } catch (\Exception $e) {
+            return false;
+        }
     }
 }
 
