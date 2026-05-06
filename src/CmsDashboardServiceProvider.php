@@ -11,41 +11,39 @@ class CmsDashboardServiceProvider extends ServiceProvider
     {
         // Auto-inject CMS permission methods into the app's User model so that
         // no manual trait addition is needed after package install/update.
-        $this->app->booted(function () {
-            $userModel = config('auth.providers.users.model', \App\Models\User::class);
+        $userModel = config('auth.providers.users.model', \App\Models\User::class);
 
-            if (!method_exists($userModel, 'role')) {
-                $userModel::resolveRelationUsing('role', function ($user) {
-                    return $user->belongsTo(\Acme\CmsDashboard\Models\Role::class);
-                });
-            }
+        if (!method_exists($userModel, 'role')) {
+            $userModel::resolveRelationUsing('role', function ($user) {
+                return $user->belongsTo(\Acme\CmsDashboard\Models\Role::class);
+            });
+        }
 
-            if (!method_exists($userModel, 'hasRole')) {
-                $userModel::macro('hasRole', function (string $role): bool {
-                    return $this->role && $this->role->slug === $role;
-                });
-            }
+        if (!method_exists($userModel, 'hasRole')) {
+            $userModel::macro('hasRole', function (string $role): bool {
+                return $this->role && $this->role->slug === $role;
+            });
+        }
 
-            if (!method_exists($userModel, 'isAdmin')) {
-                $userModel::macro('isAdmin', function (): bool {
-                    return $this->hasRole('super-admin') || $this->hasRole('administrator') || $this->hasRole('admin') || $this->hasRole('superadmin');
-                });
-            }
+        if (!method_exists($userModel, 'isAdmin')) {
+            $userModel::macro('isAdmin', function (): bool {
+                return $this->hasRole('super-admin') || $this->hasRole('administrator') || $this->hasRole('admin') || $this->hasRole('superadmin');
+            });
+        }
 
-            if (!method_exists($userModel, 'hasPermission')) {
-                $userModel::macro('hasPermission', function (string $permission): bool {
-                    if ($this->isAdmin()) return true;
-                    if (!$this->role) return false;
-                    return $this->role->permissions()->where('slug', $permission)->exists();
-                });
-            }
+        if (!method_exists($userModel, 'hasPermission')) {
+            $userModel::macro('hasPermission', function (string $permission): bool {
+                if ($this->isAdmin()) return true;
+                if (!$this->role) return false;
+                return $this->role->permissions()->where('slug', $permission)->exists();
+            });
+        }
 
-            if (!method_exists($userModel, 'hasCmsPermission')) {
-                $userModel::macro('hasCmsPermission', function (string $permission): bool {
-                    return $this->hasPermission($permission);
-                });
-            }
-        });
+        if (!method_exists($userModel, 'hasCmsPermission')) {
+            $userModel::macro('hasCmsPermission', function (string $permission): bool {
+                return $this->hasPermission($permission);
+            });
+        }
 
         \Illuminate\Support\Facades\Gate::before(function ($user, $ability) {
             return ($user->role && in_array($user->role->slug, ['super-admin', 'administrator', 'admin', 'superadmin'])) ? true : null;

@@ -404,7 +404,9 @@ if (!function_exists('lazy_has_permission')) {
         $contentPermissions = ['manage_posts', 'manage_pages', 'manage_media', 'manage_categories', 'manage_tags', 'manage_comments'];
         
         $checkPermission = function($u, $p) use ($contentPermissions) {
-            if (method_exists($u, 'hasPermission')) {
+            $hasMethod = method_exists($u, 'hasPermission') || (method_exists($u, 'hasMacro') && $u->hasMacro('hasPermission'));
+            
+            if ($hasMethod) {
                 if ($u->hasPermission($p)) return true;
                 if (in_array($p, $contentPermissions) && $u->hasPermission('manage_content')) return true;
                 return false;
