@@ -50,6 +50,9 @@ class PostController extends Controller
 
     protected function checkTypeActive($slug)
     {
+        // Core types are always active
+        if (in_array($slug, ['post', 'page'])) return;
+
         $postType = \Acme\CmsDashboard\Models\PostType::where('slug', $slug)->first();
         if ($postType && !$postType->is_active) {
             abort(404, "This post type is deactivated.");

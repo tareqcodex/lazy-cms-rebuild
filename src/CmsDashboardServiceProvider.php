@@ -28,7 +28,7 @@ class CmsDashboardServiceProvider extends ServiceProvider
 
             if (!method_exists($userModel, 'isAdmin')) {
                 $userModel::macro('isAdmin', function (): bool {
-                    return $this->hasRole('super-admin') || $this->hasRole('administrator');
+                    return $this->hasRole('super-admin') || $this->hasRole('administrator') || $this->hasRole('admin') || $this->hasRole('superadmin');
                 });
             }
 
@@ -48,7 +48,7 @@ class CmsDashboardServiceProvider extends ServiceProvider
         });
 
         \Illuminate\Support\Facades\Gate::before(function ($user, $ability) {
-            return $user->role && $user->role->slug === 'super-admin' ? true : null;
+            return ($user->role && in_array($user->role->slug, ['super-admin', 'administrator', 'admin', 'superadmin'])) ? true : null;
         });
 
         // Register Middlewares

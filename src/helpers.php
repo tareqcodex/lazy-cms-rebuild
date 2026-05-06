@@ -408,7 +408,7 @@ if (!function_exists('lazy_has_permission')) {
         try {
             $role = \Acme\CmsDashboard\Models\Role::find($user->role_id);
             if (!$role) return false;
-            if (in_array($role->slug, ['super-admin', 'administrator'])) return true;
+            if (in_array($role->slug, ['super-admin', 'administrator', 'admin', 'superadmin'])) return true;
             return $role->permissions()->where('slug', $permission)->exists();
         } catch (\Exception $e) {
             return false;
