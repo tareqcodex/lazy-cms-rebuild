@@ -42,6 +42,8 @@ return new class extends Migration
         // Seed default permissions
         $permissions = [
             ['name' => 'Manage Content', 'slug' => 'manage_content'],
+            ['name' => 'Manage Posts', 'slug' => 'manage_posts'],
+            ['name' => 'Manage Pages', 'slug' => 'manage_pages'],
             ['name' => 'Manage Users', 'slug' => 'manage_users'],
             ['name' => 'Manage Roles', 'slug' => 'manage_roles'],
             ['name' => 'Manage Settings', 'slug' => 'manage_settings'],

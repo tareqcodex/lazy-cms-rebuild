@@ -400,19 +400,32 @@ if (!function_exists('lazy_has_permission')) {
     {
         if (!$user) return false;
 
-        if (method_exists($user, 'hasPermission')) {
-            return $user->hasPermission($permission);
-        }
+        // Content-related permissions fallback to 'manage_content'
+        $contentPermissions = ['manage_posts', 'manage_pages', 'manage_media', 'manage_categories', 'manage_tags', 'manage_comments'];
+        
+        $checkPermission = function($u, $p) use ($contentPermissions) {
+            if (method_exists($u, 'hasPermission')) {
+                if ($u->hasPermission($p)) return true;
+                if (in_array($p, $contentPermissions) && $u->hasPermission('manage_content')) return true;
+                return false;
+            }
 
-        // Fallback: direct DB check — works even without HasCmsPermissions trait
-        try {
-            $role = \Acme\CmsDashboard\Models\Role::find($user->role_id);
-            if (!$role) return false;
-            if (in_array($role->slug, ['super-admin', 'administrator', 'admin', 'superadmin'])) return true;
-            return $role->permissions()->where('slug', $permission)->exists();
-        } catch (\Exception $e) {
-            return false;
-        }
+            // Fallback: direct DB check
+            try {
+                $role = \Acme\CmsDashboard\Models\Role::find($u->role_id);
+                if (!$role) return false;
+                if (in_array($role->slug, ['super-admin', 'administrator', 'admin', 'superadmin'])) return true;
+                
+                if ($role->permissions()->where('slug', $p)->exists()) return true;
+                if (in_array($p, $contentPermissions) && $role->permissions()->where('slug', 'manage_content')->exists()) return true;
+                
+                return false;
+            } catch (\Exception $e) {
+                return false;
+            }
+        };
+
+        return $checkPermission($user, $permission);
     }
 }
 
