@@ -92,7 +92,7 @@ class PostController extends Controller
     {
         $type = $request->query('type', 'post');
         $permission = ($type === 'page') ? 'manage_pages' : (($type === 'post') ? 'manage_posts' : 'manage_' . $type);
-        if (!lazy_has_permission(auth()->user(), $permission)) {
+        if (!auth()->user()->hasPermission($permission)) {
             abort(403, "You do not have permission to manage {$type}s.");
         }
         $this->checkTypeActive($type);
@@ -171,7 +171,7 @@ class PostController extends Controller
     {
         $type = $request->query('type', 'post');
         $permission = ($type === 'page') ? 'manage_pages' : (($type === 'post') ? 'manage_posts' : 'manage_' . $type);
-        if (!lazy_has_permission(auth()->user(), $permission)) {
+        if (!auth()->user()->hasPermission($permission)) {
             abort(403, "You do not have permission to create {$type}s.");
         }
         $this->checkTypeActive($type);
@@ -220,7 +220,7 @@ class PostController extends Controller
     {
         $type = $request->input('type', 'post');
         $permission = ($type === 'page') ? 'manage_pages' : (($type === 'post') ? 'manage_posts' : 'manage_' . $type);
-        if (!lazy_has_permission(auth()->user(), $permission)) {
+        if (!auth()->user()->hasPermission($permission)) {
             abort(403, "You do not have permission to store {$type}s.");
         }
         $this->checkTypeActive($type);
@@ -383,7 +383,7 @@ class PostController extends Controller
         $post->load('categories', 'tags', 'taxonomyTerms');
         $type = $post->type;
         $permission = ($type === 'page') ? 'manage_pages' : (($type === 'post') ? 'manage_posts' : 'manage_' . $type);
-        if (!lazy_has_permission(auth()->user(), $permission)) {
+        if (!auth()->user()->hasPermission($permission)) {
             abort(403, "You do not have permission to edit {$post->type}s.");
         }
 
@@ -465,7 +465,7 @@ class PostController extends Controller
     {
         $type = $post->type;
         $permission = ($type === 'page') ? 'manage_pages' : (($type === 'post') ? 'manage_posts' : 'manage_' . $type);
-        if (!lazy_has_permission(auth()->user(), $permission)) {
+        if (!auth()->user()->hasPermission($permission)) {
             abort(403, "You do not have permission to update {$post->type}s.");
         }
         $this->checkTypeActive($post->type);
@@ -683,7 +683,7 @@ class PostController extends Controller
     {
         $type = $post->type;
         $permission = ($type === 'page') ? 'manage_pages' : (($type === 'post') ? 'manage_posts' : 'manage_' . $type);
-        if (!lazy_has_permission(auth()->user(), $permission)) {
+        if (!auth()->user()->hasPermission($permission)) {
             abort(403, "You do not have permission to delete {$post->type}s.");
         }
         $type = $post->type;

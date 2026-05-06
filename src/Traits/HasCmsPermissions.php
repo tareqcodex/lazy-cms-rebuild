@@ -21,16 +21,6 @@ trait HasCmsPermissions
 
     public function hasPermission(string $permission): bool
     {
-        return $this->checkPermission($permission);
-    }
-
-    public function hasCmsPermission(string $permission): bool
-    {
-        return $this->checkPermission($permission);
-    }
-
-    protected function checkPermission(string $permission): bool
-    {
         if ($this->isAdmin()) {
             return true;
         }
@@ -40,5 +30,10 @@ trait HasCmsPermissions
         }
 
         return $this->role->permissions()->where('slug', $permission)->exists();
+    }
+
+    public function hasCmsPermission(string $permission): bool
+    {
+        return $this->hasPermission($permission);
     }
 }

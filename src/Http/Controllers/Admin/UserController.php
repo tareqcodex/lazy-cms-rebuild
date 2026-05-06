@@ -13,7 +13,7 @@ class UserController extends Controller
 {
     public function index(Request $request)
     {
-        if (!lazy_has_permission(auth()->user(), 'manage_users')) {
+        if (!auth()->user()->hasPermission('manage_users')) {
             abort(403, 'You do not have permission to manage users.');
         }
         $query = User::with('role');
@@ -62,7 +62,7 @@ class UserController extends Controller
 
     public function create()
     {
-        if (!lazy_has_permission(auth()->user(), 'manage_users')) {
+        if (!auth()->user()->hasPermission('manage_users')) {
             abort(403);
         }
         $roles = Role::orderBy('name')->get();
@@ -71,7 +71,7 @@ class UserController extends Controller
 
     public function store(Request $request)
     {
-        if (!lazy_has_permission(auth()->user(), 'manage_users')) {
+        if (!auth()->user()->hasPermission('manage_users')) {
             abort(403);
         }
         $validated = $request->validate([
@@ -97,7 +97,7 @@ class UserController extends Controller
 
     public function update(Request $request, User $user)
     {
-        if (!lazy_has_permission(auth()->user(), 'manage_users')) {
+        if (!auth()->user()->hasPermission('manage_users')) {
             abort(403);
         }
         $validated = $request->validate([
@@ -121,7 +121,7 @@ class UserController extends Controller
 
     public function destroy(User $user)
     {
-        if (!lazy_has_permission(auth()->user(), 'manage_users')) {
+        if (!auth()->user()->hasPermission('manage_users')) {
             abort(403);
         }
         if (auth()->id() === $user->id) {
@@ -136,7 +136,7 @@ class UserController extends Controller
 
     public function toggleBlock(User $user)
     {
-        if (!lazy_has_permission(auth()->user(), 'manage_users')) {
+        if (!auth()->user()->hasPermission('manage_users')) {
             abort(403);
         }
         if (auth()->id() === $user->id) {
@@ -166,7 +166,7 @@ class UserController extends Controller
 
     public function bulk(Request $request)
     {
-        if (!lazy_has_permission(auth()->user(), 'manage_users')) {
+        if (!auth()->user()->hasPermission('manage_users')) {
             abort(403);
         }
 
