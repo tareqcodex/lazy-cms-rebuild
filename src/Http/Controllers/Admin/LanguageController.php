@@ -10,7 +10,7 @@ class LanguageController extends Controller
 {
     public function index()
     {
-        if (!auth()->user()->hasPermission('manage_settings')) {
+        if (!lazy_has_permission(auth()->user(), 'manage_settings')) {
             abort(403);
         }
 
@@ -44,7 +44,7 @@ class LanguageController extends Controller
 
     public function updateSettings(Request $request)
     {
-        if (!auth()->user()->hasPermission('manage_settings')) {
+        if (!lazy_has_permission(auth()->user(), 'manage_settings')) {
             abort(403);
         }
 

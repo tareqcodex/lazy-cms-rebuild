@@ -108,7 +108,7 @@ class DashboardController extends Controller
 
     public function settings()
     {
-        if (!auth()->user()->hasPermission('manage_settings')) {
+        if (!lazy_has_permission(auth()->user(), 'manage_settings')) {
             abort(403);
         }
         
@@ -120,7 +120,7 @@ class DashboardController extends Controller
 
     public function updateSettings(Request $request)
     {
-        if (!auth()->user()->hasPermission('manage_settings')) {
+        if (!lazy_has_permission(auth()->user(), 'manage_settings')) {
             abort(403);
         }
         $data = $request->except('_token');
@@ -157,7 +157,7 @@ class DashboardController extends Controller
 
     public function seoSettings()
     {
-        if (!auth()->user()->hasPermission('manage_settings')) {
+        if (!lazy_has_permission(auth()->user(), 'manage_settings')) {
             abort(403);
         }
         
@@ -167,7 +167,7 @@ class DashboardController extends Controller
 
     public function updateSeoSettings(Request $request)
     {
-        if (!auth()->user()->hasPermission('manage_settings')) {
+        if (!lazy_has_permission(auth()->user(), 'manage_settings')) {
             abort(403);
         }
         
@@ -222,7 +222,7 @@ class DashboardController extends Controller
 
     public function activityLogs(Request $request)
     {
-        if (!auth()->user()->hasPermission('manage_settings')) {
+        if (!lazy_has_permission(auth()->user(), 'manage_settings')) {
             abort(403);
         }
 
@@ -257,7 +257,7 @@ class DashboardController extends Controller
 
     public function apiSettings()
     {
-        if (!auth()->user()->hasPermission('manage_settings')) {
+        if (!lazy_has_permission(auth()->user(), 'manage_settings')) {
             abort(403);
         }
         
@@ -267,7 +267,7 @@ class DashboardController extends Controller
 
     public function themeOptions()
     {
-        if (!auth()->user()->hasPermission('manage_settings')) {
+        if (!lazy_has_permission(auth()->user(), 'manage_settings')) {
             abort(403);
         }
 
@@ -280,7 +280,7 @@ class DashboardController extends Controller
 
     public function updateThemeOptions(\Illuminate\Http\Request $request)
     {
-        if (!auth()->user()->hasPermission('manage_settings')) {
+        if (!lazy_has_permission(auth()->user(), 'manage_settings')) {
             abort(403);
         }
 
@@ -303,7 +303,7 @@ class DashboardController extends Controller
 
     public function analytics()
     {
-        if (!auth()->user()->hasPermission('manage_settings')) {
+        if (!lazy_has_permission(auth()->user(), 'manage_settings')) {
             abort(403);
         }
 

@@ -10,7 +10,7 @@ class BlacklistController extends Controller
 {
     public function index(Request $request)
     {
-        if (!auth()->user()->hasPermission('manage_users')) {
+        if (!lazy_has_permission(auth()->user(), 'manage_users')) {
             abort(403);
         }
 
@@ -28,7 +28,7 @@ class BlacklistController extends Controller
 
     public function bulk(Request $request)
     {
-        if (!auth()->user()->hasPermission('manage_users')) {
+        if (!lazy_has_permission(auth()->user(), 'manage_users')) {
             abort(403);
         }
 
@@ -45,7 +45,7 @@ class BlacklistController extends Controller
 
     public function destroy($id)
     {
-        if (!auth()->user()->hasPermission('manage_users')) {
+        if (!lazy_has_permission(auth()->user(), 'manage_users')) {
             abort(403);
         }
         $blockedIp = BlockedIp::findOrFail($id);

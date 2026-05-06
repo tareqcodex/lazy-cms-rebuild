@@ -12,7 +12,7 @@ class BackupController extends Controller
 {
     public function index()
     {
-        if (!auth()->user()->hasPermission('manage_settings')) {
+        if (!lazy_has_permission(auth()->user(), 'manage_settings')) {
             abort(403);
         }
 
@@ -45,7 +45,7 @@ class BackupController extends Controller
 
     public function create()
     {
-        if (!auth()->user()->hasPermission('manage_settings')) {
+        if (!lazy_has_permission(auth()->user(), 'manage_settings')) {
             abort(403);
         }
 
@@ -100,7 +100,7 @@ class BackupController extends Controller
 
     public function restore($filename)
     {
-        if (!auth()->user()->hasPermission('manage_settings')) {
+        if (!lazy_has_permission(auth()->user(), 'manage_settings')) {
             abort(403);
         }
 
@@ -124,7 +124,7 @@ class BackupController extends Controller
 
     public function download($filename)
     {
-        if (!auth()->user()->hasPermission('manage_settings')) {
+        if (!lazy_has_permission(auth()->user(), 'manage_settings')) {
             abort(403);
         }
 
@@ -138,7 +138,7 @@ class BackupController extends Controller
 
     public function destroy($filename)
     {
-        if (!auth()->user()->hasPermission('manage_settings')) {
+        if (!lazy_has_permission(auth()->user(), 'manage_settings')) {
             abort(403);
         }
 

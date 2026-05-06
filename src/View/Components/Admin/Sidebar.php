@@ -157,26 +157,26 @@ class Sidebar extends Component
         if (str_contains($targetPath, 'admin/posts') || str_contains($targetPath, 'admin/pages')) {
             $pType = $type ?: (str_contains($targetPath, 'admin/pages') ? 'page' : 'post');
             $permission = ($pType === 'page') ? 'manage_pages' : (($pType === 'post') ? 'manage_posts' : 'manage_' . $pType);
-            return $user->hasPermission($permission);
+            return lazy_has_permission($user, $permission);
         }
 
         // Users
-        if (str_contains($targetPath, 'admin/users') || str_contains($targetPath, 'admin/blacklist')) return $user->hasPermission('manage_users');
+        if (str_contains($targetPath, 'admin/users') || str_contains($targetPath, 'admin/blacklist')) return lazy_has_permission($user, 'manage_users');
         
         // Roles
-        if (str_contains($targetPath, 'admin/roles')) return $user->hasPermission('manage_roles');
+        if (str_contains($targetPath, 'admin/roles')) return lazy_has_permission($user, 'manage_roles');
 
         // Settings
-        if (str_contains($targetPath, 'admin/settings') || $targetPath === 'admin/dashboard/settings') return $user->hasPermission('manage_settings');
+        if (str_contains($targetPath, 'admin/settings') || $targetPath === 'admin/dashboard/settings') return lazy_has_permission($user, 'manage_settings');
 
         // Media
-        if (str_contains($targetPath, 'admin/media')) return $user->hasPermission('manage_media');
+        if (str_contains($targetPath, 'admin/media')) return lazy_has_permission($user, 'manage_media');
         
         // Comments
-        if (str_contains($targetPath, 'admin/comments')) return $user->hasPermission('manage_posts');
+        if (str_contains($targetPath, 'admin/comments')) return lazy_has_permission($user, 'manage_posts');
 
         // ACPT
-        if (str_contains($targetPath, 'admin/acpt')) return $user->hasPermission('manage_settings');
+        if (str_contains($targetPath, 'admin/acpt')) return lazy_has_permission($user, 'manage_settings');
 
         return true;
     }

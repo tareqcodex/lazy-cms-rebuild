@@ -916,6 +916,33 @@ if (!function_exists('lazy_layout_to_shortcodes')) {
     }
 }
 
+if (!function_exists('lazy_has_permission')) {
+    function lazy_has_permission($user, $permission)
+    {
+        if (!$user) return false;
+        
+        // If it's the model with the trait/method, use it
+        if (method_exists($user, 'hasPermission')) {
+            return lazy_has_permission($user, $permission);
+        }
+
+        // Fallback logic (manually check)
+        if (method_exists($user, 'isAdmin') && $user->isAdmin()) {
+            return true;
+        }
+
+        if (isset($user->role_id)) {
+            $role = \Acme\CmsDashboard\Models\Role::find($user->role_id);
+            if ($role) {
+                if ($role->slug === 'super-admin' || $role->slug === 'administrator') return true;
+                return $role->permissions()->where('slug', $permission)->exists();
+            }
+        }
+
+        return false;
+    }
+}
+
 if (!function_exists('lazy_translate')) {
     function lazy_translate($text, $targetLang = 'en', $sourceLang = 'auto') {
         if (empty($text)) return $text;
