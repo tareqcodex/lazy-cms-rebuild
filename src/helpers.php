@@ -921,25 +921,23 @@ if (!function_exists('lazy_has_permission')) {
     {
         if (!$user) return false;
         
-        // If it's the model with the trait/method, use it
-        if (method_exists($user, 'hasPermission')) {
-            return lazy_has_permission($user, $permission);
+        // 1. Fetch Role
+        $role = null;
+        if (isset($user->role)) {
+            $role = $user->role;
+        } elseif (isset($user->role_id)) {
+            $role = \Acme\CmsDashboard\Models\Role::find($user->role_id);
         }
 
-        // Fallback logic (manually check)
-        if (method_exists($user, 'isAdmin') && $user->isAdmin()) {
+        if (!$role) return false;
+
+        // 2. Super Admin bypass
+        if ($role->slug === 'super-admin' || $role->slug === 'administrator') {
             return true;
         }
 
-        if (isset($user->role_id)) {
-            $role = \Acme\CmsDashboard\Models\Role::find($user->role_id);
-            if ($role) {
-                if ($role->slug === 'super-admin' || $role->slug === 'administrator') return true;
-                return $role->permissions()->where('slug', $permission)->exists();
-            }
-        }
-
-        return false;
+        // 3. Permission check
+        return $role->permissions()->where('slug', $permission)->exists();
     }
 }
 
