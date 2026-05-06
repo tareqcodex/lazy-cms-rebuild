@@ -19,7 +19,7 @@ return new class extends Migration
             $table->boolean('is_builtin')->default(false);
             $table->boolean('is_active')->default(true);
             $table->boolean('has_archive')->default(true);
-            $table->boolean('public')->default(true);
+            $table->boolean('is_public')->default(true);
             $table->boolean('show_in_menu')->default(true);
             $table->boolean('show_in_rest')->default(true);
             $table->boolean('hierarchical')->default(false);

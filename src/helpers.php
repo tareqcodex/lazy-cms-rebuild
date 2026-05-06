@@ -395,6 +395,15 @@ if (!function_exists('lazy_log_activity')) {
     }
 }
 
+if (!function_exists('lazy_has_permission')) {
+    function lazy_has_permission($user, string $permission): bool
+    {
+        if (!$user) return false;
+        if (method_exists($user, 'hasPermission')) return $user->hasPermission($permission);
+        return false;
+    }
+}
+
 if (!function_exists('render_lazy_widgets')) {
     function render_lazy_widgets($area) {
         $currentLocale = app()->getLocale();

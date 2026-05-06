@@ -282,19 +282,16 @@
                 return text.toString().toLowerCase().replace(/\s+/g, '-').replace(/[^\w\-]+/g, '').replace(/\-\-+/g, '-').replace(/^-+/, '').replace(/-+$/, '');
             }
 
-            titleInput?.addEventListener('blur', function() {
+            titleInput?.addEventListener('input', debounce(function() {
                 if (this.value && !slugInput.value) {
                     let newSlug = generateSlug(this.value);
                     slugInput.value = newSlug;
                     if (slugDisplay) slugDisplay.innerText = newSlug;
                     originalSlug = newSlug;
-                }
-                
-                if (this.value) {
                     permalinkContainer?.classList.remove('hidden');
                     permalinkContainer?.classList.add('flex');
                 }
-            });
+            }, 500));
 
             document.getElementById('edit-slug-btn')?.addEventListener('click', function() {
                 viewSpan?.classList.add('hidden');
@@ -350,43 +347,74 @@
 
             document.getElementById('ok-status-btn')?.addEventListener('click', function() {
                 let select = document.getElementById('status-select-ui');
-                document.getElementById('status-display-text').innerText = select.options[select.selectedIndex].text;
-                statusHidden.value = select.value;
-                document.getElementById('status-edit').classList.add('hidden');
+                if (!select) return;
+                let val = select.value;
+                let displayText = document.getElementById('status-display-text');
+                if (displayText) displayText.innerText = select.options[select.selectedIndex].text;
+                if (statusHidden) statusHidden.value = val;
+                document.getElementById('status-edit')?.classList.add('hidden');
             });
 
             document.getElementById('ok-visibility-btn')?.addEventListener('click', function() {
-                let selected = document.querySelector('input[name="visibility"]:checked').value;
-                document.getElementById('visibility-display-text').innerText = selected;
-                document.getElementById('visibility-edit').classList.add('hidden');
+                let checkedInput = document.querySelector('input[name="visibility"]:checked');
+                if (!checkedInput) return;
+                let selected = checkedInput.value;
+                let displayText = document.getElementById('visibility-display-text');
+                if (displayText) displayText.innerText = selected;
+                document.getElementById('visibility-edit')?.classList.add('hidden');
             });
 
             document.getElementById('ok-publish-btn')?.addEventListener('click', function() {
-                let mm = document.getElementById('pub-mm').value, 
-                    dd = document.getElementById('pub-dd').value, 
-                    yy = document.getElementById('pub-yy').value, 
-                    hr = document.getElementById('pub-hr').value, 
-                    min = document.getElementById('pub-min').value;
+                let mmEl = document.getElementById('pub-mm');
+                let ddEl = document.getElementById('pub-dd');
+                let yyEl = document.getElementById('pub-yy');
+                let hrEl = document.getElementById('pub-hr');
+                let minEl = document.getElementById('pub-min');
+
+                if (!mmEl || !ddEl || !yyEl || !hrEl || !minEl) return;
+
+                let mm = mmEl.value;
+                let dd = ddEl.value;
+                let yy = yyEl.value;
+                let hr = hrEl.value;
+                let min = minEl.value;
                 
                 let selDate = new Date(`${yy}-${mm}-${dd}T${hr}:${min}:00`);
-                let isFuture = selDate > new Date();
-                let monthName = document.getElementById('pub-mm').options[document.getElementById('pub-mm').selectedIndex].text;
+                let now = new Date();
+                let isFuture = selDate > now;
                 
-                document.getElementById('publish-display-prefix').innerText = isFuture ? 'Scheduled for' : 'Publish';
-                document.getElementById('publish-display-text').innerText = isFuture ? `${monthName} ${dd}, ${yy} @ ${hr}:${min}` : 'immediately';
+                let monthName = mmEl.options[mmEl.selectedIndex].text;
+                let prefixEl = document.getElementById('publish-display-prefix');
+                let textEl = document.getElementById('publish-display-text');
+
+                if (prefixEl) prefixEl.innerText = isFuture ? 'Scheduled for' : 'Publish';
+                if (textEl) textEl.innerText = isFuture ? `${monthName} ${dd}, ${yy} @ ${hr}:${min}` : 'immediately';
                 
+                let mainPublishBtn = document.getElementById('main-publish-btn');
+                let statusDisplay = document.getElementById('status-display-text');
+
                 if (isFuture) {
-                    document.getElementById('main-publish-btn').innerText = 'Schedule';
-                    statusHidden.value = 'scheduled';
-                    document.getElementById('status-display-text').innerText = 'Scheduled';
+                    if (mainPublishBtn) mainPublishBtn.innerText = 'Schedule';
+                    if (statusHidden) statusHidden.value = 'scheduled';
+                    if (statusDisplay) statusDisplay.innerText = 'Scheduled';
                 } else {
-                    document.getElementById('main-publish-btn').innerText = 'Publish';
-                    statusHidden.value = 'published';
-                    document.getElementById('status-display-text').innerText = 'Published';
+                    if (mainPublishBtn) mainPublishBtn.innerText = 'Publish';
+                    if (statusHidden) statusHidden.value = 'published';
+                    if (statusDisplay) statusDisplay.innerText = 'Published';
                 }
-                document.getElementById('published-at-hidden').value = `${yy}-${mm}-${dd} ${hr}:${min}:00`;
-                document.getElementById('publish-edit').classList.add('hidden');
+                
+                let hiddenAt = document.getElementById('published-at-hidden');
+                if (hiddenAt) hiddenAt.value = `${yy}-${mm}-${dd} ${hr}:${min}:00`;
+                document.getElementById('publish-edit')?.classList.add('hidden');
             });
+
+            function debounce(func, wait) {
+                let timeout;
+                return function() {
+                    clearTimeout(timeout);
+                    timeout = setTimeout(() => func.apply(this, arguments), wait);
+                };
+            }
 
             // Editor Toggle Logic
             const richEditorBtn = document.getElementById('editor-mode-rich');

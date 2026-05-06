@@ -163,210 +163,228 @@
 </div>
 
 <script>
-    function switchSeoTab(tab) {
-        document.querySelectorAll('.seo-tab-content').forEach(el => el.classList.add('hidden'));
-        document.querySelectorAll('.seo-tab-btn').forEach(btn => {
-            btn.classList.remove('bg-[#2271b1]', 'text-white');
-            btn.classList.add('bg-[#f0f0f1]', 'text-[#2c3338]');
-        });
-
-        document.getElementById('seo-tab-' + tab).classList.remove('hidden');
-        document.getElementById('seo-tab-btn-' + tab).classList.add('bg-[#2271b1]', 'text-white');
-        document.getElementById('seo-tab-btn-' + tab).classList.remove('bg-[#f0f0f1]', 'text-[#2c3338]');
-
-        if (tab === 'internal') {
-            fetchInternalSuggestions();
-        }
-    }
-
-    function fetchInternalSuggestions() {
-        const title = document.querySelector('input[name="title"]').value;
-        const container = document.getElementById('internal-links-suggestions');
-        const postId = "{{ $post->id ?? 0 }}";
-
-        if (!title || title.length < 3) {
-            container.innerHTML = '<div class="text-[13px] text-gray-500 italic">Enter at least 3 characters in the post title to see suggestions...</div>';
-            return;
-        }
-
-        container.innerHTML = '<div class="text-[13px] text-gray-500 italic">Searching for related content...</div>';
-
-        fetch("{{ route('admin.seo.related-posts') }}?s=" + encodeURIComponent(title) + "&exclude=" + postId)
-            .then(res => res.json())
-            .then(data => {
-                if (data.length === 0) {
-                    container.innerHTML = '<div class="text-[13px] text-red-500 italic">No related posts found.</div>';
-                    return;
-                }
-
-                let html = '<div class="space-y-2">';
-                data.forEach(item => {
-                    html += `
-                        <div class="p-2 border border-gray-100 rounded bg-gray-50 flex items-center justify-between group">
-                            <div class="flex-1">
-                                <div class="text-[13px] font-medium text-[#2271b1] truncate">${item.title}</div>
-                                <div class="text-[11px] text-gray-400 truncate">${item.url}</div>
-                            </div>
-                            <button type="button" onclick="copyToClipboard('${item.url}')" class="ml-2 p-1.5 bg-white border border-gray-200 rounded shadow-sm hover:bg-gray-100 transition-colors" title="Copy URL">
-                                <svg class="w-3.5 h-3.5 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 5H6a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2v-1M8 5a2 2 0 002 2h2a2 2 0 002-2M8 5a2 2 0 012-2h2a2 2 0 012 2m0 0h2a2 2 0 012 2v3m2 4H10m0 0l3-3m-3 3l3 3"></path></svg>
-                            </button>
-                        </div>
-                    `;
-                });
-                html += '</div>';
-                container.innerHTML = html;
-            });
-    }
-
-    function copyToClipboard(text) {
-        navigator.clipboard.writeText(text).then(() => {
-            alert('URL copied to clipboard!');
-        });
-    }
-
-    // Update suggestions when title changes
-    document.querySelector('input[name="title"]').addEventListener('input', debounce(function() {
-        if (!document.getElementById('seo-tab-internal').classList.contains('hidden')) {
-            fetchInternalSuggestions();
-        }
-    }, 500));
-
-    function debounce(func, wait) {
-        let timeout;
-        return function() {
-            clearTimeout(timeout);
-            timeout = setTimeout(() => func.apply(this, arguments), wait);
-        };
-    }
-
-    function openSeoMedia(type) {
-        if (typeof window.openMediaModal === 'function') {
-            window.openMediaModal(function(media) {
-                const inputId = type === 'og' ? 'seo-og-image' : 'seo-twitter-image';
-                const previewId = type === 'og' ? 'seo-og-preview' : 'seo-twitter-preview';
-                
-                const input = document.getElementById(inputId);
-                const preview = document.getElementById(previewId);
-                if (input) input.value = media.path;
-                if (preview) {
-                    preview.innerHTML = `<img src="/storage/${media.path}" class="w-full h-full object-cover">`;
-                }
-            });
-        }
-    }
-
-    function runSeoAnalysis() {
-        const title = document.getElementById('seo-title-input')?.value || '';
-        const desc = document.getElementById('seo-desc-input')?.value || '';
-        const keyword = document.getElementById('seo-focus-keyword')?.value.toLowerCase() || '';
-        const results = document.getElementById('seo-analysis-results');
+    document.addEventListener('DOMContentLoaded', function() {
+        const seoTabs = document.querySelectorAll('.seo-tab-content');
+        const seoTabBtns = document.querySelectorAll('.seo-tab-btn');
         
-        // Use TinyMCE content if available, otherwise fallback to textarea
-        let content = '';
-        if (window.tinymce && tinymce.get('wp-editor')) {
-            content = tinymce.get('wp-editor').getContent({format: 'text'}).toLowerCase();
-        } else {
-            content = document.querySelector('textarea[name="content"]')?.value.toLowerCase() || '';
-        }
+        window.switchSeoTab = function(tab) {
+            seoTabs.forEach(el => el.classList.add('hidden'));
+            seoTabBtns.forEach(btn => {
+                btn.classList.remove('bg-[#2271b1]', 'text-white');
+                btn.classList.add('bg-[#f0f0f1]', 'text-[#2c3338]');
+            });
 
-        if (!results) return;
-        results.innerHTML = '';
-
-        const checks = [
-            { 
-                label: 'Focus keyword in SEO title', 
-                status: keyword && title.toLowerCase().includes(keyword) ? 'good' : 'bad',
-                msg: keyword ? '' : 'Provide a focus keyword to analyze.'
-            },
-            {
-                label: 'Focus keyword in Meta description',
-                status: keyword && desc.toLowerCase().includes(keyword) ? 'good' : 'bad'
-            },
-            {
-                label: 'SEO Title length',
-                status: (title.length >= 50 && title.length <= 60) ? 'good' : 'warning'
-            },
-            {
-                label: 'Meta Description length',
-                status: (desc.length >= 150 && desc.length <= 160) ? 'good' : 'warning'
-            },
-            {
-                label: 'Focus keyword in content',
-                status: keyword && content.includes(keyword) ? 'good' : 'bad'
+            const targetTab = document.getElementById('seo-tab-' + tab);
+            const targetBtn = document.getElementById('seo-tab-btn-' + tab);
+            
+            if (targetTab) targetTab.classList.remove('hidden');
+            if (targetBtn) {
+                targetBtn.classList.add('bg-[#2271b1]', 'text-white');
+                targetBtn.classList.remove('bg-[#f0f0f1]', 'text-[#2c3338]');
             }
-        ];
 
-        checks.forEach(check => {
-            const li = document.createElement('li');
-            li.className = "flex items-center text-[12px]";
-            let dotColor = '#d63638'; // Default red
-            if (check.status === 'good') dotColor = '#00a32a';
-            if (check.status === 'warning') dotColor = '#dba617';
+            if (tab === 'internal') {
+                window.fetchInternalSuggestions();
+            }
+        };
 
-            li.innerHTML = `<span class="w-2.5 h-2.5 rounded-full mr-2 shrink-0" style="background-color: ${dotColor}"></span> <span>${check.label}</span>`;
-            results.appendChild(li);
-        });
+        window.fetchInternalSuggestions = function() {
+            const titleEl = document.querySelector('input[name="title"]');
+            if (!titleEl) return;
+            const title = titleEl.value;
+            const container = document.getElementById('internal-links-suggestions');
+            const postId = "{{ $post->id ?? 0 }}";
 
-        // Update Previews
-        document.getElementById('preview-title').innerText = title || 'Page Title';
-        document.getElementById('preview-desc').innerText = desc || 'Please provide a meta description...';
-    }
+            if (!container) return;
 
-    function updateSeoBar(inputId, barId, countId, minOk, maxOk, maxLimit) {
-        const input = document.getElementById(inputId);
-        const bar = document.getElementById(barId);
-        const count = document.getElementById(countId);
-        if (!input || !bar || !count) return;
+            if (!title || title.length < 3) {
+                container.innerHTML = '<div class="text-[13px] text-gray-500 italic">Enter at least 3 characters in the post title to see suggestions...</div>';
+                return;
+            }
 
-        const len = input.value.length;
-        count.innerText = `${len} characters`;
+            container.innerHTML = '<div class="text-[13px] text-gray-500 italic">Searching for related content...</div>';
 
-        let percentage = (len / maxLimit) * 100;
-        if (percentage > 100) percentage = 100;
-        bar.style.width = `${percentage}%`;
+            fetch("{{ route('admin.seo.related-posts') }}?s=" + encodeURIComponent(title) + "&exclude=" + postId)
+                .then(res => res.json())
+                .then(data => {
+                    if (data.length === 0) {
+                        container.innerHTML = '<div class="text-[13px] text-red-500 italic">No related posts found.</div>';
+                        return;
+                    }
 
-        if (len === 0) {
-            bar.style.backgroundColor = '#f0f0f1';
-        } else if (len < minOk) {
-            bar.style.backgroundColor = '#d63638';
-        } else if (len >= minOk && len <= maxOk) {
-            bar.style.backgroundColor = '#00a32a';
-        } else {
-            bar.style.backgroundColor = '#dba617';
+                    let html = '<div class="space-y-2">';
+                    data.forEach(item => {
+                        html += `
+                            <div class="p-2 border border-gray-100 rounded bg-gray-50 flex items-center justify-between group">
+                                <div class="flex-1">
+                                    <div class="text-[13px] font-medium text-[#2271b1] truncate">${item.title}</div>
+                                    <div class="text-[11px] text-gray-400 truncate">${item.url}</div>
+                                </div>
+                                <button type="button" onclick="window.copyToClipboard('${item.url}')" class="ml-2 p-1.5 bg-white border border-gray-200 rounded shadow-sm hover:bg-gray-100 transition-colors" title="Copy URL">
+                                    <svg class="w-3.5 h-3.5 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 5H6a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2v-1M8 5a2 2 0 002 2h2a2 2 0 002-2M8 5a2 2 0 012-2h2a2 2 0 012 2m0 0h2a2 2 0 012 2v3m2 4H10m0 0l3-3m-3 3l3 3"></path></svg>
+                                </button>
+                            </div>
+                        `;
+                    });
+                    html += '</div>';
+                    container.innerHTML = html;
+                }).catch(e => {
+                    container.innerHTML = '<div class="text-[13px] text-red-500 italic">Error loading suggestions.</div>';
+                });
+        };
+
+        window.copyToClipboard = function(text) {
+            navigator.clipboard.writeText(text).then(() => {
+                alert('URL copied to clipboard!');
+            });
+        };
+
+        function seoDebounce(func, wait) {
+            let timeout;
+            return function(...args) {
+                clearTimeout(timeout);
+                timeout = setTimeout(() => func.apply(this, args), wait);
+            };
         }
-    }
 
-    const seoTitleInput = document.getElementById('seo-title-input');
-    const seoDescInput = document.getElementById('seo-desc-input');
-    const seoFocusInput = document.getElementById('seo-focus-keyword');
+        // Update suggestions when title changes
+        document.querySelector('input[name="title"]')?.addEventListener('input', seoDebounce(function() {
+            if (!document.getElementById('seo-tab-internal')?.classList.contains('hidden')) {
+                window.fetchInternalSuggestions();
+            }
+        }, 500));
 
-    [seoTitleInput, seoDescInput, seoFocusInput].forEach(el => {
-        el?.addEventListener('input', () => {
-            updateSeoBar('seo-title-input', 'seo-title-bar', 'seo-title-count', 50, 60, 80);
-            updateSeoBar('seo-desc-input', 'seo-desc-bar', 'seo-desc-count', 150, 160, 200);
-            runSeoAnalysis();
+        window.openSeoMedia = function(type) {
+            if (typeof window.openMediaModal === 'function') {
+                window.openMediaModal(function(media) {
+                    const inputId = type === 'og' ? 'seo-og-image' : 'seo-twitter-image';
+                    const previewId = type === 'og' ? 'seo-og-preview' : 'seo-twitter-preview';
+                    
+                    const input = document.getElementById(inputId);
+                    const preview = document.getElementById(previewId);
+                    if (input) input.value = media.path;
+                    if (preview) {
+                        preview.innerHTML = `<img src="/storage/${media.path}" class="w-full h-full object-cover">`;
+                    }
+                });
+            }
+        };
+
+        window.runSeoAnalysis = function() {
+            const title = document.getElementById('seo-title-input')?.value || '';
+            const desc = document.getElementById('seo-desc-input')?.value || '';
+            const keyword = document.getElementById('seo-focus-keyword')?.value.toLowerCase() || '';
+            const results = document.getElementById('seo-analysis-results');
+            
+            let content = '';
+            try {
+                if (window.tinymce && tinymce.get('wp-editor')) {
+                    content = tinymce.get('wp-editor').getContent({format: 'text'}).toLowerCase();
+                } else {
+                    content = document.querySelector('textarea[name="content"]')?.value.toLowerCase() || '';
+                }
+            } catch(e) {}
+
+            if (!results) return;
+            results.innerHTML = '';
+
+            const checks = [
+                { 
+                    label: 'Focus keyword in SEO title', 
+                    status: keyword && title.toLowerCase().includes(keyword) ? 'good' : 'bad',
+                    msg: keyword ? '' : 'Provide a focus keyword to analyze.'
+                },
+                {
+                    label: 'Focus keyword in Meta description',
+                    status: keyword && desc.toLowerCase().includes(keyword) ? 'good' : 'bad'
+                },
+                {
+                    label: 'SEO Title length',
+                    status: (title.length >= 50 && title.length <= 60) ? 'good' : 'warning'
+                },
+                {
+                    label: 'Meta Description length',
+                    status: (desc.length >= 150 && desc.length <= 160) ? 'good' : 'warning'
+                },
+                {
+                    label: 'Focus keyword in content',
+                    status: keyword && content.includes(keyword) ? 'good' : 'bad'
+                }
+            ];
+
+            checks.forEach(check => {
+                const li = document.createElement('li');
+                li.className = "flex items-center text-[12px]";
+                let dotColor = '#d63638'; 
+                if (check.status === 'good') dotColor = '#00a32a';
+                if (check.status === 'warning') dotColor = '#dba617';
+
+                li.innerHTML = `<span class="w-2.5 h-2.5 rounded-full mr-2 shrink-0" style="background-color: ${dotColor}"></span> <span>${check.label}</span>`;
+                results.appendChild(li);
+            });
+
+            const pTitle = document.getElementById('preview-title');
+            const pDesc = document.getElementById('preview-desc');
+            if (pTitle) pTitle.innerText = title || 'Page Title';
+            if (pDesc) pDesc.innerText = desc || 'Please provide a meta description...';
+        };
+
+        window.updateSeoBar = function(inputId, barId, countId, minOk, maxOk, maxLimit) {
+            const input = document.getElementById(inputId);
+            const bar = document.getElementById(barId);
+            const count = document.getElementById(countId);
+            if (!input || !bar || !count) return;
+
+            const len = input.value.length;
+            count.innerText = `${len} characters`;
+
+            let percentage = (len / maxLimit) * 100;
+            if (percentage > 100) percentage = 100;
+            bar.style.width = `${percentage}%`;
+
+            if (len === 0) {
+                bar.style.backgroundColor = '#f0f0f1';
+            } else if (len < minOk) {
+                bar.style.backgroundColor = '#d63638';
+            } else if (len >= minOk && len <= maxOk) {
+                bar.style.backgroundColor = '#00a32a';
+            } else {
+                bar.style.backgroundColor = '#dba617';
+            }
+        };
+
+        const seoTitleInput = document.getElementById('seo-title-input');
+        const seoDescInput = document.getElementById('seo-desc-input');
+        const seoFocusInput = document.getElementById('seo-focus-keyword');
+
+        [seoTitleInput, seoDescInput, seoFocusInput].forEach(el => {
+            el?.addEventListener('input', () => {
+                window.updateSeoBar('seo-title-input', 'seo-title-bar', 'seo-title-count', 50, 60, 80);
+                window.updateSeoBar('seo-desc-input', 'seo-desc-bar', 'seo-desc-count', 150, 160, 200);
+                window.runSeoAnalysis();
+            });
         });
+
+        // Sync with main title
+        const mainTitleInput = document.getElementById('title-input');
+        let isSeoTitleManuallyEdited = {{ !empty($seo['title']) ? 'true' : 'false' }};
+
+        if (seoTitleInput && mainTitleInput) {
+            mainTitleInput.addEventListener('input', function() {
+                if (!isSeoTitleManuallyEdited) {
+                    seoTitleInput.value = this.value;
+                    window.updateSeoBar('seo-title-input', 'seo-title-bar', 'seo-title-count', 50, 60, 80);
+                    window.runSeoAnalysis();
+                }
+            });
+            seoTitleInput.addEventListener('input', () => isSeoTitleManuallyEdited = true);
+        }
+
+        // Run once on load
+        setTimeout(() => {
+            window.updateSeoBar('seo-title-input', 'seo-title-bar', 'seo-title-count', 50, 60, 80);
+            window.updateSeoBar('seo-desc-input', 'seo-desc-bar', 'seo-desc-count', 150, 160, 200);
+            window.runSeoAnalysis();
+        }, 500);
     });
-
-    // Run once on load
-    setTimeout(() => {
-        updateSeoBar('seo-title-input', 'seo-title-bar', 'seo-title-count', 50, 60, 80);
-        updateSeoBar('seo-desc-input', 'seo-desc-bar', 'seo-desc-count', 150, 160, 200);
-        runSeoAnalysis();
-    }, 500);
-
-    // Sync with main title
-    const mainTitleInput = document.getElementById('title-input');
-    let isSeoTitleManuallyEdited = {{ !empty($seo['title']) ? 'true' : 'false' }};
-
-    if (seoTitleInput && mainTitleInput) {
-        mainTitleInput.addEventListener('input', function() {
-            if (!isSeoTitleManuallyEdited) {
-                seoTitleInput.value = this.value;
-                updateSeoBar('seo-title-input', 'seo-title-bar', 'seo-title-count', 50, 60, 80);
-                runSeoAnalysis();
-            }
-        });
-        seoTitleInput.addEventListener('input', () => isSeoTitleManuallyEdited = true);
-    }
 </script>

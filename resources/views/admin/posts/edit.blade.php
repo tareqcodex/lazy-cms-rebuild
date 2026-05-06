@@ -485,56 +485,77 @@
             }
         });
 
-        const titleInput = document.getElementById('title-input');
-        const slugDisplay = document.getElementById('permalink-slug-display');
-        const slugInput = document.getElementById('slug-input');
-        const viewSpan = document.getElementById('permalink-view');
-        const editSpan = document.getElementById('permalink-edit');
         const statusHidden = document.getElementById('status-hidden');
-        let originalSlug = slugInput.value;
 
-        const permalinkContainer = document.getElementById('permalink-container');
-        
-        function generateSlug(text) {
-            return text.toString().toLowerCase().replace(/\s+/g, '-').replace(/[^\w\-]+/g, '').replace(/\-\-+/g, '-').replace(/^-+/, '').replace(/-+$/, '');
-        }
+        document.addEventListener('DOMContentLoaded', function() {
+            const titleInput = document.getElementById('title-input');
+            const permalinkContainer = document.getElementById('permalink-container');
+            const slugDisplay = document.getElementById('permalink-slug-display');
+            const slugInput = document.getElementById('slug-input');
+            const viewSpan = document.getElementById('permalink-view');
+            const editSpan = document.getElementById('permalink-edit');
+            let originalSlug = slugInput?.value || '';
+            
+            // In Edit mode, we assume manual unless they delete it? No, let's keep it manual by default.
+            if (slugInput) slugInput.dataset.manual = 'true';
 
-        if (permalinkContainer && titleInput && slugInput) {
-            titleInput.addEventListener('blur', function() {
-                if (this.value && !slugInput.value) {
-                    let newSlug = generateSlug(this.value);
-                    slugInput.value = newSlug;
-                    if (slugDisplay) slugDisplay.innerText = newSlug;
-                    originalSlug = newSlug;
-                }
-                
-                if (this.value) {
-                    permalinkContainer?.classList.remove('hidden');
-                    permalinkContainer?.classList.add('flex');
-                }
-            });
+            function generateSlug(text) {
+                return text.toString().toLowerCase()
+                    .replace(/\s+/g, '-')
+                    .replace(/[^\w\-]+/g, '')
+                    .replace(/\-\-+/g, '-')
+                    .replace(/^-+/, '')
+                    .replace(/-+$/, '');
+            }
+
+            function cmsDebounce(func, wait) {
+                let timeout;
+                return function(...args) {
+                    clearTimeout(timeout);
+                    timeout = setTimeout(() => func.apply(this, args), wait);
+                };
+            }
+
+            if (titleInput && slugInput) {
+                titleInput.addEventListener('input', cmsDebounce(function() {
+                    // Only auto-generate if the slug has been cleared OR they explicitly want it
+                    if (this.value && slugInput.dataset.manual !== 'true') {
+                        let newSlug = generateSlug(this.value);
+                        slugInput.value = newSlug;
+                        if (slugDisplay) slugDisplay.innerText = newSlug;
+                        originalSlug = newSlug;
+                    }
+                }, 500));
+            }
+
             document.getElementById('edit-slug-btn')?.addEventListener('click', function() {
                 viewSpan?.classList.add('hidden');
                 editSpan?.classList.remove('hidden');
-                slugInput?.focus();
+                if (slugInput) {
+                    slugInput.dataset.manual = 'true';
+                    slugInput.focus();
+                }
             });
 
             document.getElementById('ok-slug-btn')?.addEventListener('click', function() {
-                let newSlug = slugInput.value.toLowerCase().replace(/\s+/g, '-').replace(/[^\w\-]+/g, '');
-                slugInput.value = newSlug;
-                if (slugDisplay) slugDisplay.innerText = newSlug;
-                originalSlug = newSlug;
+                if (slugInput) {
+                    let newSlug = generateSlug(slugInput.value);
+                    slugInput.value = newSlug;
+                    if (slugDisplay) slugDisplay.innerText = newSlug;
+                    originalSlug = newSlug;
+                    slugInput.dataset.manual = 'true';
+                }
                 viewSpan?.classList.remove('hidden');
                 editSpan?.classList.add('hidden');
             });
 
             document.getElementById('cancel-slug-btn')?.addEventListener('click', (e) => { 
                 e.preventDefault(); 
-                slugInput.value = originalSlug; 
+                if (slugInput) slugInput.value = originalSlug; 
                 viewSpan?.classList.remove('hidden'); 
                 editSpan?.classList.add('hidden'); 
             });
-        }
+        });
 
         // Save Draft Logic Override
         document.getElementById('save-draft-btn')?.addEventListener('click', function() {
@@ -584,49 +605,68 @@
 
         document.getElementById('ok-status-btn')?.addEventListener('click', function() {
             let select = document.getElementById('status-select-ui');
+            if (!select) return;
             let val = select.value;
-            document.getElementById('status-display-text').innerText = select.options[select.selectedIndex].text;
-            statusHidden.value = val;
+            let displayText = document.getElementById('status-display-text');
+            if (displayText) displayText.innerText = select.options[select.selectedIndex].text;
+            if (statusHidden) statusHidden.value = val;
             
-            // If selecting scheduled but no future date set, default behavior
-            document.getElementById('status-edit').classList.add('hidden');
+            document.getElementById('status-edit')?.classList.add('hidden');
         });
 
         document.getElementById('ok-visibility-btn')?.addEventListener('click', function() {
-            let selected = document.querySelector('input[name="visibility"]:checked').value;
-            document.getElementById('visibility-display-text').innerText = selected;
-            document.getElementById('visibility-edit').classList.add('hidden');
+            let checkedInput = document.querySelector('input[name="visibility"]:checked');
+            if (!checkedInput) return;
+            let selected = checkedInput.value;
+            let displayText = document.getElementById('visibility-display-text');
+            if (displayText) displayText.innerText = selected;
+            document.getElementById('visibility-edit')?.classList.add('hidden');
         });
 
         document.getElementById('ok-publish-btn')?.addEventListener('click', function() {
-            let mm = document.getElementById('pub-mm').value;
-            let dd = document.getElementById('pub-dd').value;
-            let yy = document.getElementById('pub-yy').value;
-            let hr = document.getElementById('pub-hr').value;
-            let min = document.getElementById('pub-min').value;
+            let mmEl = document.getElementById('pub-mm');
+            let ddEl = document.getElementById('pub-dd');
+            let yyEl = document.getElementById('pub-yy');
+            let hrEl = document.getElementById('pub-hr');
+            let minEl = document.getElementById('pub-min');
+
+            if (!mmEl || !ddEl || !yyEl || !hrEl || !minEl) return;
+
+            let mm = mmEl.value;
+            let dd = ddEl.value;
+            let yy = yyEl.value;
+            let hr = hrEl.value;
+            let min = minEl.value;
             
             let selDate = new Date(`${yy}-${mm}-${dd}T${hr}:${min}:00`);
             let now = new Date();
             let isFuture = selDate > now;
             
-            let monthName = document.getElementById('pub-mm').options[document.getElementById('pub-mm').selectedIndex].text;
-            document.getElementById('publish-display-prefix').innerText = isFuture ? 'Scheduled for' : 'Published on';
-            document.getElementById('publish-display-text').innerText = `${monthName} ${dd}, ${yy} @ ${hr}:${min}`;
+            let monthName = mmEl.options[mmEl.selectedIndex].text;
+            let prefixEl = document.getElementById('publish-display-prefix');
+            let textEl = document.getElementById('publish-display-text');
             
+            if (prefixEl) prefixEl.innerText = isFuture ? 'Scheduled for' : 'Published on';
+            if (textEl) textEl.innerText = `${monthName} ${dd}, ${yy} @ ${hr}:${min}`;
+            
+            let mainPublishBtn = document.getElementById('main-publish-btn');
+            let statusDisplay = document.getElementById('status-display-text');
+
             if (isFuture) {
-                document.getElementById('main-publish-btn').innerText = 'Schedule';
-                statusHidden.value = 'scheduled';
-                document.getElementById('status-display-text').innerText = 'Scheduled';
+                if (mainPublishBtn) mainPublishBtn.innerText = 'Schedule';
+                if (statusHidden) statusHidden.value = 'scheduled';
+                if (statusDisplay) statusDisplay.innerText = 'Scheduled';
             } else {
-                document.getElementById('main-publish-btn').innerText = 'Update';
-                if (statusHidden.value === 'scheduled') {
+                if (mainPublishBtn) mainPublishBtn.innerText = 'Update';
+                if (statusHidden && statusHidden.value === 'scheduled') {
                     statusHidden.value = 'published';
-                    document.getElementById('status-display-text').innerText = 'Published';
+                    if (statusDisplay) statusDisplay.innerText = 'Published';
                 }
             }
             
-            document.getElementById('published-at-hidden').value = `${yy}-${mm}-${dd} ${hr}:${min}:00`;
-            document.getElementById('publish-edit').classList.add('hidden');
+            let hiddenAt = document.getElementById('published-at-hidden');
+            if (hiddenAt) hiddenAt.value = `${yy}-${mm}-${dd} ${hr}:${min}:00`;
+            document.getElementById('publish-edit')?.classList.add('hidden');
         });
         // Taxonomy & Categories Quick Add Logic
         document.addEventListener('click', function(e) {
@@ -837,7 +877,7 @@
         const builderPlaceholder = document.getElementById('page-builder-placeholder');
         const editorTypeHidden = document.getElementById('editor_type');
 
-        function switchEditorMode(mode) {
+        window.switchEditorMode = function(mode) {
             if (!richEditorBtn || !builderEditorBtn || !richEditorContainer || !builderPlaceholder) return;
             
             if (mode === 'builder') {
@@ -855,12 +895,12 @@
             }
         }
 
-        richEditorBtn?.addEventListener('click', () => switchEditorMode('rich'));
-        builderEditorBtn?.addEventListener('click', () => switchEditorMode('builder'));
+        richEditorBtn?.addEventListener('click', () => window.switchEditorMode('rich'));
+        builderEditorBtn?.addEventListener('click', () => window.switchEditorMode('builder'));
 
         // Initialize based on hidden input value
         if (editorTypeHidden) {
-            switchEditorMode(editorTypeHidden.value || 'rich');
+            window.switchEditorMode(editorTypeHidden.value || 'rich');
         }
 
         // Initialize Tags
