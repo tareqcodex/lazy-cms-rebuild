@@ -11,7 +11,7 @@ class SeedLazyCms extends Command
      *
      * @var string
      */
-    protected $signature = 'lazy-cms:seed';
+    protected $signature = 'lazy:seed';
 
     /**
      * The console command description.

@@ -16,6 +16,7 @@ class LazyList extends Command
         $this->info('---------------------------------------');
 
         $commands = [
+            ['lazy', 'List all available Lazy CMS commands.'],
             ['lazy:install', 'Full installation: migrations, assets, themes, and default data.'],
             ['lazy:update', 'Update system: refresh assets, themes, and sync permissions.'],
             ['lazy:seed', 'Run the main System Sync Seeder for Roles/Permissions.'],
