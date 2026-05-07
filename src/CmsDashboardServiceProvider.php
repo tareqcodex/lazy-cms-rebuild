@@ -63,11 +63,21 @@ class CmsDashboardServiceProvider extends ServiceProvider
             ], 'cms-dashboard-assets');
 
             $this->commands([
+                \Acme\CmsDashboard\Console\Commands\LazyList::class,
                 \Acme\CmsDashboard\Console\Commands\MakeDashboardPage::class,
                 \Acme\CmsDashboard\Console\Commands\InstallLazyCms::class,
                 \Acme\CmsDashboard\Console\Commands\SeedLazyCms::class,
                 \Acme\CmsDashboard\Console\Commands\UpdateLazyCms::class,
             ]);
+
+            // 1. Views & Themes
+            $this->publishes([
+                __DIR__ . '/../resources/views/themes' => resource_path('views/themes'),
+            ], 'lazy-themes');
+
+            $this->publishes([
+                __DIR__ . '/../resources/views' => resource_path('views/vendor/cms-dashboard'),
+            ], 'lazy-views');
         }
     }
 
@@ -129,5 +139,16 @@ class CmsDashboardServiceProvider extends ServiceProvider
         }
 
         config(['lazy-options' => $finalOptions]);
+
+        // 6. Set Theme Path as Priority
+        $themePath = resource_path("views/themes/{$activeTheme}");
+        if (!file_exists($themePath)) {
+            $themePath = __DIR__ . "/../resources/views/themes/{$activeTheme}";
+        }
+
+        // We only add it to the top. We do NOT remove the root to avoid breaking Laravel
+        $paths = config('view.paths', []);
+        array_unshift($paths, $themePath);
+        config(['view.paths' => array_unique($paths)]);
     }
 }

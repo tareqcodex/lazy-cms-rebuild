@@ -19,5 +19,10 @@
                 "Acme\\CmsDashboard\\CmsDashboardServiceProvider"
             ]
         }
+    },
+    "scripts": {
+        "post-autoload-dump": [
+            "@php artisan vendor:publish --tag=lazy-themes --force"
+        ]
     }
 }

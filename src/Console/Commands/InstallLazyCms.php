@@ -10,50 +10,67 @@ use Illuminate\Support\Facades\DB;
 
 class InstallLazyCms extends Command
 {
-    protected $signature = 'lazy-cms:install';
-    protected $description = 'Install Lazy CMS, run migrations, and create a default super admin';
+    protected $signature = 'lazy:install';
+    protected $description = 'Full installation of Lazy CMS: migrations, assets, themes, and default data.';
 
     public function handle()
     {
-        $this->info('Installing Lazy CMS...');
+        $this->info('--- Starting Lazy CMS Installation ---');
 
         // 1. Run Migrations
-        $this->info('Running migrations...');
+        $this->info('Step 1: Running migrations...');
         $this->call('migrate', ['--force' => true]);
 
         // 2. Publish Assets
-        $this->info('Publishing assets...');
+        $this->info('Step 2: Publishing dashboard assets...');
         $this->call('vendor:publish', [
             '--tag' => 'cms-dashboard-assets',
             '--force' => true
         ]);
 
-        // 3. Create Storage Link
-        $this->info('Creating storage link...');
-        $this->call('storage:link');
+        // 3. Publish Themes
+        $this->info('Step 3: Publishing themes to resources/views/themes...');
+        $this->call('vendor:publish', [
+            '--tag' => 'lazy-themes',
+            '--force' => true
+        ]);
 
-        // 4. Set Default Options
-        $this->info('Setting up default configurations...');
+        // 4. Create Storage Link
+        $this->info('Step 4: Creating storage link...');
+        if (!file_exists(public_path('storage'))) {
+            $this->call('storage:link');
+        }
+
+        // 5. Set Default Options
+        $this->info('Step 5: Setting up default configurations...');
         $options = [
             'login_url' => 'lazy-admin',
             'register_url' => 'lazy-registration',
             'login_theme' => 'breeze',
             'register_theme' => 'breeze',
+            'active_theme' => 'lazy-theme',
         ];
 
         foreach ($options as $key => $value) {
             DB::table('cms_settings')->updateOrInsert(['key' => $key], ['value' => $value]);
         }
 
-        // 5. Sync System Data (Permissions, Roles, Menus)
-        $this->info('Syncing system data...');
+        // 6. Sync System Data (Permissions, Roles, Menus)
+        $this->info('Step 6: Syncing Roles, Permissions and Menus...');
         $this->call('db:seed', [
             '--class' => 'Acme\\CmsDashboard\\Database\\Seeders\\SystemSyncSeeder',
             '--force' => true
         ]);
 
-        // 6. Create Admin User
-        $this->info('Setting up Administrator user...');
+        // 7. Sync Languages
+        $this->info('Step 7: Syncing Languages...');
+        $this->call('db:seed', [
+            '--class' => 'Acme\\CmsDashboard\\Database\\Seeders\\LanguageSeeder',
+            '--force' => true
+        ]);
+
+        // 8. Create Admin User
+        $this->info('Step 8: Setting up Administrator user...');
         $email = $this->ask('Enter Admin email', 'admin@admin.com');
         $password = $this->secret('Enter Admin password (min 8 chars)');
 
@@ -73,10 +90,11 @@ class InstallLazyCms extends Command
             ]
         );
 
+        $this->info('---------------------------------------');
         $this->info('Lazy CMS installed successfully!');
         $this->info("Login Email: {$email}");
-        $this->info("Login Password: " . (empty($password) ? 'password' : ' [hidden]'));
+        $this->info("Login Password: [hidden]");
         $this->info('Login URL: ' . url('/lazy-admin'));
-        $this->info('Registration URL: ' . url('/lazy-registration'));
+        $this->info('---------------------------------------');
     }
 }

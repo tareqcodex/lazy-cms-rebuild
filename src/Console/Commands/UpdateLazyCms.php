@@ -6,35 +6,44 @@ use Illuminate\Console\Command;
 
 class UpdateLazyCms extends Command
 {
-    protected $signature = 'lazy-cms:update';
-    protected $description = 'Update Lazy CMS assets, run migrations and clear cache';
+    protected $signature = 'lazy:update';
+    protected $description = 'Update Lazy CMS: run migrations, sync system data, and refresh assets/themes.';
 
     public function handle()
     {
-        $this->info('Updating Lazy CMS...');
+        $this->info('--- Starting Lazy CMS Update ---');
 
         // 1. Run Migrations
-        $this->info('Running migrations...');
+        $this->info('Step 1: Running migrations...');
         $this->call('migrate', ['--force' => true]);
 
         // 2. Sync System Data (Permissions, Roles, Menus)
-        $this->info('Syncing system data...');
+        $this->info('Step 2: Syncing system data...');
         $this->call('db:seed', [
             '--class' => 'Acme\\CmsDashboard\\Database\\Seeders\\SystemSyncSeeder',
             '--force' => true
         ]);
 
         // 3. Publish Assets (Force)
-        $this->info('Updating assets...');
+        $this->info('Step 3: Refreshing dashboard assets...');
         $this->call('vendor:publish', [
-            '--provider' => 'Acme\CmsDashboard\CmsDashboardServiceProvider',
+            '--tag' => 'cms-dashboard-assets',
             '--force' => true
         ]);
 
-        // 3. Clear Cache
-        $this->info('Clearing cache...');
+        // 4. Publish Themes (Force)
+        $this->info('Step 4: Refreshing themes...');
+        $this->call('vendor:publish', [
+            '--tag' => 'lazy-themes',
+            '--force' => true
+        ]);
+
+        // 5. Clear Cache
+        $this->info('Step 5: Clearing cache...');
         $this->call('optimize:clear');
 
+        $this->info('---------------------------------------');
         $this->info('Lazy CMS updated successfully!');
+        $this->info('---------------------------------------');
     }
 }

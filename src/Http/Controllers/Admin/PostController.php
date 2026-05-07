@@ -146,6 +146,11 @@ class PostController extends Controller
             $query->whereYear('created_at', $year)->whereMonth('created_at', $month);
         }
 
+        // Ownership Check: Author and Contributor can only see their own posts
+        if (auth()->user()->hasRole('author') || auth()->user()->hasRole('contributor')) {
+            $query->where('user_id', auth()->id());
+        }
+
         $posts = $query->latest()->paginate(10)->withQueryString();
         $categories = \Acme\CmsDashboard\Models\Category::orderBy('name')->get();
         $dates = Post::where('type', $type)
@@ -419,6 +424,11 @@ class PostController extends Controller
             abort(403, "You do not have permission to edit {$label}.");
         }
 
+        // Ownership Check: Author and Contributor can only edit their own posts
+        if ((auth()->user()->hasRole('author') || auth()->user()->hasRole('contributor')) && $post->user_id !== auth()->id()) {
+            abort(403, "You can only edit your own posts.");
+        }
+
         $locale = request('locale');
         if ($locale && $locale !== app()->getLocale()) {
             $translation = $post->translations()->where('locale', $locale)->first();
@@ -499,6 +509,12 @@ class PostController extends Controller
             $label = Str::plural($type);
             abort(403, "You do not have permission to update {$label}.");
         }
+
+        // Ownership Check: Author and Contributor can only update their own posts
+        if ((auth()->user()->hasRole('author') || auth()->user()->hasRole('contributor')) && $post->user_id !== auth()->id()) {
+            abort(403, "You can only update your own posts.");
+        }
+
         $this->checkTypeActive($post->type);
         
         $this->validateCustomFields($request);
@@ -727,6 +743,12 @@ class PostController extends Controller
             $label = Str::plural($type);
             abort(403, "You do not have permission to delete {$label}.");
         }
+
+        // Ownership Check: Author and Contributor can only delete their own posts
+        if ((auth()->user()->hasRole('author') || auth()->user()->hasRole('contributor')) && $post->user_id !== auth()->id()) {
+            abort(403, "You can only delete your own posts.");
+        }
+
         $type = $post->type;
         $title = $post->title;
         $post->delete();
