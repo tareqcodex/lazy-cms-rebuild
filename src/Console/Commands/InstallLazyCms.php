@@ -116,8 +116,14 @@ class InstallLazyCms extends Command
         if (!file_exists($path)) return;
 
         $content = file_get_contents($path);
+        $original = $content;
 
-        // 1. Add Namespace Import at the top
+        // Cleanup any previous corruption (Removing duplicates)
+        $content = str_replace(', HasCmsPermissions, HasCmsPermissions', ', HasCmsPermissions', $content);
+        // Fix top level import corruption if it happened
+        $content = preg_replace('/use Illuminate\\\\Database\\\\Eloquent\\\\Factories\\\\HasFactory, HasCmsPermissions;/', 'use Illuminate\Database\Eloquent\Factories\HasFactory;', $content);
+
+        // 1. Add Namespace Import (at the top)
         if (!str_contains($content, 'Acme\CmsDashboard\Traits\HasCmsPermissions')) {
             $content = preg_replace('/(namespace\s+App\\\\Models;)/', "$1\n\nuse Acme\CmsDashboard\Traits\HasCmsPermissions;", $content);
         }
@@ -131,11 +137,14 @@ class InstallLazyCms extends Command
             }
         }
 
-        // 3. Add Trait usage inside class body (Safest way: insert after class opening brace)
-        if (!preg_match('/\buse\s+HasCmsPermissions\b/', $content)) {
+        // 3. Add Trait usage inside class body (Only if not already present in the class body)
+        $classBody = strstr($content, 'class User');
+        if ($classBody && !str_contains($classBody, 'HasCmsPermissions')) {
             $content = preg_replace('/(class\s+User\s+extends\s+Authenticatable\s*\{)/', "$1\n    use HasCmsPermissions;", $content);
         }
 
-        file_put_contents($path, $content);
+        if ($content !== $original) {
+            file_put_contents($path, $content);
+        }
     }
 }
