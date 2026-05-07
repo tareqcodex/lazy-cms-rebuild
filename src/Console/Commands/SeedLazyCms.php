@@ -28,8 +28,15 @@ class SeedLazyCms extends Command
         $this->info('Seeding Lazy CMS data...');
 
         try {
+            $this->info('Step 1: Syncing Roles, Permissions and Menus...');
             $this->call('db:seed', [
-                '--class' => 'Acme\\CmsDashboard\\Database\\Seeders\\MenuSeeder',
+                '--class' => 'Acme\\CmsDashboard\\Database\\Seeders\\SystemSyncSeeder',
+                '--force' => true
+            ]);
+
+            $this->info('Step 2: Syncing Languages...');
+            $this->call('db:seed', [
+                '--class' => 'Acme\\CmsDashboard\\Database\\Seeders\\LanguageSeeder',
                 '--force' => true
             ]);
             
