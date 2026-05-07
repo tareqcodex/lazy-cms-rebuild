@@ -8,7 +8,7 @@
                 <p class="text-gray-500 mt-1">Master Lazy CMS and build stunning websites with freedom.</p>
             </div>
             <div class="bg-blue-50 text-blue-700 px-4 py-2 rounded-lg text-sm font-bold border border-blue-100">
-                v3.6.1 Stable
+                v4.0.0 Stable
             </div>
         </div>
 
@@ -28,6 +28,8 @@
                     <a href="#hooks" class="nav-link block px-4 py-2 text-sm font-medium text-gray-600 hover:bg-gray-50 rounded-md transition-all duration-200">Hooks (Actions & Filters)</a>
                     <a href="#rest-api" class="nav-link block px-4 py-2 text-sm font-medium text-gray-600 hover:bg-gray-50 rounded-md transition-all duration-200">REST API & Headless</a>
                     <a href="#multilingual" class="nav-link block px-4 py-2 text-sm font-medium text-gray-600 hover:bg-gray-50 rounded-md transition-all duration-200">Multilingual & Localization</a>
+                    <a href="#rbac" class="nav-link block px-4 py-2 text-sm font-medium text-gray-600 hover:bg-gray-50 rounded-md transition-all duration-200">Roles & Permissions (RBAC)</a>
+                    <a href="#theme-isolation" class="nav-link block px-4 py-2 text-sm font-medium text-gray-600 hover:bg-gray-50 rounded-md transition-all duration-200">Theme Isolation & Sync</a>
                 </nav>
             </div>
 
@@ -48,8 +50,8 @@
                             </div>
                             <div>
                                 <span class="text-gray-500"># 2. Run CMS installer</span><br>
-                                <code class="text-green-400">php artisan lazy-cms:install</code>
-                                <p class="text-[10px] text-gray-400 mt-1 italic">// This handles migrations, assets, and admin user creation.</p>
+                                <code class="text-green-400">php artisan lazy:install</code>
+                                <p class="text-[10px] text-gray-400 mt-1 italic">// This handles migrations, assets, themes, and admin creation.</p>
                             </div>
                         </div>
                     </div>
@@ -67,8 +69,8 @@
                         </div>
                         <div>
                             <span class="text-gray-500"># 2. Run Sync Command</span><br>
-                            <code class="text-green-400">php artisan lazy-cms:update</code>
-                            <p class="text-[10px] text-gray-400 mt-1 italic">// This automates migrations, force publishing assets, and clearing cache.</p>
+                            <code class="text-green-400">php artisan lazy:update</code>
+                            <p class="text-[10px] text-gray-400 mt-1 italic">// This automates migrations, refreshing assets/themes, and clearing cache.</p>
                         </div>
                     </div>
                 </section>
@@ -572,6 +574,51 @@ remove_lazy_filter('tag', 'callback', $priority);@endverbatim</code></pre>
     $data['reading_time'] = '5 min read';
     return $data;
 });@endverbatim</code></pre>
+                            </div>
+                        </div>
+                    </div>
+                </section>
+
+                {{-- Section: RBAC --}}
+                <section id="rbac">
+                    <h2 class="text-2xl font-bold text-gray-900 mb-4">Roles & Permissions (RBAC)</h2>
+                    <p class="text-gray-700 mb-6">Version 4.0.0 introduces a powerful granular permission system. Access is controlled via Roles that are linked to specific Permissions.</p>
+                    
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-8">
+                        <div class="p-4 bg-white border border-gray-200 rounded-xl shadow-sm">
+                            <h3 class="font-bold text-gray-800">Predefined Roles</h3>
+                            <ul class="mt-2 space-y-1 text-sm text-gray-600">
+                                <li><b>Super Admin:</b> Unrestricted access.</li>
+                                <li><b>Administrator:</b> Full settings & content access.</li>
+                                <li><b>Editor:</b> Manage all posts & comments.</li>
+                                <li><b>Author:</b> Manage only their own posts.</li>
+                                <li><b>Contributor:</b> Write posts (pending review).</li>
+                                <li><b>User:</b> Basic dashboard access.</li>
+                            </ul>
+                        </div>
+                        <div class="p-4 bg-white border border-gray-200 rounded-xl shadow-sm">
+                            <h3 class="font-bold text-gray-800">Permission Syncing</h3>
+                            <p class="text-xs text-gray-500 mt-2">When you add new menus or features, run the sync command to update permissions:</p>
+                            <code class="block bg-gray-50 p-2 mt-2 text-[10px]">php artisan lazy:update</code>
+                        </div>
+                    </div>
+                </section>
+
+                {{-- Section: Theme Isolation --}}
+                <section id="theme-isolation">
+                    <h2 class="text-2xl font-bold text-gray-900 mb-4">Theme Isolation & Sync</h2>
+                    <p class="text-gray-700 mb-6">To maintain a clean and secure structure, Lazy CMS enforces strict theme-only view rendering for the frontend.</p>
+                    
+                    <div class="space-y-6">
+                        <div class="bg-amber-50 border border-amber-100 p-4 rounded-xl text-sm text-amber-800">
+                            <b>Strict Rule:</b> All frontend view files must be inside <code>resources/views/themes/{theme-name}/</code>. Views placed directly in the root <code>resources/views/</code> folder will return a 404 error for frontend requests.
+                        </div>
+
+                        <div class="bg-white border border-gray-200 rounded-xl p-6 shadow-sm">
+                            <h3 class="font-bold text-gray-800 mb-3">Automated Theme Refresh</h3>
+                            <p class="text-sm text-gray-600 mb-4">When you update the package, use the sync command to ensure your local themes are updated with any core improvements.</p>
+                            <div class="bg-gray-900 rounded-lg p-4 text-gray-300 font-mono text-xs">
+                                <code class="text-green-400">php artisan lazy:update</code>
                             </div>
                         </div>
                     </div>
