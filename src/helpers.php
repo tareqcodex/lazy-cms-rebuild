@@ -291,7 +291,7 @@ if (!function_exists('get_lazy_permalink')) {
         } catch (\Exception $e) {}
 
         // Language prefix logic: If it's not the default language, we MUST add the prefix
-        $langPrefix = ($postLang === $defaultLang) ? '' : '/' . $postLang . '/';
+        $langPrefix = ($postLang === $defaultLang) ? '' : '/' . $postLang;
 
         // Homepage logic
         if (is_lazy_homepage($post)) {
