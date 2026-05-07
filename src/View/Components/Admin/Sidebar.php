@@ -15,15 +15,11 @@ class Sidebar extends Component
     {
         $this->activeMenu = $activeMenu;
 
-        try {
-            $this->menuGroups = Menu::with('children')
-                ->whereNull('parent_id')
-                ->orderBy('order')
-                ->get()
-                ->groupBy('group');
-        } catch (\Exception $e) {
-            $this->menuGroups = collect();
-        }
+        $this->menuGroups = Menu::with('children')
+            ->whereNull('parent_id')
+            ->orderBy('order')
+            ->get()
+            ->groupBy('group');
     }
 
     public static function isUrlActive($url, $strict = false)
