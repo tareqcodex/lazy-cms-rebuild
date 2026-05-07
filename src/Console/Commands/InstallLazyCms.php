@@ -117,36 +117,23 @@ class InstallLazyCms extends Command
 
         $content = file_get_contents($path);
 
-        // 1. Add Use Statement at top if missing
+        // 1. Add Namespace Import at the top
         if (!str_contains($content, 'Acme\CmsDashboard\Traits\HasCmsPermissions')) {
-            $content = str_replace(
-                'namespace App\Models;',
-                "namespace App\Models;\n\nuse Acme\CmsDashboard\Traits\HasCmsPermissions;",
-                $content
-            );
+            $content = preg_replace('/(namespace\s+App\\\\Models;)/', "$1\n\nuse Acme\CmsDashboard\Traits\HasCmsPermissions;", $content);
         }
 
-        // 2. Add role_id to Fillable (Attribute or Property)
-        if (!str_contains($content, "'role_id'") && !str_contains($content, '"role_id"')) {
-            // PHP 8.3+ Attribute style: #[Fillable(['name', ...])]
+        // 2. Add role_id to Fillable
+        if (!str_contains($content, 'role_id')) {
             if (str_contains($content, '#[Fillable')) {
                 $content = preg_replace('/#\[Fillable\(\[(.*?)\]\)\]/s', "#[Fillable([$1, 'role_id'])]", $content);
-            } 
-            // Standard property style: protected $fillable = [...]
-            elseif (str_contains($content, '$fillable')) {
+            } elseif (str_contains($content, '$fillable')) {
                 $content = preg_replace('/\$fillable\s*=\s*\[(.*?)\]/s', "\$fillable = [$1, 'role_id']", $content);
             }
         }
 
-        // 3. Add HasCmsPermissions Trait inside class
-        if (!str_contains($content, 'use HasCmsPermissions')) {
-            // Find a 'use' statement that is indented (likely a trait usage inside the class)
-            if (preg_match('/(\n\s+use\s+)(.*?HasFactory.*?);/s', $content)) {
-                $content = preg_replace('/(\n\s+use\s+)(.*?HasFactory.*?);/s', "$1$2, HasCmsPermissions;", $content);
-            } else {
-                // Otherwise add after class opening
-                $content = preg_replace('/(class User extends.*?{)/s', "$1\n    use HasCmsPermissions;", $content);
-            }
+        // 3. Add Trait usage inside class body (Safest way: insert after class opening brace)
+        if (!preg_match('/\buse\s+HasCmsPermissions\b/', $content)) {
+            $content = preg_replace('/(class\s+User\s+extends\s+Authenticatable\s*\{)/', "$1\n    use HasCmsPermissions;", $content);
         }
 
         file_put_contents($path, $content);
