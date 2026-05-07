@@ -128,12 +128,23 @@ class InstallLazyCms extends Command
             $content = preg_replace('/(namespace\s+App\\\\Models;)/', "$1\n\nuse Acme\CmsDashboard\Traits\HasCmsPermissions;", $content);
         }
 
-        // 2. Add role_id to Fillable
-        if (!str_contains($content, 'role_id')) {
+        // 2. Add role_id and username to Fillable
+        if (!str_contains($content, 'role_id') || !str_contains($content, 'username')) {
             if (str_contains($content, '#[Fillable')) {
-                $content = preg_replace('/#\[Fillable\(\[(.*?)\]\)\]/s', "#[Fillable([$1, 'role_id'])]", $content);
+                // Ensure both role_id and username are added if missing
+                if (!str_contains($content, 'username')) {
+                    $content = preg_replace('/#\[Fillable\(\[(.*?)\]\)\]/s', "#[Fillable([$1, 'username'])]", $content);
+                }
+                if (!str_contains($content, 'role_id')) {
+                    $content = preg_replace('/#\[Fillable\(\[(.*?)\]\)\]/s', "#[Fillable([$1, 'role_id'])]", $content);
+                }
             } elseif (str_contains($content, '$fillable')) {
-                $content = preg_replace('/\$fillable\s*=\s*\[(.*?)\]/s', "\$fillable = [$1, 'role_id']", $content);
+                if (!str_contains($content, 'username')) {
+                    $content = preg_replace('/\$fillable\s*=\s*\[(.*?)\]/s', "\$fillable = [$1, 'username']", $content);
+                }
+                if (!str_contains($content, 'role_id')) {
+                    $content = preg_replace('/\$fillable\s*=\s*\[(.*?)\]/s', "\$fillable = [$1, 'role_id']", $content);
+                }
             }
         }
 
