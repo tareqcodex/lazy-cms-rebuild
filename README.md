@@ -25,11 +25,11 @@ Lazy CMS comes with a set of automated commands to make development easier.
 
 | Command | Description |
 | :--- | :--- |
-| `php artisan lazy` | **Help Menu:** Lists all available Lazy CMS commands. |
-| `php artisan lazy:install` | **Full Setup:** Migrations, Assets, Themes, and Seeds. |
+| `php artisan lazy` | **Help Menu:** Lists all available Lazy CMS commands in CLI. |
+| `php artisan lazy:install` | **Full Setup:** Migrations, Assets, Themes, User and seeds. |
 | `php artisan lazy:update` | **Sync Update:** Refreshes assets, themes, and permissions. |
-| `php artisan vendor:publish --tag=lazy-themes` | **Themes Only:** Publishes frontend themes to `resources/views/themes`. |
-| `php artisan vendor:publish --tag=lazy-views` | **Views Override:** Publishes admin views to `resources/views/vendor`. |
+| `php artisan lazy:seed` | **Demo Data:** Seeds default menus and initial demo data. |
+| `php artisan make:lazy-page` | **Scaffold:** Creates a new dashboard page, controller, and menu item. |
 
 ---
 

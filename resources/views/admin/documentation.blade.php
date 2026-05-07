@@ -18,6 +18,7 @@
                 <nav class="sticky top-6 space-y-1" id="doc-nav">
                     <a href="#getting-started" class="nav-link block px-4 py-2 text-sm font-medium text-blue-600 bg-blue-50 rounded-md transition-all duration-200">Getting Started</a>
                     <a href="#updating" class="nav-link block px-4 py-2 text-sm font-medium text-gray-600 hover:bg-gray-50 rounded-md transition-all duration-200">Updating & Syncing</a>
+                    <a href="#page-generation" class="nav-link block px-4 py-2 text-sm font-medium text-gray-600 hover:bg-gray-50 rounded-md transition-all duration-200">Page Generation</a>
                     <a href="#custom-routes" class="nav-link block px-4 py-2 text-sm font-medium text-gray-600 hover:bg-gray-50 rounded-md transition-all duration-200">Custom Routes</a>
                     <a href="#helpers" class="nav-link block px-4 py-2 text-sm font-medium text-gray-600 hover:bg-gray-50 rounded-md transition-all duration-200">Helper Functions</a>
                     <a href="#loops" class="nav-link block px-4 py-2 text-sm font-medium text-gray-600 hover:bg-gray-50 rounded-md transition-all duration-200">Displaying Posts (Loops)</a>
@@ -53,6 +54,16 @@
                                 <code class="text-green-400">php artisan lazy:install</code>
                                 <p class="text-[10px] text-gray-400 mt-1 italic">// This handles migrations, assets, themes, and admin creation.</p>
                             </div>
+                            <div>
+                                <span class="text-gray-500"># 3. View all available commands</span><br>
+                                <code class="text-green-400">php artisan lazy</code>
+                                <p class="text-[10px] text-gray-400 mt-1 italic">// Lists all specialized Lazy CMS commands.</p>
+                            </div>
+                            <div>
+                                <span class="text-gray-500"># 4. Seed demo data (Optional)</span><br>
+                                <code class="text-green-400">php artisan lazy:seed</code>
+                                <p class="text-[10px] text-gray-400 mt-1 italic">// Populates default menus and initial demo content.</p>
+                            </div>
                         </div>
                     </div>
                 </section>
@@ -65,12 +76,26 @@
                     <div class="bg-gray-900 rounded-lg p-4 text-gray-300 font-mono text-xs space-y-4">
                         <div>
                             <span class="text-gray-500"># 1. Update composer package</span><br>
-                            <code class="text-green-400">composer update tareqcodex/lazy-cms-rebuild</code>
+                            <code class="text-green-400">composer require tareqcodex/lazy-cms-rebuild</code>
                         </div>
                         <div>
                             <span class="text-gray-500"># 2. Run Sync Command</span><br>
                             <code class="text-green-400">php artisan lazy:update</code>
                             <p class="text-[10px] text-gray-400 mt-1 italic">// This automates migrations, refreshing assets/themes, and clearing cache.</p>
+                        </div>
+                    </div>
+                </section>
+
+                {{-- Section: Page Generation --}}
+                <section id="page-generation">
+                    <h2 class="text-2xl font-bold text-gray-900 mb-4">Page Generation</h2>
+                    <p class="text-gray-700 mb-6">Quickly scaffold new dashboard pages, controllers, and menu items with a single command.</p>
+
+                    <div class="bg-gray-900 rounded-lg p-4 text-gray-300 font-mono text-xs space-y-4">
+                        <div>
+                            <span class="text-gray-500"># Create a new dashboard page (e.g. Portfolio)</span><br>
+                            <code class="text-green-400">php artisan make:lazy-page Portfolio</code>
+                            <p class="text-[10px] text-gray-400 mt-1 italic">// This creates a controller, a view, and adds a menu item in the sidebar.</p>
                         </div>
                     </div>
                 </section>
@@ -151,7 +176,7 @@ Route::get('/blogs', function () {
                 {{-- Section: Loops --}}
                 <section id="loops">
                     <h2 class="text-2xl font-bold text-gray-900 mb-4">Displaying Posts (Loops)</h2>
-                    <p class="text-gray-700 mb-4">Use <code>the_lazy_loop()</code> for a quick grid, or write your own <code>@@foreach</code> for total freedom.</p>
+                    <p class="text-gray-700 mb-4">Use <code>the_lazy_loop()</code> for a quick grid, or write your own <code>@foreach</code> for total freedom.</p>
                     
                     <h3 class="font-bold mt-6 mb-2">Method 1: Fast Grid</h3>
                     <div class="bg-gray-900 rounded-xl p-6 text-gray-300 font-mono text-sm mb-6">
@@ -439,7 +464,7 @@ Route::get('/blogs', function () {
                             <div class="bg-gray-900 rounded-lg p-4 text-gray-300 font-mono text-xs">
                                 <pre><code>@verbatim// Example: Add CSS to Admin
 add_lazy_action('lazy_admin_head', function() {
-    echo "&lt;style&gt;body { border-top: 4px solid red; }&lt;/style&gt;";
+    echo "<style>body { border-top: 4px solid red; }</style>";
 });@endverbatim</code></pre>
                             </div>
                         </div>
@@ -532,7 +557,7 @@ remove_lazy_filter('tag', 'callback', $priority);@endverbatim</code></pre>
                         <div class="bg-white border border-gray-200 rounded-xl p-6 shadow-sm">
                             <h3 class="text-lg font-bold text-blue-600 mb-3">3. Language Switcher Helpers</h3>
                             <p class="text-sm text-gray-600 mb-4">Use these helpers to render switchers in your frontend themes:</p>
-                            <div class="bg-gray-100 p-4 rounded-lg font-mono text-xs text-gray-700 space-y-2">
+                            <div class="bg-100 p-4 rounded-lg font-mono text-xs text-gray-700 space-y-2">
                                 <code>{!! lazy_lang_dropdown() !!}</code> - A sleek dropdown with flags.<br>
                                 <code>{!! lazy_lang_switcher() !!}</code> - A simple list/flex switcher.
                             </div>

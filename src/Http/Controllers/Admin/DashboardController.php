@@ -113,9 +113,10 @@ class DashboardController extends Controller
         }
         
         $pages = Post::where('type', 'page')->where('status', 'published')->orderBy('title')->get();
+        $roles = \Acme\CmsDashboard\Models\Role::orderBy('name')->get();
         $settings = DB::table('cms_settings')->pluck('value', 'key')->toArray();
 
-        return view('cms-dashboard::admin.settings.index', compact('pages', 'settings'));
+        return view('cms-dashboard::admin.settings.index', compact('pages', 'settings', 'roles'));
     }
 
     public function updateSettings(Request $request)

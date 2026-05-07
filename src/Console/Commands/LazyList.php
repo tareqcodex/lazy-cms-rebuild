@@ -16,13 +16,12 @@ class LazyList extends Command
         $this->info('---------------------------------------');
 
         $commands = [
-            ['lazy', 'List all available Lazy CMS commands.'],
-            ['lazy:install', 'Full installation: migrations, assets, themes, and default data.'],
-            ['lazy:update', 'Update system: refresh assets, themes, and sync permissions.'],
-            ['lazy:seed', 'Run the main System Sync Seeder for Roles/Permissions.'],
-            ['lazy:make-page', 'Create a new custom dashboard page template.'],
-            ['vendor:publish --tag=lazy-themes', 'Publish only the frontend themes to resources.'],
-            ['vendor:publish --tag=lazy-views', 'Publish all admin views to resources for override.'],
+            ['lazy:install', 'Full setup: Migrations, Assets, Themes, User and seeds.'],
+            ['lazy:update', 'Sync update: Refreshes assets, themes, and permissions.'],
+            ['lazy:seed', 'Demo data: Seeds default menus and initial demo data.'],
+            ['make:lazy-page', 'Scaffold: Creates a new dashboard page, controller, and menu.'],
+            ['vendor:publish --tag=lazy-themes', 'Themes only: Publishes frontend themes to resources.'],
+            ['vendor:publish --tag=lazy-views', 'Views override: Publishes admin views for manual override.'],
         ];
 
         $this->table(['Command', 'Description'], $commands);

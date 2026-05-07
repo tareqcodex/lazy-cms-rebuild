@@ -244,8 +244,8 @@ class Sidebar extends Component
     public function render()
     {
         return view('cms-dashboard::components.admin.sidebar', [
-            'getPermission' => function($menu) { return $this->getPermission($menu); },
-            'resolveRoute' => function($route, $title = '') { return $this->resolveRoute($route, $title); },
+            'getPermission' => [$this, 'getPermission'],
+            'resolveRoute' => [$this, 'resolveRoute'],
         ]);
     }
 }

@@ -189,8 +189,8 @@
                             </div>
                         @endif
                     </div>
-                </div>
-
+                @endif
+                
                 <!-- Publish Metabox -->
                 <div class="wp-metabox mb-0">
                     <div class="wp-metabox-header flex justify-between items-center cursor-pointer">

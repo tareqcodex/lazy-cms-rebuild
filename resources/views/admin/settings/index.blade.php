@@ -184,13 +184,12 @@
                     </th>
                     <td>
                         <select name="default_role" id="default_role" class="wp-input w-[200px] h-8 py-0">
-                            <option value="subscriber"
-                                {{ ($settings['default_role'] ?? '') == 'subscriber' ? 'selected' : '' }}>Subscriber
-                            </option>
-                            <option value="editor"
-                                {{ ($settings['default_role'] ?? '') == 'editor' ? 'selected' : '' }}>Editor</option>
-                            <option value="author"
-                                {{ ($settings['default_role'] ?? '') == 'author' ? 'selected' : '' }}>Author</option>
+                            @foreach($roles as $role)
+                                <option value="{{ $role->slug }}"
+                                    {{ ($settings['default_role'] ?? 'subscriber') == $role->slug ? 'selected' : '' }}>
+                                    {{ $role->name }}
+                                </option>
+                            @endforeach
                         </select>
                     </td>
                 </tr>
