@@ -178,7 +178,7 @@ Route::get('/blogs', function () {
                 {{-- Section: Loops --}}
                 <section id="loops">
                     <h2 class="text-2xl font-bold text-gray-900 mb-4">Displaying Posts (Loops)</h2>
-                    <p class="text-gray-700 mb-4">Use <code>the_lazy_loop()</code> for a quick grid, or write your own <code>@foreach</code> for total freedom.</p>
+                    <p class="text-gray-700 mb-4">Use <code>the_lazy_loop()</code> for a quick grid, or write your own <code>@@foreach</code> for total freedom.</p>
                     
                     <h3 class="font-bold mt-6 mb-2">Method 1: Fast Grid</h3>
                     <div class="bg-gray-900 rounded-xl p-6 text-gray-300 font-mono text-sm mb-6">
