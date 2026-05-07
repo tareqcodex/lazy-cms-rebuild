@@ -43,8 +43,8 @@ class SystemSyncSeeder extends Seeder
         foreach ($roles as $roleData) {
             $role = Role::updateOrCreate(['slug' => $roleData['slug']], $roleData);
             
-            // Auto-link all permissions to Super Admin
-            if ($role->slug === 'super-admin') {
+            // Auto-link all permissions to Super Admin and Administrator
+            if ($role->slug === 'super-admin' || $role->slug === 'administrator') {
                 $role->permissions()->sync($allPermissionIds);
             }
         }
