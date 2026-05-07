@@ -140,9 +140,9 @@ class InstallLazyCms extends Command
 
         // 3. Add HasCmsPermissions Trait inside class
         if (!str_contains($content, 'use HasCmsPermissions')) {
-            // If already has other traits, append to them
-            if (preg_match('/use (.*?HasFactory.*?;)/s', $content)) {
-                $content = preg_replace('/use (.*?HasFactory.*?);/s', "use $1, HasCmsPermissions;", $content);
+            // Find a 'use' statement that is indented (likely a trait usage inside the class)
+            if (preg_match('/(\n\s+use\s+)(.*?HasFactory.*?);/s', $content)) {
+                $content = preg_replace('/(\n\s+use\s+)(.*?HasFactory.*?);/s', "$1$2, HasCmsPermissions;", $content);
             } else {
                 // Otherwise add after class opening
                 $content = preg_replace('/(class User extends.*?{)/s', "$1\n    use HasCmsPermissions;", $content);
