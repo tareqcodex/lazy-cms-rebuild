@@ -128,8 +128,10 @@ Route::get('/blogs', function () {
                             <h3 class="font-bold text-blue-600 mb-2">the_lazy_pagination($items, $view)</h3>
                             <p class="text-sm text-gray-600 mb-4">Render pagination links with custom design support.</p>
                             <div class="bg-gray-900 rounded-lg p-4 text-gray-300 font-mono text-xs">
-                                <pre><code>@verbatim{!! the_lazy_pagination($postItems) !!}
-{!! the_lazy_pagination($postItems, 'custom-view') !!}@endverbatim</code></pre>
+                                <pre><code>@verbatim
+{!! the_lazy_pagination($postItems) !!}
+{!! the_lazy_pagination($postItems, 'custom-view') !!}
+@endverbatim</code></pre>
                             </div>
                         </div>
 
@@ -185,7 +187,8 @@ Route::get('/blogs', function () {
 
                     <h3 class="font-bold mb-2">Method 2: Custom HTML with Pagination (Recommended)</h3>
                     <div class="bg-gray-900 rounded-xl p-6 text-gray-300 font-mono text-sm">
-                        <pre><code>@verbatim@php $items = get_lazy_posts(['post_type' => 'post', 'limit' => 6, 'paginate' => true]); @endphp
+                        <pre><code>@verbatim
+@php $items = get_lazy_posts(['post_type' => 'post', 'limit' => 6, 'paginate' => true]); @endphp
 
 @foreach($items as $post)
     <div class="card">
@@ -198,7 +201,8 @@ Route::get('/blogs', function () {
 
 <div class="pagination">
     {!! the_lazy_pagination($items) !!}
-</div>@endverbatim</code></pre>
+</div>
+@endverbatim</code></pre>
                     </div>
                 </section>
 
@@ -213,7 +217,8 @@ Route::get('/blogs', function () {
                             <h3 class="text-lg font-bold text-blue-600 mb-3">1. Add Fields to Main Settings</h3>
                             <p class="text-sm text-gray-600 mb-4">To add new inputs to the <b>General Settings</b> page, use the <code>hooks</code> array in your config.</p>
                             <div class="bg-gray-900 rounded-lg p-4 text-gray-300 font-mono text-xs overflow-x-auto">
-                                <pre><code>@verbatim// config/lazy-options.php
+                                <pre><code>@verbatim
+// config/lazy-options.php
 'hooks' => [
     'general-settings' => [
         'fields' => [
@@ -224,7 +229,8 @@ Route::get('/blogs', function () {
             ],
         ]
     ]
-]@endverbatim</code></pre>
+]
+@endverbatim</code></pre>
                             </div>
                         </div>
 
@@ -233,7 +239,8 @@ Route::get('/blogs', function () {
                             <h3 class="text-lg font-bold text-blue-600 mb-3">2. Create a Custom Admin Page</h3>
                             <p class="text-sm text-gray-600 mb-4">You can create standalone pages that appear in the sidebar using the <code>pages</code> array.</p>
                             <div class="bg-gray-900 rounded-lg p-4 text-gray-300 font-mono text-xs overflow-x-auto">
-                                <pre><code>@verbatim// config/lazy-options.php
+                                <pre><code>@verbatim
+// config/lazy-options.php
 'pages' => [
     'theme-settings' => [
         'title' => 'Theme Options',
@@ -251,7 +258,8 @@ Route::get('/blogs', function () {
             ],
         ]
     ]
-]@endverbatim</code></pre>
+]
+@endverbatim</code></pre>
                             </div>
                         </div>
 
@@ -262,11 +270,15 @@ Route::get('/blogs', function () {
                             <div class="bg-gray-900 rounded-lg p-4 text-gray-300 font-mono text-xs space-y-4">
                                 <div>
                                     <span class="text-gray-500">// Get simple text value</span><br>
-                                    <code class="text-blue-400">@verbatim{{ get_cms_option('site_tagline') }}@endverbatim</code>
+                                    <code class="text-blue-400">@verbatim
+{{ get_cms_option('site_tagline') }}
+@endverbatim</code>
                                 </div>
                                 <div>
                                     <span class="text-gray-500">// Get image URL</span><br>
-                                    <code class="text-blue-400">@verbatim<img src="{{ asset(get_cms_option('header_logo')) }}">@endverbatim</code>
+                                    <code class="text-blue-400">@verbatim
+<img src="{{ asset(get_cms_option('header_logo')) }}">
+@endverbatim</code>
                                 </div>
                             </div>
                         </div>
@@ -284,8 +296,10 @@ Route::get('/blogs', function () {
                             <h3 class="text-lg font-bold text-blue-600 mb-3">1. The Automatic Component (Best)</h3>
                             <p class="text-sm text-gray-600 mb-4">Add this single line inside your <code>&lt;head&gt;</code> tag. It will handle everything based on the current post or page.</p>
                             <div class="bg-gray-900 rounded-lg p-4 text-gray-300 font-mono text-xs overflow-x-auto">
-                                <pre><code>@verbatim&lt;!-- Inside layout/app.blade.php head section --&gt;
-<x-cms-dashboard::frontend.seo-meta :post="$post ?? null" :title="$title ?? null" />@endverbatim</code></pre>
+                                <pre><code>@verbatim
+<!-- Inside layout/app.blade.php head section -->
+<x-cms-dashboard::frontend.seo-meta :post="$post ?? null" :title="$title ?? null" />
+@endverbatim</code></pre>
                             </div>
                         </div>
 
@@ -294,15 +308,17 @@ Route::get('/blogs', function () {
                             <h3 class="text-lg font-bold text-blue-600 mb-3">2. Manual Value Access</h3>
                             <p class="text-sm text-gray-600 mb-4">If you want to access specific SEO values manually, use the <code>seo_meta</code> array on the post object.</p>
                             <div class="bg-gray-900 rounded-lg p-4 text-gray-300 font-mono text-xs space-y-4">
-                                <pre><code>@verbatim@php $seo = $post->seo_meta; @endphp
+                                <pre><code>@verbatim
+@php $seo = $post->seo_meta; @endphp
 
-&lt;!-- Get Meta Title --&gt;
+<!-- Get Meta Title -->
 {{ $seo['title'] ?? $post->title }}
 
-&lt;!-- Get OpenGraph Image --&gt;
+<!-- Get OpenGraph Image -->
 @if(!empty($seo['og_image']))
-    &lt;meta property="og:image" content="{{ asset('storage/' . $seo['og_image']) }}"&gt;
-@endif@endverbatim</code></pre>
+    <meta property="og:image" content="{{ asset('storage/' . $seo['og_image']) }}">
+@endif
+@endverbatim</code></pre>
                             </div>
                         </div>
 
@@ -349,17 +365,23 @@ Route::get('/blogs', function () {
                             <div class="space-y-4">
                                 <div class="p-3 bg-gray-50 rounded border-l-4 border-blue-400">
                                     <p class="text-xs font-bold text-gray-500 uppercase mb-1">SEO Support (In &lt;head&gt;)</p>
-                                    <code class="text-xs">@verbatim<x-cms-dashboard::frontend.seo-meta :post="$post ?? null" />@endverbatim</code>
+                                    <code class="text-xs">@verbatim
+<x-cms-dashboard::frontend.seo-meta :post="$post ?? null" />
+@endverbatim</code>
                                 </div>
 
                                 <div class="p-3 bg-gray-50 rounded border-l-4 border-blue-400">
                                     <p class="text-xs font-bold text-gray-500 uppercase mb-1">Head Hook (Before &lt;/head&gt;)</p>
-                                    <code class="text-xs">@verbatim{!! do_lazy_action('lazy_head') !!}@endverbatim</code>
+                                    <code class="text-xs">@verbatim
+{!! do_lazy_action('lazy_head') !!}
+@endverbatim</code>
                                 </div>
 
                                 <div class="p-3 bg-gray-50 rounded border-l-4 border-blue-400">
                                     <p class="text-xs font-bold text-gray-500 uppercase mb-1">Footer Hook (Before &lt;/body&gt;)</p>
-                                    <code class="text-xs">@verbatim{!! do_lazy_action('lazy_footer') !!}@endverbatim</code>
+                                    <code class="text-xs">@verbatim
+{!! do_lazy_action('lazy_footer') !!}
+@endverbatim</code>
                                 </div>
                             </div>
                         </div>
@@ -391,19 +413,21 @@ Route::get('/blogs', function () {
                             <h3 class="text-lg font-bold text-blue-600 mb-3">2. Example Widget Code</h3>
                             <p class="text-sm text-gray-600 mb-4">Use the <code>$widget</code> variable to access settings and title.</p>
                             <div class="bg-gray-900 rounded-lg p-4 text-gray-300 font-mono text-xs overflow-x-auto">
-                                <pre><code>@verbatim&lt;!-- about-author.blade.php --&gt;
-&lt;div class="widget mb-10 p-6 bg-gray-50 rounded-xl"&gt;
+                                <pre><code>@verbatim
+<!-- about-author.blade.php -->
+<div class="widget mb-10 p-6 bg-gray-50 rounded-xl">
     @if($widget->title)
-        &lt;h4 class="widget-title text-xl font-bold mb-4"&gt;{{ $widget->title }}&lt;/h4&gt;
+        <h4 class="widget-title text-xl font-bold mb-4">{{ $widget->title }}</h4>
     @endif
     
-    &lt;div class="author-box flex items-center gap-4"&gt;
-        &lt;img src="{{ asset('theme/images/avatar.jpg') }}" class="w-16 h-16 rounded-full"&gt;
-        &lt;div&gt;
-            &lt;p class="text-gray-600 text-sm"&gt;Hello, I'm a passionate developer building amazing things with Lazy CMS.&lt;/p&gt;
-        &lt;/div&gt;
-    &lt;/div&gt;
-&lt;/div&gt;@endverbatim</code></pre>
+    <div class="author-box flex items-center gap-4">
+        <img src="{{ asset('theme/images/avatar.jpg') }}" class="w-16 h-16 rounded-full">
+        <div>
+            <p class="text-gray-600 text-sm">Hello, I'm a passionate developer building amazing things with Lazy CMS.</p>
+        </div>
+    </div>
+</div>
+@endverbatim</code></pre>
                             </div>
                         </div>
 
@@ -412,8 +436,10 @@ Route::get('/blogs', function () {
                             <h3 class="text-lg font-bold text-blue-600 mb-3">3. Rendering Widgets</h3>
                             <p class="text-sm text-gray-600 mb-4">To display a widget area (like a sidebar) in your theme, use the global helper:</p>
                             <div class="bg-gray-900 rounded-lg p-4 text-gray-300 font-mono text-xs">
-                                <pre><code>@verbatim&lt;!-- In your sidebar.blade.php --&gt;
-{!! render_lazy_widgets('primary-sidebar') !!}@endverbatim</code></pre>
+                                <pre><code>@verbatim
+<!-- In your sidebar.blade.php -->
+{!! render_lazy_widgets('primary-sidebar') !!}
+@endverbatim</code></pre>
                             </div>
                         </div>
                     </div>
@@ -462,10 +488,12 @@ Route::get('/blogs', function () {
                             </div>
 
                             <div class="bg-gray-900 rounded-lg p-4 text-gray-300 font-mono text-xs">
-                                <pre><code>@verbatim// Example: Add CSS to Admin
+                                <pre><code>@verbatim
+// Example: Add CSS to Admin
 add_lazy_action('lazy_admin_head', function() {
     echo "<style>body { border-top: 4px solid red; }</style>";
-});@endverbatim</code></pre>
+});
+@endverbatim</code></pre>
                             </div>
                         </div>
 
@@ -489,14 +517,16 @@ add_lazy_action('lazy_admin_head', function() {
                             </div>
 
                             <div class="bg-gray-900 rounded-lg p-4 text-gray-300 font-mono text-xs">
-                                <pre><code>@verbatim// Example: Simplified Field Hook
+                                <pre><code>@verbatim
+// Example: Simplified Field Hook
 add_lazy_filter('lazy_general_settings_fields', function($fields) {
     $fields['copyright_text'] = [
         'type' => 'text',
         'label' => 'Copyright'
     ];
     return $fields;
-});@endverbatim</code></pre>
+});
+@endverbatim</code></pre>
                             </div>
 
                             <h3 class="text-lg font-bold text-gray-800 mt-6 flex items-center gap-2">
@@ -507,16 +537,20 @@ add_lazy_filter('lazy_general_settings_fields', function($fields) {
                             
                             <h4 class="text-xs font-bold text-gray-500 uppercase mt-4 mb-2">1. Removing Hooks</h4>
                             <div class="bg-gray-900 rounded-lg p-4 text-gray-300 font-mono text-xs mb-4">
-                                <pre><code>@verbatimremove_lazy_action('tag', 'callback', $priority);
-remove_lazy_filter('tag', 'callback', $priority);@endverbatim</code></pre>
+                                <pre><code>@verbatim
+remove_lazy_action('tag', 'callback', $priority);
+remove_lazy_filter('tag', 'callback', $priority);
+@endverbatim</code></pre>
                             </div>
 
                             <h4 class="text-xs font-bold text-gray-500 uppercase mt-4 mb-2">2. Removing Dynamic Fields</h4>
                             <div class="bg-gray-900 rounded-lg p-4 text-gray-300 font-mono text-xs">
-                                <pre><code>@verbatimadd_lazy_filter('lazy_general_settings_fields', function($fields) {
+                                <pre><code>@verbatim
+add_lazy_filter('lazy_general_settings_fields', function($fields) {
     unset($fields['copyright_text']); // Remove a specific field
     return $fields;
-}, 20); // Priority 20 to run after adding@endverbatim</code></pre>
+}, 20); // Priority 20 to run after adding
+@endverbatim</code></pre>
                             </div>
                         </div>
                     </div>
@@ -542,14 +576,16 @@ remove_lazy_filter('tag', 'callback', $priority);@endverbatim</code></pre>
                             <h3 class="text-lg font-bold text-blue-600 mb-3">2. Translatable Option Fields</h3>
                             <p class="text-sm text-gray-600 mb-4">To make a custom option field translatable, simply add <code>'translatable' => true</code> to the field definition in <code>config/lazy-options.php</code>.</p>
                             <div class="bg-gray-900 rounded-lg p-4 text-gray-300 font-mono text-xs overflow-x-auto">
-                                <pre><code>@verbatim// config/lazy-options.php
+                                <pre><code>@verbatim
+// config/lazy-options.php
 'fields' => [
     'footer_text' => [
         'type' => 'textarea',
         'label' => 'Footer Copyright',
         'translatable' => true, // Enables per-language inputs
     ],
-]@endverbatim</code></pre>
+]
+@endverbatim</code></pre>
                             </div>
                         </div>
 
@@ -595,10 +631,12 @@ remove_lazy_filter('tag', 'callback', $priority);@endverbatim</code></pre>
                             <h3 class="text-lg font-bold text-gray-800">Filtering API Data</h3>
                             <p class="text-xs text-gray-600">Modify JSON responses using theme hooks:</p>
                             <div class="bg-gray-900 rounded-lg p-4 text-gray-300 font-mono text-[10px]">
-                                <pre><code>@verbatimadd_lazy_filter('lazy_api_post_data', function($data, $post) {
+                                <pre><code>@verbatim
+add_lazy_filter('lazy_api_post_data', function($data, $post) {
     $data['reading_time'] = '5 min read';
     return $data;
-});@endverbatim</code></pre>
+});
+@endverbatim</code></pre>
                             </div>
                         </div>
                     </div>

@@ -176,6 +176,11 @@ class Sidebar extends Component
         // Comments
         if (str_contains($targetPath, 'admin/comments')) return $user->hasPermission('manage_posts');
 
+        // Appearance (Themes, Menus, Widgets)
+        if (str_contains($targetPath, 'admin/themes')) return $user->hasPermission('access_themes') || $user->hasPermission('manage_settings');
+        if (str_contains($targetPath, 'admin/menus')) return $user->hasPermission('access_menus') || $user->hasPermission('manage_settings');
+        if (str_contains($targetPath, 'admin/widgets')) return $user->hasPermission('access_widgets') || $user->hasPermission('manage_settings');
+
         // ACPT
         if (str_contains($targetPath, 'admin/acpt')) return $user->hasPermission('manage_settings');
 

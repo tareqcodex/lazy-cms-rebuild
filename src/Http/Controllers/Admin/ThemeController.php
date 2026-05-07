@@ -12,7 +12,7 @@ class ThemeController extends Controller
 {
     public function index()
     {
-        if (!auth()->user()->hasPermission('manage_settings')) {
+        if (!auth()->user()->hasPermission('access_themes') && !auth()->user()->hasPermission('manage_settings')) {
             abort(403);
         }
 
@@ -64,7 +64,7 @@ class ThemeController extends Controller
 
     public function activate($slug)
     {
-        if (!auth()->user()->hasPermission('manage_settings')) {
+        if (!auth()->user()->hasPermission('access_themes') && !auth()->user()->hasPermission('manage_settings')) {
             abort(403);
         }
 
@@ -90,7 +90,7 @@ class ThemeController extends Controller
 
     public function destroy($slug)
     {
-        if (!auth()->user()->hasPermission('manage_settings')) {
+        if (!auth()->user()->hasPermission('access_themes') && !auth()->user()->hasPermission('manage_settings')) {
             abort(403);
         }
 
@@ -125,7 +125,7 @@ class ThemeController extends Controller
 
     public function upload(Request $request)
     {
-        if (!auth()->user()->hasPermission('manage_settings')) {
+        if (!auth()->user()->hasPermission('access_themes') && !auth()->user()->hasPermission('manage_settings')) {
             abort(403);
         }
 
