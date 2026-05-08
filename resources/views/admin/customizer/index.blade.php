@@ -141,7 +141,7 @@
                                                             {{-- Hidden input for the actual JSON value --}}
                                                             <input type="hidden" name="{{ $key }}" :value="JSON.stringify(fontData)">
 
-                                                            <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                                                            <div class="grid grid-cols-1 md:grid-cols-2 gap-x-6 gap-y-4">
                                                                 {{-- Font Family with Search --}}
                                                                 <div class="space-y-1.5 relative">
                                                                     <label class="text-[11px] font-semibold text-[#646970] uppercase">Font Family</label>
@@ -191,9 +191,7 @@
                                                                     <label class="text-[11px] font-semibold text-[#646970] uppercase">Font Size</label>
                                                                     <input type="text" x-model="fontData.size" placeholder="16px" class="wp-input w-full h-9 text-[13px]">
                                                                 </div>
-                                                            </div>
 
-                                                            <div class="grid grid-cols-1 md:grid-cols-4 gap-4">
                                                                 {{-- Line Height --}}
                                                                 <div class="space-y-1.5">
                                                                     <label class="text-[11px] font-semibold text-[#646970] uppercase">Line Height</label>
@@ -224,21 +222,35 @@
                                                                 <div class="space-y-1.5">
                                                                     <label class="text-[11px] font-semibold text-[#646970] uppercase">Style & Decor</label>
                                                                     <div class="flex border border-[#c3c4c7] rounded overflow-hidden">
-                                                                        <button type="button" @click="fontData.font_style = (fontData.font_style === 'italic' ? 'normal' : 'italic')"
+                                                                        <button type="button" @click="toggleStyle('italic')"
                                                                                 class="flex-1 h-9 flex items-center justify-center border-r border-[#c3c4c7]"
                                                                                 :class="fontData.font_style === 'italic' ? 'bg-[#2271b1] text-white' : 'bg-[#f6f7f7] text-[#50575e] hover:bg-white'">
                                                                             <span class="material-symbols-outlined" style="font-size:18px !important;">format_italic</span>
                                                                         </button>
                                                                         <template x-for="option in ['none', 'underline', 'line-through']" :key="option">
-                                                                            <button type="button" @click="fontData.text_decoration = option"
+                                                                            <button type="button" @click="toggleStyle(option)"
                                                                                     class="flex-1 h-9 flex items-center justify-center transition-colors border-r border-[#c3c4c7] last:border-r-0"
-                                                                                    :class="fontData.text_decoration === option ? 'bg-[#2271b1] text-white' : 'bg-[#f6f7f7] text-[#50575e] hover:bg-white'">
+                                                                                    :class="(option === 'none' && fontData.font_style === 'normal' && fontData.text_decoration === 'none') || (option !== 'none' && fontData.text_decoration === option) ? 'bg-[#2271b1] text-white' : 'bg-[#f6f7f7] text-[#50575e] hover:bg-white'">
                                                                                 <span class="material-symbols-outlined" style="font-size:18px !important;" x-text="getDecorIcon(option)" :title="option"></span>
                                                                             </button>
                                                                         </template>
                                                                     </div>
                                                                 </div>
                                                             </div>
+
+                                                            {{-- Live Preview --}}
+                                                            <div class="mt-4 p-4 border border-[#e5e7eb] rounded bg-white overflow-hidden">
+                                                                <div class="flex items-center justify-between mb-3 border-b border-[#f0f0f1] pb-2">
+                                                                    <span class="text-[10px] font-bold text-[#8c8f94] uppercase tracking-wider">Live Preview</span>
+                                                                    <span class="text-[10px] text-[#2271b1] font-medium" x-text="fontData.family + ' ' + formatVariant(fontData.variant)"></span>
+                                                                </div>
+                                                                <div class="preview-text" :style="getPreviewStyle()">
+                                                                    1234567890ABCDEFGHIJKLMN OPQRSTUVWXY Zabcdefghijklm nopqrstuvwxyz
+                                                                </div>
+                                                            </div>
+                                                        </div>
+
+                                                    @elseif($type === 'textarea')
 
                                                             {{-- Live Preview --}}
                                                             <div class="mt-4 p-4 border border-[#e5e7eb] rounded bg-white overflow-hidden">
@@ -495,7 +507,24 @@ const GOOGLE_FONTS = {
         { family: 'Montserrat', variants: ['100', '200', '300', '400', '500', '600', '700', '800', '900'] },
         { family: 'Source Sans 3', variants: ['200', '300', '400', '500', '600', '700', '800', '900'] },
         { family: 'Raleway', variants: ['100', '200', '300', '400', '500', '600', '700', '800', '900'] },
-        { family: 'Ubuntu', variants: ['300', '400', '500', '700'] }
+        { family: 'Ubuntu', variants: ['300', '400', '500', '700'] },
+        { family: 'Oswald', variants: ['200', '300', '400', '500', '600', '700'] },
+        { family: 'Quicksand', variants: ['300', '400', '500', '600', '700'] },
+        { family: 'PT Sans', variants: ['400', '700'] },
+        { family: 'Mukta', variants: ['200', '300', '400', '500', '600', '700', '800'] },
+        { family: 'Work Sans', variants: ['100', '200', '300', '400', '500', '600', '700', '800', '900'] },
+        { family: 'Nanum Gothic', variants: ['400', '700', '800'] },
+        { family: 'Noto Sans', variants: ['100', '200', '300', '400', '500', '600', '700', '800', '900'] },
+        { family: 'Rubik', variants: ['300', '400', '500', '600', '700', '800', '900'] },
+        { family: 'Heebo', variants: ['100', '200', '300', '400', '500', '600', '700', '800', '900'] },
+        { family: 'Karla', variants: ['200', '300', '400', '500', '600', '700', '800'] },
+        { family: 'Arimo', variants: ['400', '500', '600', '700'] },
+        { family: 'Cabin', variants: ['400', '500', '600', '700'] },
+        { family: 'Libre Franklin', variants: ['100', '200', '300', '400', '500', '600', '700', '800', '900'] },
+        { family: 'Barlow', variants: ['100', '200', '300', '400', '500', '600', '700', '800', '900'] },
+        { family: 'DM Sans', variants: ['400', '500', '700'] },
+        { family: 'Questrial', variants: ['400'] },
+        { family: 'Cairo', variants: ['200', '300', '400', '500', '600', '700', '800', '900'] }
     ],
     'Serif': [
         { family: 'Playfair Display', variants: ['400', '500', '600', '700', '800', '900'] },
@@ -504,7 +533,17 @@ const GOOGLE_FONTS = {
         { family: 'PT Serif', variants: ['400', '700'] },
         { family: 'Libre Baskerville', variants: ['400', '700'] },
         { family: 'Crimson Text', variants: ['400', '600', '700'] },
-        { family: 'Noto Serif', variants: ['400', '700'] }
+        { family: 'Noto Serif', variants: ['400', '700'] },
+        { family: 'Arvo', variants: ['400', '700'] },
+        { family: 'EB Garamond', variants: ['400', '500', '600', '700', '800'] },
+        { family: 'Old Standard TT', variants: ['400', '700'] },
+        { family: 'Bitter', variants: ['100', '200', '300', '400', '500', '600', '700', '800', '900'] },
+        { family: 'Cardo', variants: ['400', '700'] },
+        { family: 'Cormorant Garamond', variants: ['300', '400', '500', '600', '700'] },
+        { family: 'Domine', variants: ['400', '500', '600', '700'] },
+        { family: 'Spectral', variants: ['200', '300', '400', '500', '600', '700', '800'] },
+        { family: 'Zilla Slab', variants: ['300', '400', '500', '600', '700'] },
+        { family: 'Manrope', variants: ['200', '300', '400', '500', '600', '700', '800'] }
     ],
     'Display': [
         { family: 'Abril Fatface', variants: ['400'] },
@@ -512,13 +551,38 @@ const GOOGLE_FONTS = {
         { family: 'Pacifico', variants: ['400'] },
         { family: 'Righteous', variants: ['400'] },
         { family: 'Bebas Neue', variants: ['400'] },
-        { family: 'Cinzel', variants: ['400', '500', '600', '700', '800', '900'] }
+        { family: 'Cinzel', variants: ['400', '500', '600', '700', '800', '900'] },
+        { family: 'Anton', variants: ['400'] },
+        { family: 'Comfortaa', variants: ['300', '400', '500', '600', '700'] },
+        { family: 'Dancing Script', variants: ['400', '500', '600', '700'] },
+        { family: 'Satisfy', variants: ['400'] },
+        { family: 'Patua One', variants: ['400'] },
+        { family: 'Luckiest Guy', variants: ['400'] },
+        { family: 'Permanent Marker', variants: ['400'] },
+        { family: 'Fredoka One', variants: ['400'] },
+        { family: 'Alpha Slab One', variants: ['400'] },
+        { family: 'Bangers', variants: ['400'] },
+        { family: 'Cookie', variants: ['400'] },
+        { family: 'Great Vibes', variants: ['400'] },
+        { family: 'Kaushan Script', variants: ['400'] },
+        { family: 'Shadows Into Light', variants: ['400'] },
+        { family: 'Courgette', variants: ['400'] },
+        { family: 'Gloria Hallelujah', variants: ['400'] },
+        { family: 'Homemade Apple', variants: ['400'] },
+        { family: 'Yellowtail', variants: ['400'] }
     ],
     'Monospace': [
         { family: 'Fira Code', variants: ['300', '400', '500', '600', '700'] },
         { family: 'Source Code Pro', variants: ['200', '300', '400', '500', '600', '700', '800', '900'] },
         { family: 'Roboto Mono', variants: ['100', '200', '300', '400', '500', '600', '700'] },
-        { family: 'JetBrains Mono', variants: ['100', '200', '300', '400', '500', '600', '700', '800'] }
+        { family: 'JetBrains Mono', variants: ['100', '200', '300', '400', '500', '600', '700', '800'] },
+        { family: 'Inconsolata', variants: ['200', '300', '400', '500', '600', '700', '800', '900'] },
+        { family: 'Space Mono', variants: ['400', '700'] },
+        { family: 'Ubuntu Mono', variants: ['400', '700'] },
+        { family: 'Courier Prime', variants: ['400', '700'] },
+        { family: 'IBM Plex Mono', variants: ['100', '200', '300', '400', '500', '600', '700'] },
+        { family: 'Share Tech Mono', variants: ['400'] },
+        { family: 'Anonymous Pro', variants: ['400', '700'] }
     ]
 };
 
@@ -531,6 +595,19 @@ function typographyComponent(key, initialData) {
         init() {
             // Load the font on init for preview
             this.loadGoogleFont(this.fontData.family);
+        },
+
+        toggleStyle(op) {
+            if (op === 'italic') {
+                this.fontData.font_style = (this.fontData.font_style === 'italic' ? 'normal' : 'italic');
+                if (this.fontData.font_style === 'italic') this.fontData.text_decoration = 'none';
+            } else if (op === 'none') {
+                this.fontData.font_style = 'normal';
+                this.fontData.text_decoration = 'none';
+            } else {
+                this.fontData.text_decoration = (this.fontData.text_decoration === op ? 'none' : op);
+                if (this.fontData.text_decoration !== 'none') this.fontData.font_style = 'normal';
+            }
         },
 
         get filteredFonts() {
@@ -616,6 +693,11 @@ function typographyComponent(key, initialData) {
 </script>
 
 <style>
+/* Customizer Panel Width - Reduced by 30% */
+#customizer-app {
+    max-width: 980px !important; /* Original was ~1400px, 70% of 1400 is 980 */
+    margin: 20px auto;
+}
 /* Customizer scrollbar */
 .custom-scrollbar::-webkit-scrollbar { width: 5px; }
 .custom-scrollbar::-webkit-scrollbar-track { background: #f1f1f1; }
