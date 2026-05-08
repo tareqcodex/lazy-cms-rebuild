@@ -185,7 +185,7 @@
                     $activeLanguages = \Acme\CmsDashboard\Models\Language::where('status', true)->get(); 
                 @endphp
 
-                @if($activeLanguages->count() > 0)
+                @if($activeLanguages->count() > 1)
                 <div class="wp-metabox mb-6" style="margin-bottom: 24px !important; margin-top: 10px !important;">
                     <div class="wp-metabox-header"><span>Language</span></div>
                     <div class="wp-metabox-content p-3">
@@ -200,7 +200,7 @@
                             </select>
                         </div>
 
-                        @if(!$post->origin_id && $activeLanguages->count() > 1)
+                        @if(!$post->origin_id)
                             <hr class="my-3 border-gray-100">
                             <label class="flex items-center text-[13px] font-bold text-[#1d2327] mb-3 cursor-pointer">
                                 <input type="checkbox" name="make_multilingual_copy" value="1" class="mr-2 rounded-sm border-[#8c8f94] text-[#2271b1]" onchange="document.getElementById('multi-lang-list').classList.toggle('hidden', !this.checked)">
@@ -253,7 +253,6 @@
                     <div class="wp-metabox-content" style="padding: 10px;">
                         <div class="flex justify-between items-center mb-3">
                             <button type="button" id="save-draft-btn" formnovalidate class="wp-btn-secondary text-[13px] bg-[#f6f7f7]">Save Draft</button>
-                            <a href="{{ get_lazy_permalink($post) }}" target="_blank" class="wp-btn-secondary text-[13px] bg-[#f6f7f7]">Preview</a>
                         </div>
                         <div class="text-[13px] text-[#646970] space-y-3 mb-4">
                             <!-- Status -->
@@ -458,7 +457,7 @@
                 @endif
 
 
-                @if(in_array('featured_image', $supports))
+                @if(in_array('featured_image', $supports) || in_array('thumbnail', $supports))
                 <!-- Featured Image -->
                 <div class="wp-metabox mb-6" style="margin-bottom: 24px !important; margin-top: 10px !important;">
                     <div class="wp-metabox-header flex justify-between items-center cursor-pointer"><span>Featured image</span> <svg class="w-4 h-4 text-[#646970]" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 15l7-7 7 7"/></svg></div>
@@ -488,9 +487,10 @@
             selector: '#wp-editor',
             menubar: false,
             height: 450,
+            width: '100%',
             plugins: ['lists', 'link', 'image', 'preview', 'code', 'fullscreen', 'media', 'table', 'wordcount'],
             toolbar: 'formatselect | bold italic underline strikethrough | blockquote | alignleft aligncenter alignright alignjustify | bullist numlist outdent indent | link image media | code fullscreen',
-            content_style: 'body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Oxygen-Sans, Ubuntu, Cantarell, "Helvetica Neue", sans-serif; font-size:14px }',
+            content_style: 'body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Oxygen-Sans, Ubuntu, Cantarell, "Helvetica Neue", sans-serif; font-size:14px; padding: 20px; }',
             branding: false,
             image_title: true,
             automatic_uploads: true,
@@ -636,11 +636,16 @@
                 document.getElementById('main-publish-btn').innerText = 'Schedule';
                 statusHidden.value = 'scheduled';
                 document.getElementById('status-display-text').innerText = 'Scheduled';
+                // Update select UI too
+                const statusSelectUI = document.getElementById('status-select-ui');
+                if (statusSelectUI) statusSelectUI.value = 'scheduled';
             } else {
                 document.getElementById('main-publish-btn').innerText = 'Update';
                 if (statusHidden.value === 'scheduled') {
                     statusHidden.value = 'published';
                     document.getElementById('status-display-text').innerText = 'Published';
+                    const statusSelectUI = document.getElementById('status-select-ui');
+                    if (statusSelectUI) statusSelectUI.value = 'published';
                 }
             }
             
@@ -833,6 +838,7 @@
         };
 
         function addTagsFromInput() {
+            if (!tagInput) return;
             const val = tagInput.value.trim();
             if (!val) return;
             const newTags = val.split(',').map(t => t.trim()).filter(t => t && !tags.includes(t));
@@ -848,6 +854,7 @@
                 addTagsFromInput();
             }
         });
+
 
         // Editor Toggle Logic
         const richEditorBtn = document.getElementById('editor-mode-rich');

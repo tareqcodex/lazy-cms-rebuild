@@ -5,18 +5,46 @@
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <title>@yield('title', get_cms_option('site_title', 'Lazy CMS'))</title>
     
+    @php
+        // Prepare Theme Options
+        $primaryColor = get_cms_option('theme_primary_color', '#0091ea');
+        $secondaryColor = get_cms_option('theme_secondary_color', '#1d2327');
+        $bodyBgColor = get_cms_option('theme_body_bg_color', '#ffffff');
+        $textColor = get_cms_option('theme_text_color', '#1d2327');
+        $linkColor = get_cms_option('theme_link_color', '#0091ea');
+        $linkHoverColor = get_cms_option('theme_link_hover_color', '#007ac1');
+        $headingColor = get_cms_option('theme_heading_color', '#1d2327');
+        $siteWidth = get_cms_option('theme_site_width', '1240px');
+        $favicon = get_cms_option('theme_site_favicon');
+        
+        // Typography Processing
+        $bodyTypo = json_decode(get_cms_option('theme_typography_body'), true) ?: ['family' => 'Inter', 'variant' => '400', 'size' => '15px'];
+        $h1Typo = json_decode(get_cms_option('theme_typography_h1'), true);
+        $navTypo = json_decode(get_cms_option('theme_typography_nav'), true);
+        
+        // Collect fonts to load
+        $fontsToLoad = [$bodyTypo['family'] ?? 'Inter'];
+        if (isset($h1Typo['family'])) $fontsToLoad[] = $h1Typo['family'];
+        if (isset($navTypo['family'])) $fontsToLoad[] = $navTypo['family'];
+        $fontsToLoad = array_unique($fontsToLoad);
+        $googleFontsUrl = "https://fonts.googleapis.com/css2?family=" . implode('&family=', array_map(fn($f) => str_replace(' ', '+', $f) . ':wght@300;400;500;600;700;800;900', $fontsToLoad)) . "&display=swap";
+
+        // Layout Type
+        $layoutType = get_cms_option('theme_layout_type', 'wide');
+    @endphp
+
     <!-- Favicon -->
-    @if(get_cms_option('theme_favicon'))
-        <link rel="icon" type="image/x-icon" href="{{ asset('storage/' . get_cms_option('theme_favicon')) }}">
+    @if($favicon)
+        <link rel="icon" type="image/x-icon" href="{{ $favicon }}">
     @endif
 
     <!-- Meta SEO -->
     @yield('seo')
 
-    <!-- Fonts -->
+    <!-- Dynamic Fonts -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link href="{{ $googleFontsUrl }}" rel="stylesheet">
     
     <!-- Tailwind -->
     <script src="https://cdn.tailwindcss.com"></script>
@@ -25,11 +53,11 @@
             theme: {
                 extend: {
                     colors: {
-                        primary: '#0274be',
-                        'primary-hover': '#015a94',
+                        primary: '{{ $primaryColor }}',
+                        'primary-hover': '{{ $linkHoverColor }}',
                     },
                     fontFamily: {
-                        sans: ['Inter', 'sans-serif'],
+                        sans: ['{{ $bodyTypo["family"] }}', 'sans-serif'],
                     },
                 }
             }
@@ -38,183 +66,140 @@
 
     <style>
         :root {
-            --primary: #0274be;
-            --primary-hover: #015a94;
-            --text-main: #3a3a3a;
-            --text-heading: #191919;
+            --primary: {{ $primaryColor }};
+            --primary-hover: {{ $linkHoverColor }};
+            --text-main: {{ $textColor }};
+            --text-heading: {{ $headingColor }};
             --text-muted: #666666;
-            --bg-body: #ffffff;
+            --bg-body: {{ $bodyBgColor }};
             --bg-alt: #f5f7f9;
             --border-color: #e8e8e8;
-            @php 
-                $siteWidth = get_cms_option('theme_site_width', '1200px');
-                if (is_numeric($siteWidth)) $siteWidth .= 'px';
-            @endphp
-            --site-width: {{ $siteWidth }};
+            --site-width: {{ is_numeric($siteWidth) ? $siteWidth . 'px' : $siteWidth }};
+            
+            /* Typography Variables */
+            --body-font: '{{ $bodyTypo["family"] }}', sans-serif;
+            --body-size: {{ $bodyTypo["size"] ?? '15px' }};
+            --body-lh: {{ $bodyTypo["line_height"] ?? '1.6' }};
         }
 
         body {
             background-color: var(--bg-body);
             color: var(--text-main);
-            font-family: 'Inter', sans-serif;
+            font-family: var(--body-font);
+            font-size: var(--body-size);
+            line-height: var(--body-lh);
+            
+            @if(get_cms_option('theme_body_bg_image'))
+                background-image: url('{{ get_cms_option("theme_body_bg_image") }}');
+                background-position: {{ get_cms_option("theme_body_bg_position", "center center") }};
+                background-size: {{ get_cms_option("theme_body_bg_size", "cover") }};
+                background-repeat: {{ get_cms_option("theme_body_bg_repeat", "no-repeat") }};
+                background-attachment: {{ get_cms_option("theme_body_bg_attachment", "scroll") }};
+            @endif
         }
 
-        /* Astra-style Header */
-        .main-header {
-            background: #ffffff;
-            border-bottom: 1px solid var(--border-color);
+        @if($layoutType === 'boxed')
+        body {
+            background-color: #f0f0f1; /* Darker bg for boxed layout contrast */
         }
+        .boxed-wrapper {
+            max-width: var(--site-width);
+            margin: 0 auto;
+            background: var(--bg-body);
+            box-shadow: 0 0 50px rgba(0,0,0,0.1);
+        }
+        @endif
 
-        /* Typography */
-        h1, h2, h3, h4, h5, h6 {
-            color: var(--text-heading);
-            font-weight: 700;
-            line-height: 1.3;
-        }
+        a { color: {{ $linkColor }}; transition: color 0.2s; }
+        a:hover { color: {{ $linkHoverColor }}; }
 
-        /* Card Simplification */
-        .post-card {
-            background: #fff;
-            border: 1px solid var(--border-color);
-            transition: all 0.3s ease;
-        }
-        .post-card:hover {
-            box-shadow: 0 10px 30px rgba(0,0,0,0.05);
-        }
-
-        /* Sidebar Widgets */
-        .widget {
-            margin-bottom: 2rem;
-        }
-        .widget-title {
-            position: relative;
-            padding-bottom: 10px;
-            margin-bottom: 15px;
-            border-bottom: 1px solid var(--border-color);
-            font-size: 0.95rem;
-            text-transform: uppercase;
-            letter-spacing: 1px;
-        }
-        .widget-title::after {
-            content: '';
-            position: absolute;
-            bottom: -2px;
-            left: 0;
-            width: 50px;
-            height: 2px;
-            background: var(--primary);
-        }
-
-        /* Force Outer Container to be 100% for Backgrounds */
-        .lazy-container {
-            width: 100% !important;
-            max-width: none !important;
-            padding-left: 0 !important;
-            padding-right: 0 !important;
-        }
-
-        .main-header,
-        .main-footer,
-        section.w-full {
-            width: 100% !important;
-            max-width: none !important;
-            padding-left: 0 !important;
-            padding-right: 0 !important;
-            margin: 0 !important;
-        }
-
-        .container-custom,
-        .page-container {
-            width: 100%;
-            max-width: var(--site-width) !important;
-            margin-left: auto !important;
-            margin-right: auto !important;
-            padding-left: 20px;
-            padding-right: 20px;
-        }
-
-        /* Site Width Template Logic - Inner Content Only */
-        .template-site-width .container-custom,
-        .template-site-width .lazy-container-inner:not(.w-full) {
-            max-width: var(--site-width) !important;
-            width: 100% !important;
-            margin-left: auto !important;
-            margin-right: auto !important;
-        }
-
-        /* Ensure w-full containers actually fill the space without padding */
-        .lazy-container-inner.w-full {
-            width: 100% !important;
-            max-width: none !important;
-            padding-left: 0 !important;
-            padding-right: 0 !important;
-            margin: 0 !important;
-        }
-
-        /* Allow builder sections to break out of page-container if needed */
-        .template-site-width .prose {
-            max-width: none !important;
-            width: 100% !important;
-        }
-
-        .btn-premium {
-            display: inline-block;
-            padding: 12px 32px;
-            background-color: var(--primary);
-            color: white;
-            font-weight: 700;
-            border-radius: 4px;
-            transition: all 0.3s ease;
-        }
-        .btn-premium:hover {
-            background-color: var(--primary-hover);
-            transform: translateY(-2px);
-            box-shadow: 0 4px 12px rgba(2, 116, 190, 0.2);
-        }
-
-        /* Device Visibility Logic (User Breakpoints) */
-        @media (min-width: 320px) and (max-width: 640px) {
-            .lazy-hide-mobile { display: none !important; }
-        }
-        @media (min-width: 641px) and (max-width: 1024px) {
-            .lazy-hide-tablet { display: none !important; }
-        }
-        @media (min-width: 1025px) {
-            .lazy-hide-desktop { display: none !important; }
-        }
-        .lazy-hide-all { display: none !important; }
-
-        /* Auto Responsive Columns for Mobile */
-        @media (max-width: 767px) {
-            .lazy-column {
-                flex-basis: 100% !important;
-                max-width: 100% !important;
-                width: 100% !important;
+        /* Typography Tags */
+        @php
+            $tags = ['h1', 'h2', 'h3', 'h4', 'h5', 'h6', 'nav'];
+            foreach($tags as $tag) {
+                $optionName = "theme_typography_{$tag}";
+                $typo = json_decode(get_cms_option($optionName), true);
+                if($typo) {
+                    echo "{$tag}, .{$tag}-style { ";
+                    if(isset($typo['family'])) echo "font-family: '{$typo['family']}', sans-serif; ";
+                    if(isset($typo['size'])) echo "font-size: {$typo['size']}; ";
+                    if(isset($typo['variant'])) echo "font-weight: {$typo['variant']}; ";
+                    if(isset($typo['line_height'])) echo "line-height: {$typo['line_height']}; ";
+                    if(isset($typo['letter_spacing'])) echo "letter-spacing: {$typo['letter_spacing']}; ";
+                    if(isset($typo['text_transform'])) echo "text-transform: {$typo['text_transform']}; ";
+                    if(isset($typo['text_decoration'])) echo "text-decoration: {$typo['text_decoration']}; ";
+                    if(isset($typo['font_style'])) echo "font-style: {$typo['font_style']}; ";
+                    echo "color: var(--text-heading); }\n";
+                }
             }
+        @endphp
+
+        /* Astra-style Header Customization */
+        .main-header {
+            background: {{ get_cms_option('theme_header_bg_color', '#ffffff') }};
+            color: {{ get_cms_option('theme_header_text_color', '#1d2327') }};
+            height: {{ get_cms_option('theme_header_height', '80px') }};
+            padding-top: {{ get_cms_option('theme_header_padding_top', '0px') }};
+            padding-bottom: {{ get_cms_option('theme_header_padding_bottom', '0px') }};
+            @if(get_cms_option('theme_header_border_bottom', '1') == '1')
+                border-bottom: 1px solid {{ get_cms_option('theme_header_border_color', '#e8e8e8') }};
+            @else
+                border-bottom: none;
+            @endif
         }
 
-        /* Hover Effects */
-        .lazy-column, .lazy-container {
-            position: relative;
-            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        @if(get_cms_option('theme_header_sticky', '0') == '1')
+        .main-header {
+            position: sticky;
+            top: 0;
+            z-index: 1000;
         }
-        .hover-effect-zoom:hover { transform: scale(1.03) !important; z-index: 50 !important; }
-        .hover-effect-lift:hover { transform: translateY(-10px) !important; z-index: 50 !important; box-shadow: 0 20px 40px rgba(0,0,0,0.1) !important; }
-        .hover-effect-glow:hover { box-shadow: 0 0 25px rgba(0, 145, 234, 0.5) !important; z-index: 50 !important; }
-        .hover-effect-fade:hover { opacity: 0.7 !important; }
+        @endif
+
+        /* Container & Padding */
+        .container-custom, .page-container {
+            max-width: var(--site-width) !important;
+            padding-left: {{ get_cms_option('theme_100_width_padding', '20px') }};
+            padding-right: {{ get_cms_option('theme_100_width_padding', '20px') }};
+        }
+
+        main {
+            padding-top: {{ get_cms_option('theme_page_padding_top', '60px') }};
+            padding-bottom: {{ get_cms_option('theme_page_padding_bottom', '60px') }};
+        }
+
+        /* PRIORITY CUSTOM CSS */
+        {!! get_cms_option('theme_custom_css') !!}
     </style>
+    
     @yield('styles')
     {!! do_lazy_action('lazy_head') !!}
+
+    {{-- PRIORITY HEAD SCRIPT --}}
+    @if(get_cms_option('theme_head_script'))
+        <script>{!! get_cms_option('theme_head_script') !!}</script>
+    @endif
 </head>
-<body class="antialiased selection:bg-primary selection:text-white template-site-width">
+@php
+    $defaultTemplate = get_cms_option('theme_default_template', 'site-width');
+    $bodyClasses = "antialiased selection:bg-primary selection:text-white";
+    if ($layoutType !== 'boxed') {
+        $bodyClasses .= " template-{$defaultTemplate}";
+    }
+@endphp
+<body class="{{ $bodyClasses }}">
+
+    @if($layoutType === 'boxed') <div class="boxed-wrapper min-h-screen flex flex-col"> @endif
 
     @include('cms-dashboard::themes.lazy-theme.partials.header')
 
-    <main class="min-h-screen">
+    <main class="flex-grow">
         @yield('content')
     </main>
 
     @include('cms-dashboard::themes.lazy-theme.partials.footer')
+
+    @if($layoutType === 'boxed') </div> @endif
 
     <!-- Scripts -->
     <script src="https://unpkg.com/lucide@latest"></script>
@@ -223,5 +208,10 @@
     </script>
     @stack('scripts')
     {!! do_lazy_action('lazy_footer') !!}
+
+    {{-- PRIORITY FOOTER SCRIPT --}}
+    @if(get_cms_option('theme_footer_script'))
+        <script>{!! get_cms_option('theme_footer_script') !!}</script>
+    @endif
 </body>
 </html>

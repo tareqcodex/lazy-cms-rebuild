@@ -32,7 +32,6 @@ class CmsDashboardServiceProvider extends ServiceProvider
             
             'cms-dashboard::admin.users.edit' => 'users-edit',
             'cms-dashboard::admin.settings.index'         => 'general-settings',
-            'cms-dashboard::admin.settings.theme-options' => 'theme-options',
         ];
 
         view()->composer('*', function ($view) use ($viewMap) {

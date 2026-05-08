@@ -7,13 +7,18 @@
     <!-- Upload Zone -->
     <div id="media-upload-area" class="flex flex-col items-center justify-center border-2 border-dashed border-[#c3c4c7] rounded-sm bg-white py-20 px-10 transition-all cursor-pointer hover:border-[#2271b1] hover:bg-[#f8f8f8]"
          onclick="document.getElementById('media-page-upload-input').click()">
+        @php
+            $allowedRaw = get_cms_option('performance_allowed_formats', '[]');
+            $allowedFormats = is_array($allowedRaw) ? $allowedRaw : json_decode($allowedRaw, true);
+            $accept = !empty($allowedFormats) ? '.' . implode(',.', $allowedFormats) : '';
+        @endphp
         <div class="text-center pointer-events-none">
             <svg class="w-16 h-16 mx-auto text-[#c3c4c7] mb-4" fill="none" stroke="currentColor" viewBox="0 0 48 48">
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M28 8H12a4 4 0 00-4 4v20m32-12v8m0 0v8a4 4 0 01-4 4H12a4 4 0 01-4-4v-4m32-4l-3.172-3.172a4 4 0 00-5.656 0L28 28M8 32l9.172-9.172a4 4 0 015.656 0L28 28m0 0l4 4m4-24h8m-4-4v8m-12 4h.02"/>
             </svg>
             <h2 class="text-[20px] mb-2 font-normal text-[#1d2327]">Drop files to upload</h2>
             <p class="text-[14px] text-[#646970] mb-4">or click to browse</p>
-            <input type="file" id="media-page-upload-input" class="hidden" multiple accept="image/jpeg,image/png,image/gif,image/webp">
+            <input type="file" id="media-page-upload-input" class="hidden" multiple {!! $accept ? 'accept="'.$accept.'"' : '' !!}>
             <span class="wp-btn-secondary px-6 pointer-events-none">Select Files</span>
             <p class="mt-6 text-[12px] text-[#646970]">Maximum upload file size: 10 MB.</p>
         </div>
@@ -25,7 +30,12 @@
     </div>
 
     <div class="mt-6 text-[13px] text-[#646970]">
-        You are using the multi-file uploader. Supported formats: JPG, PNG, GIF, WebP.
+        You are using the multi-file uploader. 
+        @if(!empty($allowedFormats))
+            Supported formats: {{ strtoupper(implode(', ', $allowedFormats)) }}.
+        @else
+            All file formats are allowed.
+        @endif
     </div>
 
     <script>

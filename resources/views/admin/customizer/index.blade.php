@@ -231,6 +231,49 @@
                                                             </div>
                                                         </div>
 
+                                                    @elseif($type === 'image')
+                                                        {{-- Simplified & Reliable Image Picker --}}
+                                                        <div class="image-picker-component" x-data="{ 
+                                                            imageUrl: '{{ $val }}',
+                                                            selectImage() { openCmsMediaModal('field_{{ $key }}') },
+                                                            removeImage() { this.imageUrl = ''; document.getElementById('field_{{ $key }}').value = ''; }
+                                                        }">
+                                                            <div class="space-y-3">
+                                                                {{-- Clickable Preview Box --}}
+                                                                <div x-on:click="selectImage()"
+                                                                      class="w-48 h-48 rounded-lg border-2 border-dashed border-[#c3c4c7] bg-[#f6f7f7] cursor-pointer hover:border-[#2271b1] hover:bg-[#f0f7ff] transition-all overflow-hidden flex items-center justify-center relative group shadow-sm">
+                                                                    
+                                                                    <template x-if="imageUrl">
+                                                                        <img :src="imageUrl" x-on:error="imageUrl = ''" class="w-full h-full object-cover">
+                                                                    </template>
+                                                                    
+                                                                    <template x-if="!imageUrl">
+                                                                        <div class="text-center p-4">
+                                                                            <span class="material-symbols-outlined text-[#8c8f94] text-4xl block mb-2">add_photo_alternate</span>
+                                                                            <span class="text-[11px] font-medium text-[#646970] uppercase">Click to Select Image</span>
+                                                                        </div>
+                                                                    </template>
+                                                                </div>
+
+                                                                {{-- Action Buttons --}}
+                                                                <div class="flex items-center gap-4 px-1">
+                                                                    <button type="button" x-on:click="selectImage()"
+                                                                            class="flex items-center gap-1.5 text-[12px] font-bold text-[#2271b1] hover:text-[#135e96] transition-colors uppercase tracking-tight">
+                                                                        <span class="material-symbols-outlined" style="font-size:16px !important;">edit</span>
+                                                                        Edit
+                                                                    </button>
+                                                                    <div x-show="imageUrl" class="w-px h-3 bg-[#c3c4c7]"></div>
+                                                                    <button type="button" x-show="imageUrl" x-on:click="removeImage()"
+                                                                            class="flex items-center gap-1.5 text-[12px] font-bold text-red-600 hover:text-red-700 transition-colors uppercase tracking-tight">
+                                                                        <span class="material-symbols-outlined" style="font-size:16px !important;">delete</span>
+                                                                        Remove
+                                                                    </button>
+                                                                </div>
+
+                                                                <input type="hidden" name="{{ $key }}" id="field_{{ $key }}" :value="imageUrl">
+                                                            </div>
+                                                        </div>
+
                                                     @elseif($type === 'color')
                                                         {{-- Coloris picker — attaches to the text input --}}
                                                         <div class="flex items-center gap-2.5">
@@ -249,6 +292,61 @@
                                                                 <option value="{{ $optVal }}" {{ $val == $optVal ? 'selected' : '' }}>{{ $optLabel }}</option>
                                                             @endforeach
                                                         </select>
+
+                                                     @elseif($type === 'multi_select')
+                                                         @php
+                                                             $mVal = is_array($val) ? $val : (json_decode($val, true) ?: ($field['default'] ?? []));
+                                                             $options = $field['options'] ?? [];
+                                                         @endphp
+                                                         <div x-data='{ 
+                                                                  open: false, 
+                                                                  selected: {!! json_encode($mVal) !!}, 
+                                                                  options: {!! json_encode($options) !!},
+                                                                  toggle(opt) {
+                                                                      if (this.selected.includes(opt)) {
+                                                                          this.selected = this.selected.filter(i => i !== opt);
+                                                                      } else {
+                                                                          this.selected = [...this.selected, opt];
+                                                                      }
+                                                                  },
+                                                                  remove(opt) {
+                                                                      this.selected = this.selected.filter(i => i !== opt);
+                                                                  }
+                                                              }' 
+                                                              class="multi-select-container relative w-[340px]">
+                                                             <input type="hidden" name="{{ $key }}" :value="JSON.stringify(selected)">
+                                                             
+                                                             <div @click="open = !open" 
+                                                                  class="wp-input min-h-[36px] h-auto flex flex-wrap items-center gap-1.5 p-1.5 cursor-pointer bg-white border border-[#c3c4c7] rounded shadow-sm hover:border-[#2271b1] transition-all">
+                                                                 
+                                                                 <template x-for="item in selected" :key="item">
+                                                                     <div class="inline-flex items-center gap-1.5 px-2.5 py-1 bg-[#f0f0f1] text-[#2c3338] text-[11px] font-medium rounded-full border border-[#dcdcde] group/tag hover:bg-[#e0e0e2] transition-colors">
+                                                                         <span x-text="options[item] || item"></span>
+                                                                         <button type="button" @click.stop="remove(item)" class="flex items-center justify-center w-3.5 h-3.5 rounded-full hover:bg-[#dcdcde] transition-colors">
+                                                                             <span class="material-symbols-outlined !text-[12px] text-[#50575e] group-hover/tag:text-red-600">close</span>
+                                                                         </button>
+                                                                     </div>
+                                                                 </template>
+                                                                 
+                                                                 <span x-show="selected.length === 0" class="text-[#8c8f94] text-[12px] px-2 italic">Select allowed formats...</span>
+                                                                 
+                                                                 <div class="ml-auto flex items-center pr-1">
+                                                                     <span class="material-symbols-outlined text-[#8c8f94] transition-transform duration-200" :class="open ? 'rotate-180' : ''" style="font-size:18px !important;">expand_more</span>
+                                                                 </div>
+                                                             </div>
+
+                                                             <div x-show="open" @click.away="open = false" x-cloak x-transition:enter="transition ease-out duration-100" x-transition:enter-start="opacity-0 transform scale-95" x-transition:enter-end="opacity-100 transform scale-100"
+                                                                  class="absolute z-[110] mt-1 w-full bg-white border border-[#c3c4c7] rounded shadow-xl max-h-[240px] overflow-y-auto custom-scrollbar ring-1 ring-black ring-opacity-5">
+                                                                 <template x-for="(label, opt) in options" :key="opt">
+                                                                     <div @click="toggle(opt)" 
+                                                                          class="px-4 py-2.5 text-[12px] cursor-pointer hover:bg-[#f0f7ff] flex items-center justify-between border-b border-[#f0f0f1] last:border-0 transition-colors"
+                                                                          :class="selected.includes(opt) ? 'bg-[#f0f7ff] text-[#2271b1] font-semibold' : 'text-[#1d2327]'">
+                                                                         <span x-text="label"></span>
+                                                                         <span x-show="selected.includes(opt)" class="material-symbols-outlined text-[16px] text-[#2271b1]">check_circle</span>
+                                                                     </div>
+                                                                 </template>
+                                                             </div>
+                                                         </div>
 
                                                     @elseif($type === 'button_group')
                                                         {{-- Segmented control — PHP sets initial state, JS updates on change --}}
@@ -294,12 +392,31 @@
                                                                   placeholder="{{ $field['placeholder'] ?? '' }}"
                                                                   class="wp-input w-[340px] text-[13px] resize-y pt-2 leading-relaxed">{{ $val }}</textarea>
 
-                                                    @elseif($type === 'css')
-                                                        <textarea name="{{ $key }}" id="field_{{ $key }}"
-                                                                  rows="18"
-                                                                  placeholder="{{ $field['placeholder'] ?? '' }}"
-                                                                  class="w-full font-mono text-[12px] bg-[#1d1f27] text-[#c5c8c6] border border-[#3c434a] rounded p-4 resize-y leading-relaxed focus:outline-none focus:border-[#2271b1]"
-                                                                  style="min-height:280px; tab-size:4;">{{ $val }}</textarea>
+                                                    @elseif($type === 'action_button')
+                                                        <div class="flex flex-col gap-2">
+                                                            <button type="button" 
+                                                                    onclick="runCustomizerAction('{{ $field['action'] }}', this)"
+                                                                    class="wp-btn-secondary px-6 self-start">
+                                                                {{ $field['text'] ?? 'Run Action' }}
+                                                            </button>
+                                                            @if(!empty($field['desc']))
+                                                                <p class="text-[11px] text-[#646970] leading-relaxed max-w-[340px] italic">
+                                                                    {!! $field['desc'] !!}
+                                                                </p>
+                                                            @endif
+                                                        </div>
+
+                                                    @elseif($type === 'css' || $type === 'script')
+                                                        {{-- Monaco Editor for CSS/JS --}}
+                                                        <div class="monaco-wrapper border border-[#3c434a] rounded overflow-hidden shadow-inner" style="height: 500px;">
+                                                            <div id="monaco-editor-{{ $key }}" class="w-full h-full"></div>
+                                                            <textarea name="{{ $key }}" id="field_{{ $key }}" class="hidden">{{ $val }}</textarea>
+                                                        </div>
+                                                        <script>
+                                                            window.addEventListener('load', function() {
+                                                                initMonaco('{{ $key }}', '{{ $type === "css" ? "css" : "javascript" }}');
+                                                            });
+                                                        </script>
                                                     @endif
                                                 </td>
                                             </tr>
@@ -368,13 +485,101 @@
 @push('scripts')
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@melloware/coloris/dist/coloris.min.css">
 <script src="https://cdn.jsdelivr.net/npm/@melloware/coloris/dist/coloris.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/monaco-editor/0.44.0/min/vs/loader.min.js"></script>
 <script>
+// Monaco Configuration
+require.config({ paths: { 'vs': 'https://cdnjs.cloudflare.com/ajax/libs/monaco-editor/0.44.0/min/vs' }});
+window.monacoEditors = {};
+
+function initMonaco(fieldId, language) {
+    const container = document.getElementById('monaco-editor-' + fieldId);
+    const textarea = document.getElementById('field_' + fieldId);
+    if (!container || !textarea) return;
+
+    require(['vs/editor/editor.main'], function() {
+        const editor = monaco.editor.create(container, {
+            value: textarea.value,
+            language: language,
+            theme: 'vs-dark',
+            automaticLayout: true,
+            minimap: { enabled: false },
+            fontSize: 13,
+            lineHeight: 20,
+            scrollBeyondLastLine: false,
+            wordWrap: 'on',
+            formatOnPaste: true,
+            formatOnType: true,
+            suggestOnTriggerCharacters: true,
+            quickSuggestions: true,
+            colorDecorators: true
+        });
+
+        editor.onDidChangeModelContent(() => {
+            textarea.value = editor.getValue();
+            // Dispatch input event to notify Alpine.js or other listeners
+            textarea.dispatchEvent(new Event('input', { bubbles: true }));
+        });
+
+        window.monacoEditors[fieldId] = editor;
+    });
+}
+
+// Media Modal Integration
+function openCmsMediaModal(fieldId) {
+    // Search for a global media picker instance
+    const picker = window.cmsMediaPicker || window.mediaPicker || (window.CMSMediaModal ? CMSMediaModal : null);
+    
+    const updateImageField = (attachment) => {
+        // Try multiple properties for the URL
+        let url = attachment.full_url || attachment.url || attachment.path || attachment.guid || '';
+        
+        if (!url) {
+            console.error('Media selection failed: No URL found in attachment object', attachment);
+            return;
+        }
+
+        // Specific fix for Laravel storage: if it starts with 'media/', it needs '/storage/'
+        if (url.startsWith('media/')) {
+            url = '/storage/' + url;
+        } else if (!url.startsWith('http') && !url.startsWith('/')) {
+            // General fallback for other relative paths
+            url = '/' + url;
+        }
+
+        const input = document.getElementById(fieldId);
+        if (input) {
+            input.value = url;
+            
+            // Try to find the Alpine.js component scope and update it
+            const component = input.closest('.image-picker-component');
+            if (component && window.Alpine) {
+                const data = Alpine.$data(component);
+                if (data) {
+                    data.imageUrl = url;
+                }
+            }
+            
+            input.dispatchEvent(new Event('input', { bubbles: true }));
+            input.dispatchEvent(new Event('change', { bubbles: true }));
+        }
+    };
+
+    if (picker && typeof picker.open === 'function') {
+        picker.open(updateImageField);
+    } else if (typeof window.openMediaModal === 'function') {
+        window.openMediaModal(updateImageField);
+    } else {
+        alert('Media picker not available. Please ensure the media modal component is loaded.');
+    }
+}
+
 // Coloris — called directly (scripts are at end of body, DOM is ready)
 Coloris({
     theme: 'default',
     themeMode: 'light',
-    alpha: false,
-    format: 'hex',
+    alpha: true,
+    format: 'auto',
+    formatToggle: true,
     closeButton: true,
     closeLabel: 'Done',
     clearButton: false,
@@ -464,6 +669,36 @@ function customizerApp(initialSection) {
             } finally {
                 icon.textContent  = 'save';
                 label.textContent = 'Save Changes';
+            }
+        },
+
+        async runAction(action, event) {
+            if (action === 'optimizeImages') {
+                if (!confirm('Caution: This will replace all existing original images with optimized versions. This process cannot be undone. Continue?')) return;
+            } else if (!confirm('Are you sure you want to run this action?')) {
+                return;
+            }
+
+            const btn = event.target;
+            const originalText = btn.innerText;
+            btn.disabled = true;
+            btn.innerText = 'Processing...';
+
+            try {
+                const res = await fetch(`{{ url('admin/appearance/customizer/action') }}/${action}`, {
+                    method: 'POST',
+                    headers: { 
+                        'X-Requested-With': 'XMLHttpRequest',
+                        'X-CSRF-TOKEN': '{{ csrf_token() }}'
+                    }
+                });
+                const data = await res.json();
+                this.showToast(data.message || 'Action completed.', data.success ? 'success' : 'error');
+            } catch (err) {
+                this.showToast('Error executing action.', 'error');
+            } finally {
+                btn.disabled = false;
+                btn.innerText = originalText;
             }
         },
 
@@ -566,117 +801,56 @@ const GOOGLE_FONTS = {
         { family: 'PT Serif', variants: ['400', '700'] },
         { family: 'Libre Baskerville', variants: ['400', '700'] },
         { family: 'Crimson Text', variants: ['400', '600', '700'] },
-        { family: 'Noto Serif', variants: ['400', '700'] },
         { family: 'Arvo', variants: ['400', '700'] },
+        { family: 'Bitter', variants: ['400', '700'] },
         { family: 'EB Garamond', variants: ['400', '500', '600', '700', '800'] },
+        { family: 'Noticia Text', variants: ['400', '700'] },
         { family: 'Old Standard TT', variants: ['400', '700'] },
-        { family: 'Bitter', variants: ['100', '200', '300', '400', '500', '600', '700', '800', '900'] },
-        { family: 'Cardo', variants: ['400', '700'] },
-        { family: 'Cormorant Garamond', variants: ['300', '400', '500', '600', '700'] },
-        { family: 'Domine', variants: ['400', '500', '600', '700'] },
-        { family: 'Spectral', variants: ['200', '300', '400', '500', '600', '700', '800'] },
-        { family: 'Zilla Slab', variants: ['300', '400', '500', '600', '700'] },
-        { family: 'Manrope', variants: ['200', '300', '400', '500', '600', '700', '800'] },
-        { family: 'Tinos', variants: ['400', '700'] },
-        { family: 'Neuton', variants: ['200', '300', '400', '700', '800'] },
-        { family: 'Faustina', variants: ['300', '400', '500', '600', '700', '800'] },
-        { family: 'Bree Serif', variants: ['400'] },
-        { family: 'PT Serif Caption', variants: ['400'] },
-        { family: 'Quattrocento', variants: ['400', '700'] },
-        { family: 'Vollkorn', variants: ['400', '500', '600', '700', '800', '900'] },
-        { family: 'Rasa', variants: ['300', '400', '500', '600', '700'] }
-    ],
-    'Display': [
-        { family: 'Abril Fatface', variants: ['400'] },
-        { family: 'Lobster', variants: ['400'] },
-        { family: 'Pacifico', variants: ['400'] },
-        { family: 'Righteous', variants: ['400'] },
-        { family: 'Bebas Neue', variants: ['400'] },
-        { family: 'Cinzel', variants: ['400', '500', '600', '700', '800', '900'] },
-        { family: 'Anton', variants: ['400'] },
-        { family: 'Comfortaa', variants: ['300', '400', '500', '600', '700'] },
-        { family: 'Dancing Script', variants: ['400', '500', '600', '700'] },
-        { family: 'Satisfy', variants: ['400'] },
-        { family: 'Patua One', variants: ['400'] },
-        { family: 'Luckiest Guy', variants: ['400'] },
-        { family: 'Permanent Marker', variants: ['400'] },
-        { family: 'Fredoka One', variants: ['400'] },
-        { family: 'Alpha Slab One', variants: ['400'] },
-        { family: 'Bangers', variants: ['400'] },
-        { family: 'Cookie', variants: ['400'] },
-        { family: 'Great Vibes', variants: ['400'] },
-        { family: 'Kaushan Script', variants: ['400'] },
-        { family: 'Shadows Into Light', variants: ['400'] },
-        { family: 'Courgette', variants: ['400'] },
-        { family: 'Gloria Hallelujah', variants: ['400'] },
-        { family: 'Homemade Apple', variants: ['400'] },
-        { family: 'Yellowtail', variants: ['400'] },
-        { family: 'Special Elite', variants: ['400'] },
-        { family: 'UnifrakturMaguntia', variants: ['400'] },
-        { family: 'Press Start 2P', variants: ['400'] },
-        { family: 'Monoton', variants: ['400'] },
-        { family: 'Staatliches', variants: ['400'] },
-        { family: 'Orbitron', variants: ['400', '500', '600', '700', '800', '900'] },
-        { family: 'Aladin', variants: ['400'] },
-        { family: 'Rye', variants: ['400'] },
-        { family: 'Piedra', variants: ['400'] },
-        { family: 'Eater', variants: ['400'] },
-        { family: 'Metal Mania', variants: ['400'] },
-        { family: 'Black Ops One', variants: ['400'] },
-        { family: 'Faster One', variants: ['400'] }
+        { family: 'Cardo', variants: ['400'] }
     ],
     'Monospace': [
         { family: 'Fira Code', variants: ['300', '400', '500', '600', '700'] },
         { family: 'Source Code Pro', variants: ['200', '300', '400', '500', '600', '700', '800', '900'] },
         { family: 'Roboto Mono', variants: ['100', '200', '300', '400', '500', '600', '700'] },
-        { family: 'JetBrains Mono', variants: ['100', '200', '300', '400', '500', '600', '700', '800'] },
         { family: 'Inconsolata', variants: ['200', '300', '400', '500', '600', '700', '800', '900'] },
-        { family: 'Space Mono', variants: ['400', '700'] },
         { family: 'Ubuntu Mono', variants: ['400', '700'] },
-        { family: 'Courier Prime', variants: ['400', '700'] },
-        { family: 'IBM Plex Mono', variants: ['100', '200', '300', '400', '500', '600', '700'] },
-        { family: 'Share Tech Mono', variants: ['400'] },
-        { family: 'Anonymous Pro', variants: ['400', '700'] },
-        { family: 'Nova Mono', variants: ['400'] },
-        { family: 'Cutive Mono', variants: ['400'] },
-        { family: 'Overpass Mono', variants: ['300', '400', '600', '700'] },
+        { family: 'Space Mono', variants: ['400', '700'] },
         { family: 'VT323', variants: ['400'] }
+    ],
+    'Display': [
+        { family: 'Lobster', variants: ['400'] },
+        { family: 'Pacifico', variants: ['400'] },
+        { family: 'Dancing Script', variants: ['400', '500', '600', '700'] },
+        { family: 'Abril Fatface', variants: ['400'] },
+        { family: 'Righteous', variants: ['400'] },
+        { family: 'Comfortaa', variants: ['300', '400', '500', '600', '700'] },
+        { family: 'Bebas Neue', variants: ['400'] },
+        { family: 'Caveat', variants: ['400', '500', '600', '700'] },
+        { family: 'Satisfy', variants: ['400'] },
+        { family: 'Patua One', variants: ['400'] }
     ]
 };
 
 function typographyComponent(key, initialData) {
     return {
+        key: key,
         open: false,
         fontSearch: '',
-        fontData: initialData,
+        fontData: initialData || {
+            family: 'Inter',
+            variant: '400',
+            size: '15px',
+            line_height: '1.6',
+            letter_spacing: '0px',
+            text_transform: 'none',
+            text_decoration: 'none',
+            font_style: 'normal'
+        },
         
         init() {
-            // Load the font on init for preview
-            this.loadGoogleFont(this.fontData.family);
-        },
-
-        toggleStyle(op) {
-            if (op === 'italic') {
-                this.fontData.font_style = (this.fontData.font_style === 'italic' ? 'normal' : 'italic');
-                if (this.fontData.font_style === 'italic') this.fontData.text_decoration = 'none';
-            } else if (op === 'none') {
-                this.fontData.font_style = 'normal';
-                this.fontData.text_decoration = 'none';
-            } else {
-                this.fontData.text_decoration = (this.fontData.text_decoration === op ? 'none' : op);
-                if (this.fontData.text_decoration !== 'none') this.fontData.font_style = 'normal';
+            if (this.fontData.family) {
+                this.loadFont(this.fontData.family);
             }
-        },
-
-        get filteredFonts() {
-            if (!this.fontSearch) return GOOGLE_FONTS;
-            const s = this.fontSearch.toLowerCase();
-            const filtered = {};
-            for (const [cat, fonts] of Object.entries(GOOGLE_FONTS)) {
-                const matched = fonts.filter(f => f.family.toLowerCase().includes(s));
-                if (matched.length) filtered[cat] = matched;
-            }
-            return filtered;
         },
 
         get currentVariants() {
@@ -687,18 +861,38 @@ function typographyComponent(key, initialData) {
             return ['400'];
         },
 
+        get filteredFonts() {
+            if (!this.fontSearch) return GOOGLE_FONTS;
+            const q = this.fontSearch.toLowerCase();
+            const filtered = {};
+            for (const cat in GOOGLE_FONTS) {
+                const matches = GOOGLE_FONTS[cat].filter(f => f.family.toLowerCase().includes(q));
+                if (matches.length) filtered[cat] = matches;
+            }
+            return filtered;
+        },
+
         selectFont(font) {
             this.fontData.family = font.family;
-            // Reset variant if previous one doesn't exist in new font
             if (!font.variants.includes(this.fontData.variant)) {
                 this.fontData.variant = font.variants.includes('400') ? '400' : font.variants[0];
             }
-            this.loadGoogleFont(font.family);
+            this.loadFont(font.family);
             this.open = false;
         },
 
+        loadFont(family) {
+            const linkId = 'font-' + family.replace(/\s+/g, '-').toLowerCase();
+            if (document.getElementById(linkId)) return;
+            const link = document.createElement('link');
+            link.id = linkId;
+            link.rel = 'stylesheet';
+            link.href = `https://fonts.googleapis.com/css2?family=${family.replace(/\s+/g, '+')}:wght@100;200;300;400;500;600;700;800;900&display=swap`;
+            document.head.appendChild(link);
+        },
+
         formatVariant(v) {
-            const weights = {
+            const labels = {
                 '100': 'Thin (100)',
                 '200': 'Extra Light (200)',
                 '300': 'Light (300)',
@@ -709,28 +903,28 @@ function typographyComponent(key, initialData) {
                 '800': 'Extra Bold (800)',
                 '900': 'Black (900)'
             };
-            return weights[v] || v;
+            return labels[v] || v;
         },
 
-        loadGoogleFont(family) {
-            if (!family || family === 'System Default') return;
-            const linkId = 'gfont-' + family.replace(/\s+/g, '-').toLowerCase();
-            if (document.getElementById(linkId)) return;
-            const link = document.createElement('link');
-            link.id = linkId;
-            link.rel = 'stylesheet';
-            link.href = `https://fonts.googleapis.com/css2?family=${family.replace(/\s+/g, '+')}:wght@100;200;300;400;500;600;700;800;900&display=swap`;
-            document.head.appendChild(link);
+        getTransformIcon(opt) {
+            const icons = { 'none': 'do_not_disturb_on', 'capitalize': 'match_case', 'uppercase': 'uppercase', 'lowercase': 'lowercase' };
+            return icons[opt] || 'text_fields';
         },
 
-        getTransformIcon(op) {
-            const icons = { 'none': 'block', 'capitalize': 'match_case', 'uppercase': 'uppercase', 'lowercase': 'lowercase' };
-            return icons[op] || 'block';
-        },
-
-        getDecorIcon(op) {
+        getDecorIcon(opt) {
             const icons = { 'none': 'format_clear', 'underline': 'format_underlined', 'line-through': 'format_strikethrough' };
-            return icons[op] || 'format_clear';
+            return icons[opt] || 'text_fields';
+        },
+
+        toggleStyle(type) {
+            if (type === 'italic') {
+                this.fontData.font_style = this.fontData.font_style === 'italic' ? 'normal' : 'italic';
+            } else if (type === 'none') {
+                this.fontData.text_decoration = 'none';
+                this.fontData.font_style = 'normal';
+            } else {
+                this.fontData.text_decoration = this.fontData.text_decoration === type ? 'none' : type;
+            }
         },
 
         getPreviewStyle() {
@@ -747,6 +941,39 @@ function typographyComponent(key, initialData) {
             };
         }
     };
+}
+
+async function runCustomizerAction(action, btn) {
+    if (action === 'optimizeImages' && !confirm('Are you sure? This will replace existing original images and cannot be undone.')) {
+        return;
+    }
+
+    const originalText = btn.innerHTML;
+    btn.disabled = true;
+    btn.innerHTML = '<span class="animate-spin inline-block mr-2">↻</span> Processing...';
+
+    try {
+        const response = await fetch(`{{ url('admin/appearance/customizer/action') }}/${action}`, {
+            method: 'POST',
+            headers: {
+                'X-CSRF-TOKEN': '{{ csrf_token() }}',
+                'Accept': 'application/json',
+                'Content-Type': 'application/json'
+            }
+        });
+        const data = await response.json();
+        
+        if (data.success) {
+            alert(data.message || 'Action completed successfully.');
+        } else {
+            alert(data.message || 'Something went wrong.');
+        }
+    } catch (err) {
+        alert('Error: ' + err.message);
+    } finally {
+        btn.disabled = false;
+        btn.innerHTML = originalText;
+    }
 }
 </script>
 

@@ -266,42 +266,6 @@ class DashboardController extends Controller
         return view('cms-dashboard::admin.settings.api', compact('settings'));
     }
 
-    public function themeOptions()
-    {
-        if (!auth()->user()->hasPermission('manage_settings')) {
-            abort(403);
-        }
-
-        $activeTheme = DB::table('cms_settings')->where('key', 'active_theme')->value('value') ?? 'lazy-theme';
-        $settings    = DB::table('cms_settings')->pluck('value', 'key')->toArray();
-        $themeFields = config('lazy-options.hooks.theme-options.fields', []);
-
-        return view('cms-dashboard::admin.settings.theme-options', compact('settings', 'activeTheme', 'themeFields'));
-    }
-
-    public function updateThemeOptions(\Illuminate\Http\Request $request)
-    {
-        if (!auth()->user()->hasPermission('manage_settings')) {
-            abort(403);
-        }
-
-        $themeFields = config('lazy-options.hooks.theme-options.fields', []);
-        $data = $request->except(['_token', '_method']);
-
-        // Handle checkboxes that are not present in the request
-        foreach ($themeFields as $name => $field) {
-            if (isset($field['type']) && $field['type'] === 'checkbox') {
-                $data[$name] = $request->has($name) ? '1' : '0';
-            }
-        }
-
-        foreach ($data as $key => $value) {
-            DB::table('cms_settings')->updateOrInsert(['key' => $key], ['value' => $value]);
-        }
-
-        return redirect()->route('admin.settings.theme-options')->with('success', 'Theme options saved.');
-    }
-
     public function analytics()
     {
         if (!auth()->user()->hasPermission('manage_settings')) {

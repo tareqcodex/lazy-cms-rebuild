@@ -131,7 +131,7 @@
                     $isMultiLang = get_cms_option('multi_language_enabled', 0);
                     $activeLanguages = \Acme\CmsDashboard\Models\Language::where('status', true)->get(); 
                 @endphp
-                @if($activeLanguages->count() > 0)
+                @if($activeLanguages->count() > 1)
                 <div class="wp-metabox mb-0">
                     <div class="wp-metabox-header"><span>Language</span></div>
                     <div class="wp-metabox-content p-3">
@@ -147,7 +147,6 @@
                             <p class="text-[11px] text-gray-500 mt-1">Language of current content.</p>
                         </div>
 
-                        @if($activeLanguages->count() > 1)
                         <hr class="my-3 border-gray-100">
                         <label class="flex items-center text-[13px] font-bold text-[#1d2327] mb-3 cursor-pointer">
                             <input type="checkbox" name="make_multilingual_copy" value="1" class="mr-2 rounded-sm border-[#8c8f94] text-[#2271b1]" onchange="document.getElementById('multi-lang-list').classList.toggle('hidden', !this.checked)">
@@ -162,9 +161,10 @@
                                 </label>
                             @endforeach
                         </div>
-                        @endif
                     </div>
                 </div>
+                @else
+                    <input type="hidden" name="lang_code" value="{{ get_cms_option('default_language', 'en') }}">
                 @endif
 
                 <!-- Publish Metabox -->
@@ -175,7 +175,6 @@
                     <div class="wp-metabox-content" style="padding: 10px;">
                         <div class="flex justify-between items-center mb-3">
                             <button type="button" id="save-draft-btn" formnovalidate class="wp-btn-secondary text-[13px] bg-[#f6f7f7]">Save Draft</button>
-                            <button type="button" class="wp-btn-secondary text-[13px] bg-[#f6f7f7]">Preview</button>
                         </div>
                         <div class="text-[13px] text-[#646970] space-y-3 mb-4">
                             <!-- Status -->
@@ -188,6 +187,7 @@
                                             <select id="status-select-ui" class="wp-input text-[13px] py-0 h-[26px] flex-grow">
                                                 <option value="draft">Draft</option>
                                                 <option value="published" selected>Published</option>
+                                                <option value="scheduled">Scheduled</option>
                                             </select>
                                             <button type="button" id="ok-status-btn" class="wp-btn-secondary text-[12px] h-[26px]">OK</button> 
                                         </div>
@@ -384,10 +384,16 @@
                     document.getElementById('main-publish-btn').innerText = 'Schedule';
                     statusHidden.value = 'scheduled';
                     document.getElementById('status-display-text').innerText = 'Scheduled';
+                    const statusSelectUI = document.getElementById('status-select-ui');
+                    if (statusSelectUI) statusSelectUI.value = 'scheduled';
                 } else {
                     document.getElementById('main-publish-btn').innerText = 'Publish';
-                    statusHidden.value = 'published';
-                    document.getElementById('status-display-text').innerText = 'Published';
+                    if (statusHidden.value === 'scheduled') {
+                        statusHidden.value = 'published';
+                        document.getElementById('status-display-text').innerText = 'Published';
+                        const statusSelectUI = document.getElementById('status-select-ui');
+                        if (statusSelectUI) statusSelectUI.value = 'published';
+                    }
                 }
                 document.getElementById('published-at-hidden').value = `${yy}-${mm}-${dd} ${hr}:${min}:00`;
                 document.getElementById('publish-edit').classList.add('hidden');

@@ -38,6 +38,21 @@
             
             <form action="{{ route('admin.acpt.terms.store', $taxonomy->slug) }}" method="POST">
                 @csrf
+                @php $activeLanguages = \Acme\CmsDashboard\Models\Language::where('status', true)->get(); @endphp
+                @if($activeLanguages->count() > 1)
+                    <div class="mb-4">
+                        <label class="block text-[14px] text-[#2c3338] mb-1 font-semibold">Language</label>
+                        <select name="lang_code" class="wp-input w-full h-8 py-0">
+                            @foreach($activeLanguages as $lang)
+                                <option value="{{ $lang->code }}" {{ $lang->code == app()->getLocale() ? 'selected' : '' }}>
+                                    {{ $lang->flag }} {{ $lang->name }}
+                                </option>
+                            @endforeach
+                        </select>
+                    </div>
+                @else
+                    <input type="hidden" name="lang_code" value="{{ app()->getLocale() }}">
+                @endif
                 <input type="hidden" name="cpt_slug" value="{{ request('cpt') ?: ($taxonomy->post_types[0] ?? '') }}">
                 <div class="mb-4">
                     <label class="block text-[14px] text-[#2c3338] mb-1 font-semibold">Name</label>

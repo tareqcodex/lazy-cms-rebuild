@@ -15,6 +15,7 @@
     
     <!-- Icons -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link rel="stylesheet" href="{{ asset('vendor/cms-dashboard/css/material-symbols.css') }}" />
 
     <!-- Tailwind (Corrected Paths) -->
     <script src="{{ asset('vendor/cms-dashboard/js/tailwind.min.js') }}"></script>

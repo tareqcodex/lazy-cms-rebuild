@@ -229,6 +229,24 @@ class CustomizerController extends \Illuminate\Routing\Controller
                     ],
                 ],
             ],
+            'logo' => [
+                'title' => 'Logo & Favicon',
+                'icon'  => 'image',
+                'fields' => [
+                    'theme_site_logo' => [
+                        'type'    => 'image',
+                        'label'   => 'Site Logo',
+                        'desc'    => 'Upload your site logo. Recommended format: PNG or SVG.',
+                        'default' => '',
+                    ],
+                    'theme_site_favicon' => [
+                        'type'    => 'image',
+                        'label'   => 'Favicon',
+                        'desc'    => 'Upload a square icon for the browser tab. Recommended size: 32x32px or 64x64px.',
+                        'default' => '',
+                    ],
+                ],
+            ],
             'menu' => [
                 'title' => 'Menu',
                 'icon'  => 'menu',
@@ -345,11 +363,10 @@ class CustomizerController extends \Illuminate\Routing\Controller
                 'icon'  => 'wallpaper',
                 'fields' => [
                     'theme_body_bg_image' => [
-                        'type'        => 'url',
+                        'type'        => 'image',
                         'label'       => 'Body Background Image',
-                        'desc'        => 'URL of the body background image. Leave empty for no background image.',
+                        'desc'        => 'Select an image for the body background. Leave empty for no background image.',
                         'default'     => '',
-                        'placeholder' => 'https://...',
                     ],
                     'theme_body_bg_position' => [
                         'type'    => 'select',
@@ -382,6 +399,65 @@ class CustomizerController extends \Illuminate\Routing\Controller
                     ],
                 ],
             ],
+            'performance' => [
+                'title' => 'Performance',
+                'icon'  => 'speed',
+                'fields' => [
+                    'performance_allowed_formats' => [
+                        'type'    => 'multi_select',
+                        'label'   => 'Allowed Upload Formats',
+                        'desc'    => 'Select which file types are allowed to be uploaded. This applies globally across the site.',
+                        'default' => ['jpg', 'jpeg', 'png', 'gif', 'webp', 'pdf', 'zip'],
+                        'options' => [
+                            'jpg'  => 'JPG',
+                            'jpeg' => 'JPEG',
+                            'png'  => 'PNG',
+                            'gif'  => 'GIF',
+                            'webp' => 'WebP',
+                            'svg'  => 'SVG',
+                            'pdf'  => 'PDF',
+                            'zip'  => 'ZIP',
+                            'mp4'  => 'MP4',
+                            'mp3'  => 'MP3',
+                            'csv'  => 'CSV',
+                            'docx' => 'DOCX',
+                        ],
+                    ],
+                    'performance_static_caching' => [
+                        'type'    => 'toggle',
+                        'label'   => 'Static Caching',
+                        'desc'    => 'Enable response caching for frontend. Drastically improves speed by caching HTML output.',
+                        'default' => '0',
+                    ],
+                    'performance_webp_conversion' => [
+                        'type'    => 'toggle',
+                        'label'   => 'WebP Conversion',
+                        'desc'    => 'Auto convert uploaded images to WebP. Recommended for better performance and smaller file sizes.',
+                        'default' => '1',
+                    ],
+                    'performance_image_quality' => [
+                        'type'        => 'text',
+                        'label'       => 'Image Quality',
+                        'desc'        => '(0-100) Lower quality means smaller file sizes. 80 is recommended.',
+                        'default'     => '80',
+                        'placeholder' => '80',
+                    ],
+                    'performance_max_image_width' => [
+                        'type'        => 'text',
+                        'label'       => 'Max Image Width',
+                        'desc'        => 'Pixels. Images wider than this will be automatically resized. 1920 is default.',
+                        'default'     => '1920',
+                        'placeholder' => '1920',
+                    ],
+                    'performance_bulk_optimize' => [
+                        'type'  => 'action_button',
+                        'label' => 'Bulk Actions',
+                        'text'  => 'Optimize Existing Images Now',
+                        'desc'  => '<span class="text-red-600 font-semibold">Caution:</span> This will replace all existing original images with optimized versions. This process cannot be undone.',
+                        'action'=> 'optimizeImages',
+                    ],
+                ],
+            ],
             'social' => [
                 'title' => 'Social Media',
                 'icon'  => 'share',
@@ -407,6 +483,26 @@ class CustomizerController extends \Illuminate\Routing\Controller
                         'desc'        => 'Add your custom CSS here. It will be injected into the &lt;head&gt; on the frontend. Do not include &lt;style&gt; tags.',
                         'default'     => '',
                         'placeholder' => "/* Add your custom CSS here */\n.my-class {\n    color: red;\n}",
+                    ],
+                ],
+            ],
+            'custom_scripts' => [
+                'title' => 'Custom Scripts',
+                'icon'  => 'javascript',
+                'fields' => [
+                    'theme_head_script' => [
+                        'type'        => 'script',
+                        'label'       => 'Head Script',
+                        'desc'        => 'Add scripts to be injected into the &lt;head&gt; tag. Useful for Google Analytics, Meta Pixel, etc. Do not include &lt;script&gt; tags.',
+                        'default'     => '',
+                        'placeholder' => "// Google Analytics or other head scripts\nconsole.log('Head script loaded');",
+                    ],
+                    'theme_footer_script' => [
+                        'type'        => 'script',
+                        'label'       => 'Footer Script',
+                        'desc'        => 'Add scripts to be injected before the closing &lt;/body&gt; tag. Do not include &lt;script&gt; tags.',
+                        'default'     => '',
+                        'placeholder' => "// Footer scripts or tracking codes\nconsole.log('Footer script loaded');",
                     ],
                 ],
             ],
@@ -532,29 +628,138 @@ class CustomizerController extends \Illuminate\Routing\Controller
             abort(403);
         }
 
-        $request->validate(['import_file' => 'required|file|mimes:json,txt|max:512']);
+        if (!$request->hasFile('import_file')) {
+            return redirect()->back()->with('error', 'No file uploaded.');
+        }
 
-        $validKeys = [];
-        foreach ($this->sections() as $sec) {
-            foreach ($sec['fields'] as $k => $f) {
-                $validKeys[] = $k;
+        try {
+            $json = file_get_contents($request->file('import_file')->getRealPath());
+            $data = json_decode($json, true);
+
+            if (!$data || !is_array($data)) {
+                return redirect()->back()->with('error', 'Invalid JSON file.');
             }
-        }
 
-        $data = json_decode(file_get_contents($request->file('import_file')->getPathname()), true);
-
-        if (!is_array($data)) {
-            return redirect()->route('admin.customizer.index', ['section' => 'import_export'])
-                ->with('error', 'Invalid JSON file.');
-        }
-
-        foreach ($data as $key => $value) {
-            if (in_array($key, $validKeys, true)) {
-                DB::table('cms_settings')->updateOrInsert(['key' => $key], ['value' => $value]);
+            foreach ($data as $key => $val) {
+                DB::table('cms_settings')->updateOrInsert(['key' => $key], ['value' => $val]);
             }
+
+            return redirect()->back()->with('success', 'Settings imported successfully.');
+        } catch (\Exception $e) {
+            return redirect()->back()->with('error', 'Import failed: ' . $e->getMessage());
+        }
+    }
+
+    public function runAction($action)
+    {
+        if (!auth()->user()->hasPermission('manage_settings')) {
+            return response()->json(['success' => false, 'message' => 'Forbidden'], 403);
         }
 
-        return redirect()->route('admin.customizer.index', ['section' => 'import_export'])
-            ->with('success', 'Settings imported successfully.');
+        try {
+            if ($action === 'optimizeImages') {
+                return $this->optimizeImages();
+            }
+
+            return response()->json([
+                'success' => false,
+                'message' => "Action '{$action}' not found."
+            ], 404);
+        } catch (\Exception $e) {
+            return response()->json([
+                'success' => false,
+                'message' => $e->getMessage()
+            ], 500);
+        }
+    }
+
+    protected function optimizeImages()
+    {
+        if (!function_exists('imagecreatefromstring')) {
+            throw new \Exception("GD extension with imagecreatefromstring is required.");
+        }
+
+        $mediaItems = \Acme\CmsDashboard\Models\Media::where('mime_type', 'like', 'image/%')->get();
+        $count = 0;
+        $quality = (int)get_cms_option('performance_image_quality', 80);
+        $maxWidth = (int)get_cms_option('performance_max_image_width', 1920);
+        $autoWebp = get_cms_option('performance_webp_conversion', '1') == '1';
+
+        foreach ($mediaItems as $media) {
+            $filePath = storage_path('app/public/' . $media->path);
+            if (!file_exists($filePath)) continue;
+
+            // Skip if already webp and we are targeting webp
+            if ($autoWebp && $media->mime_type === 'image/webp') continue;
+
+            $img = @imagecreatefromstring(file_get_contents($filePath));
+            if (!$img) continue;
+
+            $width = imagesx($img);
+            $height = imagesy($img);
+
+            // Resize if needed
+            if ($width > $maxWidth) {
+                $newWidth = $maxWidth;
+                $newHeight = (int)floor($height * ($maxWidth / $width));
+                $tmp = imagecreatetruecolor($newWidth, $newHeight);
+                imagealphablending($tmp, false);
+                imagesavealpha($tmp, true);
+                imagecopyresampled($tmp, $img, 0, 0, 0, 0, $newWidth, $newHeight, $width, $height);
+                imagedestroy($img);
+                $img = $tmp;
+                $width = $newWidth;
+                $height = $newHeight;
+            }
+
+            $filename = pathinfo($media->filename, PATHINFO_FILENAME);
+            $extension = $autoWebp ? 'webp' : pathinfo($media->path, PATHINFO_EXTENSION);
+            $newFilename = $filename . '-' . time() . '.' . $extension;
+            $newPath = 'media/' . $newFilename;
+
+            ob_start();
+            $success = false;
+            if ($autoWebp && function_exists('imagewebp')) {
+                imagepalettetotruecolor($img);
+                imagealphablending($img, true);
+                imagesavealpha($img, true);
+                $success = imagewebp($img, null, $quality);
+            } else {
+                $ext = strtolower($extension);
+                if (($ext === 'jpg' || $ext === 'jpeg') && function_exists('imagejpeg')) {
+                    $success = imagejpeg($img, null, $quality);
+                } elseif ($ext === 'png' && function_exists('imagepng')) {
+                    $success = imagepng($img, null, (int)round(9 * (100 - $quality) / 100));
+                }
+            }
+
+            $imageData = ob_get_clean();
+            if ($success && $imageData) {
+                // Delete old file
+                \Illuminate\Support\Facades\Storage::disk('public')->delete($media->path);
+                
+                // Save new file
+                \Illuminate\Support\Facades\Storage::disk('public')->put($newPath, $imageData);
+
+                // Update Database
+                $media->update([
+                    'filename' => $newFilename,
+                    'path' => $newPath,
+                    'mime_type' => $autoWebp ? 'image/webp' : $media->mime_type,
+                    'width' => $width,
+                    'height' => $height,
+                    'compressed_size' => strlen($imageData)
+                ]);
+                $count++;
+            }
+            imagedestroy($img);
+        }
+
+        lazy_log_activity('settings_updated', "Bulk optimized {$count} media items via Customizer");
+
+        return response()->json([
+            'success' => true,
+            'message' => "Successfully optimized {$count} images."
+        ]);
     }
 }

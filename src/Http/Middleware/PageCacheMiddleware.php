@@ -19,7 +19,7 @@ class PageCacheMiddleware
         $key = 'page_cache_' . md5($request->fullUrl());
 
         // Check if cache exists
-        if (Cache::has($key) && get_cms_option('enable_page_cache', '0') === '1') {
+        if (Cache::has($key) && get_cms_option('performance_static_caching', '0') === '1') {
             $cacheData = Cache::get($key);
             return response($cacheData['content'])
                 ->header('Content-Type', $cacheData['type'])
@@ -29,7 +29,7 @@ class PageCacheMiddleware
         $response = $next($request);
 
         // Only cache successful responses
-        if ($response->isSuccessful() && get_cms_option('enable_page_cache', '0') === '1') {
+        if ($response->isSuccessful() && get_cms_option('performance_static_caching', '0') === '1') {
             Cache::put($key, [
                 'content' => $response->getContent(),
                 'type' => $response->headers->get('Content-Type')

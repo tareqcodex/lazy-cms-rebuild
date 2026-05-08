@@ -11,7 +11,4 @@
     <a href="{{ route('admin.settings.api') }}" class="px-4 py-2 text-[14px] {{ request()->routeIs('admin.settings.api') ? 'border-b-2 border-[#2271b1] text-[#1d2327] font-semibold bg-white -mb-[1px] border-l border-t border-r border-[#c3c4c7]' : 'text-[#2271b1] hover:text-[#135e96]' }}">
         REST API
     </a>
-    <a href="{{ route('admin.settings.theme-options') }}" class="px-4 py-2 text-[14px] {{ request()->routeIs('admin.settings.theme-options') ? 'border-b-2 border-[#2271b1] text-[#1d2327] font-semibold bg-white -mb-[1px] border-l border-t border-r border-[#c3c4c7]' : 'text-[#2271b1] hover:text-[#135e96]' }}">
-        Theme Options
-    </a>
 </div>

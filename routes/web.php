@@ -165,8 +165,6 @@ Route::prefix('admin')->name('admin.')->middleware(['web', \Acme\CmsDashboard\Ht
     Route::post('settings/seo', [DashboardController::class, 'updateSeoSettings'])->name('settings.seo.update');
     Route::get('settings/activity-logs', [DashboardController::class, 'activityLogs'])->name('settings.activity-logs');
     Route::get('settings/api', [DashboardController::class, 'apiSettings'])->name('settings.api');
-    Route::get('settings/theme-options', [DashboardController::class, 'themeOptions'])->name('settings.theme-options');
-    Route::post('settings/theme-options', [DashboardController::class, 'updateThemeOptions'])->name('settings.theme-options.update');
     
     // Backups
     Route::get('tools/backup', [\Acme\CmsDashboard\Http\Controllers\Admin\BackupController::class, 'index'])->name('backup.index');
@@ -209,6 +207,7 @@ Route::prefix('admin')->name('admin.')->middleware(['web', \Acme\CmsDashboard\Ht
     Route::post('/appearance/customizer/reset', [\Acme\CmsDashboard\Http\Controllers\Admin\CustomizerController::class, 'resetSection'])->name('customizer.reset');
     Route::get('/appearance/customizer/export', [\Acme\CmsDashboard\Http\Controllers\Admin\CustomizerController::class, 'export'])->name('customizer.export');
     Route::post('/appearance/customizer/import', [\Acme\CmsDashboard\Http\Controllers\Admin\CustomizerController::class, 'import'])->name('customizer.import');
+    Route::post('/appearance/customizer/action/{action}', [\Acme\CmsDashboard\Http\Controllers\Admin\CustomizerController::class, 'runAction'])->name('customizer.action');
 
     // Themes
     Route::get('/themes', [ThemeController::class, 'index'])->name('themes.index');

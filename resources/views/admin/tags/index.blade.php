@@ -22,7 +22,21 @@
             <h2 class="text-[14px] font-semibold text-[#1d2327] mb-3">Add New Tag</h2>
             <form action="{{ route('admin.tags.store') }}" method="POST">
                 @csrf
-                <input type="hidden" name="lang_code" value="{{ app()->getLocale() }}">
+                @php $activeLanguages = \Acme\CmsDashboard\Models\Language::where('status', true)->get(); @endphp
+                @if($activeLanguages->count() > 1)
+                    <div class="mb-4">
+                        <label class="block text-[13px] text-[#1d2327] mb-1">Language</label>
+                        <select name="lang_code" class="wp-input w-full h-8 py-0">
+                            @foreach($activeLanguages as $lang)
+                                <option value="{{ $lang->code }}" {{ $lang->code == app()->getLocale() ? 'selected' : '' }}>
+                                    {{ $lang->flag }} {{ $lang->name }}
+                                </option>
+                            @endforeach
+                        </select>
+                    </div>
+                @else
+                    <input type="hidden" name="lang_code" value="{{ app()->getLocale() }}">
+                @endif
                 <div class="mb-4">
                     <label class="block text-[13px] text-[#1d2327] mb-1">Name</label>
                     <input type="text" name="name" class="wp-input w-full" required>

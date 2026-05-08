@@ -1,12 +1,12 @@
 <div id="wp-media-modal" class="hidden fixed inset-0 z-[99999] overflow-hidden">
     <!-- Backdrop -->
-    <div class="absolute inset-0 bg-black/60 backdrop-blur-sm"></div>
+    <div class="absolute inset-0 bg-black/60"></div>
     
     <!-- Modal Container -->
     <div class="absolute inset-4 sm:inset-10 bg-white shadow-2xl flex flex-col overflow-hidden border border-[#c3c4c7]">
         
         <!-- Header -->
-        <div class="h-[50px] border-bottom border-[#c3c4c7] flex justify-between items-center px-4 shrink-0 bg-white">
+        <div class="h-[50px] border-b border-[#c3c4c7] flex justify-between items-center px-4 shrink-0 bg-white">
             <h1 class="text-[22px] font-normal text-[#1d2327]">Add media</h1>
             <button type="button" id="close-media-modal" class="text-[#646970] hover:text-black p-2">
                 <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg>
@@ -31,12 +31,28 @@
                 <div class="flex-grow overflow-y-auto p-4 flex flex-col">
                     
                     <!-- Upload Files View -->
-                    <div id="media-upload-view" class="media-tab-content flex-grow flex flex-col items-center justify-center border-2 border-dashed border-[#c3c4c7] rounded-sm bg-[#f6f7f7]">
-                        <div class="text-center">
-                            <h2 class="text-[20px] mb-2 font-normal text-[#1d2327]">Drop files to upload</h2>
-                            <p class="text-[14px] text-[#646970] mb-4">or</p>
-                            <input type="file" id="media-upload-input" class="hidden" multiple accept="image/*">
-                            <button type="button" onclick="document.getElementById('media-upload-input').click()" class="wp-btn-secondary px-6">Select Files</button>
+                    <div id="media-upload-view" class="media-tab-content flex-grow flex flex-col items-center justify-center">
+                        <div class="border-2 border-dashed border-[#c3c4c7] w-full max-w-[95%] h-full flex flex-col items-center justify-center bg-white"
+                             onclick="document.getElementById('media-upload-input').click()">
+                            @php
+                                $allowedRaw = get_cms_option('performance_allowed_formats', '[]');
+                                $allowedFormats = is_array($allowedRaw) ? $allowedRaw : json_decode($allowedRaw, true);
+                                $accept = !empty($allowedFormats) ? '.' . implode(',.', $allowedFormats) : '';
+                            @endphp
+                            <input type="file" id="media-upload-input" class="hidden" {!! $accept ? 'accept="'.$accept.'"' : '' !!}>
+                            
+                            <h3 class="text-[20px] font-normal text-[#1d2327] mb-2">Drop files to upload</h3>
+                            <p class="text-[#646970] mb-4">or</p>
+                            <button type="button" class="border border-[#2271b1] text-[#2271b1] bg-white hover:bg-[#f6f7f7] px-5 py-2 rounded-md text-[14px] font-medium transition-colors mb-4">Select Files</button>
+                            
+                            <p class="text-[12px] text-[#646970] font-medium uppercase tracking-wide">
+                                @if(!empty($allowedFormats))
+                                    Allowed: {{ strtoupper(implode(', ', $allowedFormats)) }}
+                                @else
+                                    All formats allowed
+                                @endif
+                            </p>
+
                             <p class="mt-8 text-[12px] text-[#646970]">Maximum upload file size: 10 MB.</p>
                         </div>
                     </div>
@@ -79,18 +95,12 @@
                 <h3 class="uppercase text-[12px] font-bold text-[#646970] mb-4">Attachment Details</h3>
                 <div id="details-empty" class="text-[13px] text-[#646970] italic">Select an item to see details.</div>
                 <div id="details-view" class="hidden space-y-4">
-                    <div class="flex gap-3">
-                        <img id="detail-thumb" src="" class="w-16 h-16 object-cover bg-white border border-[#c3c4c7]">
+                    <div class="flex flex-col gap-3">
+                        <img id="detail-thumb" src="" class="w-full h-auto max-h-[150px] object-contain bg-white border border-[#c3c4c7]">
                         <div class="text-[12px] break-all">
                             <div id="detail-filename" class="font-bold text-black mt-1">image.jpg</div>
                             <div id="detail-date" class="text-[#646970] mb-1">April 17, 2026</div>
                             <div id="detail-dimensions" class="text-[#646970] mb-2 text-[11px]"></div>
-                            <div class="pt-2 border-t border-[#c3c4c7] mt-2 space-y-1">
-                                <div><strong>Main File size:</strong> <span id="detail-orig-size" class="text-[#646970]"></span></div>
-                                <div><strong>Compression Size:</strong> <span id="detail-comp-size" class="text-[#646970]"></span></div>
-                                <div><strong>Total Compression:</strong> <span id="detail-pct" class="text-green-600 font-bold"></span></div>
-                                <div><strong>Status:</strong> <span id="detail-status" class="px-1.5 py-0.5 rounded text-[10px] font-bold uppercase"></span></div>
-                            </div>
                             <button type="button" id="delete-media-permanently" class="text-[#b32d2e] hover:underline mt-2 text-[12px]">Delete permanently</button>
                         </div>
                     </div>
@@ -102,12 +112,21 @@
                         <div><label class="block text-[12px] text-[#646970] mb-1">Description</label><textarea id="meta-desc" class="wp-input w-full text-[13px] h-16 py-1"></textarea></div>
                         <div><label class="block text-[12px] text-[#646970] mb-1">File URL:</label><input type="text" id="meta-url" readonly class="wp-input w-full text-[12px] h-7 bg-white/50"></div>
                     </div>
+                    
+                    <div class="pt-2 border-t border-[#c3c4c7] mt-2 space-y-1 text-[11px]">
+                        <div><strong>Main File size:</strong> <span id="detail-orig-size" class="text-[#646970]"></span></div>
+                        <div><strong>Compression Size:</strong> <span id="detail-comp-size" class="text-[#646970]"></span></div>
+                        <div><strong>Total Compression:</strong> <span id="detail-pct" class="text-green-600 font-bold"></span></div>
+                        <div><strong>Status:</strong> <span id="detail-status" class="px-1.5 py-0.5 rounded text-[10px] font-bold uppercase"></span></div>
+                    </div>
+
                     <div class="flex items-center justify-between pt-2 border-t border-[#c3c4c7]">
                         <button type="button" id="save-media-meta-btn" class="wp-btn-primary text-[12px] h-7 px-4">Update</button>
                         <span id="save-status-msg" class="text-[12px] text-green-600 font-medium opacity-0 transition-opacity duration-300">Saved!</span>
                     </div>
                 </div>
             </div>
+
 
         </div>
     </div>
@@ -156,14 +175,31 @@
 
         // Upload Logic
         const fileInput = document.getElementById('media-upload-input');
+        let isUploading = false;
+
         fileInput.addEventListener('change', function() {
-            if (!this.files.length) return;
+            if (!this.files.length || isUploading) return;
+            
+            isUploading = true;
+            const file = this.files[0];
             const formData = new FormData();
-            formData.append('file', this.files[0]);
+            formData.append('file', file);
             formData.append('_token', '{{ csrf_token() }}');
 
-            // Show library and spinner
-            document.querySelector('[data-target="media-library-view"]').click();
+            // Switch to library view without re-triggering loadLibrary if we're already uploading
+            const libraryTab = document.querySelector('[data-target="media-library-view"]');
+            
+            // UI state updates
+            document.querySelectorAll('.media-modal-tab-btn').forEach(b => {
+                b.classList.remove('active', 'bg-white', 'text-black', 'font-semibold', 'border-l-[#2271b1]');
+                b.classList.add('border-l-transparent', 'text-[#2271b1]');
+            });
+            libraryTab.classList.add('active', 'bg-white', 'text-black', 'font-semibold', 'border-l-[#2271b1]');
+            libraryTab.classList.remove('border-l-transparent', 'text-[#2271b1]');
+            
+            document.querySelectorAll('.media-tab-content').forEach(c => c.classList.add('hidden'));
+            document.getElementById('media-library-view').classList.remove('hidden');
+            
             document.getElementById('media-loading-spinner').classList.remove('hidden');
 
             fetch("{{ route('admin.media.store') }}", {
@@ -180,11 +216,9 @@
                 
                 if (res.ok && data && data.success) {
                     loadLibrary();
-                    // Clear file input
-                    fileInput.value = '';
                 } else {
                     console.error('Upload Error:', data || await res.text());
-                    alert('Upload failed. Check console for details.');
+                    alert('Upload failed: ' + (data?.message || 'Check console for details.'));
                 }
             })
             .catch(err => {
@@ -193,6 +227,8 @@
             })
             .finally(() => {
                 document.getElementById('media-loading-spinner').classList.add('hidden');
+                isUploading = false;
+                fileInput.value = ''; // Always clear to allow re-selecting same file
             });
         });
 

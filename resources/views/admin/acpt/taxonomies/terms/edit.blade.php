@@ -19,9 +19,10 @@
             @method('PUT')
             
             <div class="space-y-4">
+                @php $activeLanguages = \Acme\CmsDashboard\Models\Language::where('status', true)->get(); @endphp
+                @if($activeLanguages->count() > 1)
                 <div>
                     <label class="block text-[14px] text-[#1d2327] mb-1">Language</label>
-                    @php $activeLanguages = \Acme\CmsDashboard\Models\Language::where('status', true)->get(); @endphp
                     <select name="lang_code" class="wp-input w-full md:w-1/2 h-8 py-0">
                         @foreach($activeLanguages as $lang)
                             <option value="{{ $lang->code }}" {{ $term->lang_code == $lang->code ? 'selected' : '' }}>
@@ -30,7 +31,7 @@
                         @endforeach
                     </select>
                     
-                    @if(!$term->origin_id && $activeLanguages->count() > 1)
+                    @if(!$term->origin_id)
                         <div class="mt-4 p-3 bg-gray-50 border border-gray-200 rounded-sm w-full md:w-1/2">
                             <label class="flex items-center text-[13px] font-bold text-[#1d2327] mb-2 cursor-pointer">
                                 <input type="checkbox" name="make_multilingual_copy" value="1" class="mr-2 rounded-sm border-[#8c8f94] text-[#2271b1]" onchange="document.getElementById('multi-lang-list').classList.toggle('hidden', !this.checked)">
@@ -59,6 +60,9 @@
                         </div>
                     @endif
                 </div>
+                @else
+                    <input type="hidden" name="lang_code" value="{{ $term->lang_code }}">
+                @endif
                 <div>
                     <label class="block text-[14px] text-[#1d2327] mb-1">Name</label>
                     <input type="text" name="name" value="{{ old('name', $term->name) }}" class="wp-input w-full md:w-1/2" required>

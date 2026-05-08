@@ -1,29 +1,30 @@
 <!-- Header Area -->
-<header class="main-header w-full sticky top-0 z-[100] bg-white border-b border-slate-100">
-    <div class="container-custom">
-        <div class="flex items-center justify-between h-20">
+<header class="main-header w-full sticky top-0 z-[100]">
+    <div class="container-custom h-full">
+        <div class="flex items-center justify-between h-full">
             <!-- Logo -->
             <div class="flex-shrink-0">
                 <a href="{{ url('/') }}" class="flex items-center gap-2">
-                    @if(get_cms_option('theme_logo'))
-                        <img src="{{ asset('storage/' . get_cms_option('theme_logo')) }}" alt="{{ get_cms_option('site_title', 'Lazy CMS') }}" class="h-10 w-auto">
+                    @if(get_cms_option('theme_site_logo'))
+                        <img src="{{ get_cms_option('theme_site_logo') }}" alt="{{ get_cms_option('site_title', 'Lazy CMS') }}" class="h-10 w-auto">
                     @else
                         <span class="text-2xl font-black tracking-tighter text-slate-900">
-                            Lazy Theme<span class="text-primary">.</span>
+                            {{ get_cms_option('site_title', 'Lazy Theme') }}<span class="text-primary">.</span>
                         </span>
                     @endif
                 </a>
             </div>
 
             <!-- Desktop Navigation -->
-            <nav class="hidden lg:flex items-center gap-8">
+            <nav class="hidden lg:flex items-center gap-8 h-full">
                 @php $menuItems = get_lazy_menu('header'); @endphp
                 @foreach($menuItems as $item)
                     @php 
                         $isActive = (url()->current() == $item->url) || (request()->is(ltrim(parse_url($item->url, PHP_URL_PATH), '/')));
+                        $itemHoverColor = get_cms_option('theme_menu_hover_color', '#0091ea');
                     @endphp
-                    <div class="relative group">
-                        <a href="{{ $item->url }}" class="text-[14px] font-semibold {{ $isActive ? 'text-primary' : 'text-slate-700' }} hover:text-primary transition-colors flex items-center gap-1 py-7">
+                    <div class="relative group h-full flex items-center">
+                        <a href="{{ $item->url }}" class="nav-style {{ $isActive ? 'text-primary' : '' }} hover:text-[{{ $itemHoverColor }}] transition-colors flex items-center gap-1">
                             {{ $item->title }}
                             @if($item->children->count() > 0)
                                 <i data-lucide="chevron-down" class="w-4 h-4 text-slate-400 group-hover:text-primary transition-colors {{ $isActive ? 'text-primary' : '' }}"></i>
@@ -31,11 +32,13 @@
                         </a>
                         
                         @if($item->children->count() > 0)
-                            <div class="absolute top-full left-0 w-56 bg-white border border-slate-100 shadow-xl opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-200 transform translate-y-2 group-hover:translate-y-0 z-50">
+                            <div class="absolute top-full left-0 w-56 shadow-xl opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-200 transform translate-y-2 group-hover:translate-y-0 z-50"
+                                 style="background-color: {{ get_cms_option('theme_dropdown_bg', '#ffffff') }}; border: 1px solid var(--border-color);">
                                 <ul class="py-2">
                                     @foreach($item->children as $child)
                                         <li class="relative group/sub">
-                                            <a href="{{ $child->url }}" class="flex items-center justify-between px-5 py-2.5 text-[13px] font-medium text-slate-600 hover:text-primary hover:bg-slate-50 transition-all">
+                                            <a href="{{ $child->url }}" class="flex items-center justify-between px-5 py-2.5 text-[13px] font-medium hover:bg-slate-50 transition-all"
+                                               style="color: {{ get_cms_option('theme_dropdown_text_color', '#1d2327') }};">
                                                 {{ $child->title }}
                                                 @if($child->children->count() > 0)
                                                     <i data-lucide="chevron-right" class="w-3.5 h-3.5 text-slate-400"></i>
@@ -43,11 +46,13 @@
                                             </a>
                                             
                                             @if($child->children->count() > 0)
-                                                <div class="absolute top-0 left-full w-56 bg-white border border-slate-100 shadow-xl opacity-0 invisible group-hover/sub:opacity-100 group-hover/sub:visible transition-all duration-200 transform translate-x-2 group-hover/sub:translate-x-0 z-50">
+                                                <div class="absolute top-0 left-full w-56 shadow-xl opacity-0 invisible group-hover/sub:opacity-100 group-hover/sub:visible transition-all duration-200 transform translate-x-2 group-hover/sub:translate-x-0 z-50"
+                                                     style="background-color: {{ get_cms_option('theme_dropdown_bg', '#ffffff') }}; border: 1px solid var(--border-color);">
                                                     <ul class="py-2">
                                                         @foreach($child->children as $grandChild)
                                                             <li>
-                                                                <a href="{{ $grandChild->url }}" class="block px-5 py-2.5 text-[13px] font-medium text-slate-600 hover:text-primary hover:bg-slate-50 transition-all">
+                                                                <a href="{{ $grandChild->url }}" class="block px-5 py-2.5 text-[13px] font-medium hover:bg-slate-50 transition-all"
+                                                                   style="color: {{ get_cms_option('theme_dropdown_text_color', '#1d2327') }};">
                                                                     {{ $grandChild->title }}
                                                                 </a>
                                                             </li>
@@ -69,11 +74,11 @@
                 <!-- Language Switcher -->
                 {!! lazy_lang_dropdown() !!}
 
-                <button class="text-slate-700 hover:text-primary transition-colors" onclick="document.getElementById('search-bar').classList.toggle('hidden')">
+                <button class="hover:text-primary transition-colors" style="color: inherit;" onclick="document.getElementById('search-bar').classList.toggle('hidden')">
                     <i data-lucide="search" class="w-5 h-5"></i>
                 </button>
                 
-                <button class="lg:hidden text-slate-700 hover:text-primary transition-colors" onclick="document.getElementById('mobile-menu').classList.remove('translate-x-full')">
+                <button class="lg:hidden hover:text-primary transition-colors" style="color: inherit;" onclick="document.getElementById('mobile-menu').classList.remove('translate-x-full')">
                     <i data-lucide="menu" class="w-6 h-6"></i>
                 </button>
             </div>

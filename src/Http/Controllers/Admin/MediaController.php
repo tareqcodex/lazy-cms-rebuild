@@ -43,7 +43,8 @@ class MediaController extends Controller
                   ->whereMonth('created_at', $month);
         }
 
-        $media = $query->latest()->paginate(10)->appends($request->all());
+        $perPage = ($request->ajax() || $request->expectsJson()) ? 100 : 10;
+        $media = $query->latest()->paginate($perPage)->appends($request->all());
 
         // Get unique months for filter dropdown
         $months = Media::selectRaw('DISTINCT DATE_FORMAT(created_at, "%Y%m") as month_val, DATE_FORMAT(created_at, "%M %Y") as month_label')
@@ -80,8 +81,19 @@ class MediaController extends Controller
 
             $file = $request->file('file');
             $originalName = pathinfo($file->getClientOriginalName(), PATHINFO_FILENAME);
-            $extension = $file->getClientOriginalExtension();
+            $extension = strtolower($file->getClientOriginalExtension());
             $mimeType = $file->getMimeType();
+
+            // Validate allowed formats
+            $allowedRaw = get_cms_option('performance_allowed_formats', '[]');
+            $allowedFormats = is_array($allowedRaw) ? $allowedRaw : json_decode($allowedRaw, true);
+            
+            if (!empty($allowedFormats) && !in_array($extension, $allowedFormats)) {
+                return response()->json([
+                    'success' => false,
+                    'message' => "File format '.{$extension}' is not allowed. Allowed: " . implode(', ', $allowedFormats)
+                ], 422);
+            }
             
             $filename = Str::slug($originalName) . '-' . time();
             $isImage = strpos($mimeType, 'image/') === 0;
@@ -98,9 +110,9 @@ class MediaController extends Controller
                     $height = $imgSize[1];
                 }
 
-                $quality = (int)get_cms_option('image_quality', 80);
-                $maxWidth = (int)get_cms_option('image_max_width', 1920);
-                $autoWebp = get_cms_option('image_auto_webp', '1') == '1';
+                $quality = (int)get_cms_option('performance_image_quality', 80);
+                $maxWidth = (int)get_cms_option('performance_max_image_width', 1920);
+                $autoWebp = get_cms_option('performance_webp_conversion', '1') == '1';
 
                 // Decide final extension and mime
                 if ($autoWebp && function_exists('imagewebp')) {
@@ -282,9 +294,9 @@ class MediaController extends Controller
         try {
             $mediaItems = Media::where('mime_type', 'like', 'image/%')->get();
             $count = 0;
-            $quality = (int)get_cms_option('image_quality', 80);
-            $maxWidth = (int)get_cms_option('image_max_width', 1920);
-            $autoWebp = get_cms_option('image_auto_webp', '1') == '1';
+            $quality = (int)get_cms_option('performance_image_quality', 80);
+            $maxWidth = (int)get_cms_option('performance_max_image_width', 1920);
+            $autoWebp = get_cms_option('performance_webp_conversion', '1') == '1';
 
             if (!function_exists('imagecreatefromstring')) {
                 throw new \Exception("GD extension with imagecreatefromstring is required.");
