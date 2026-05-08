@@ -3,13 +3,55 @@
     $heightMode = $s['height'] ?? 'auto';
     
     $containerStyles = [];
-    if (!empty($s['bgColor'])) $containerStyles[] = "background-color: {$s['bgColor']}";
+
+    $hexToRgba = function($hex, $opacity) {
+        if (empty($hex) || $hex === 'transparent') return 'transparent';
+        if (strpos($hex, 'rgba') !== false) return $hex;
+        $hex = str_replace('#', '', $hex);
+        if (strlen($hex) === 3) {
+            $r = hexdec(substr($hex, 0, 1) . substr($hex, 0, 1));
+            $g = hexdec(substr($hex, 1, 1) . substr($hex, 1, 1));
+            $b = hexdec(substr($hex, 2, 1) . substr($hex, 2, 1));
+        } else {
+            $r = hexdec(substr($hex, 0, 2));
+            $g = hexdec(substr($hex, 2, 2));
+            $b = hexdec(substr($hex, 4, 2));
+        }
+        return "rgba($r, $g, $b, $opacity)";
+    };
+
+    // Solid color (shows through transparent gradient stops or behind images)
+    if (!empty($s['bgColor'])) {
+        $containerStyles[] = "background-color: " . $hexToRgba($s['bgColor'], $s['bgColorOpacity'] ?? 1);
+    }
+
+    // Gradient and/or image as layered background-image (gradient on top, image below)
+    $bgImages = [];
+    if (!empty($s['bgGradientStartColor']) && !empty($s['bgGradientEndColor'])) {
+        $gType    = $s['bgGradientType'] ?? 'linear';
+        $angle    = $s['bgGradientAngle'] ?? 180;
+        $startPos = $s['bgGradientStartPosition'] ?? 0;
+        $endPos   = $s['bgGradientEndPosition']   ?? 100;
+        $start    = $hexToRgba($s['bgGradientStartColor'], $s['bgGradientStartOpacity'] ?? $s['bgColorOpacity'] ?? 1);
+        $end      = $hexToRgba($s['bgGradientEndColor'],   $s['bgGradientEndOpacity']   ?? $s['bgColorOpacity'] ?? 1);
+        if ($gType === 'linear') {
+            $bgImages[] = "linear-gradient({$angle}deg, {$start} {$startPos}%, {$end} {$endPos}%)";
+        } else {
+            $bgImages[] = "radial-gradient(circle at center, {$start} {$startPos}%, {$end} {$endPos}%)";
+        }
+    }
     if (!empty($s['bgImage'])) {
-        $containerStyles[] = "background-image: url('{$s['bgImage']}')";
-        $containerStyles[] = "background-size: " . ($s['bgImageSize'] ?? 'cover');
-        $containerStyles[] = "background-position: " . ($s['bgImagePosition'] ?? 'center center');
-        $containerStyles[] = "background-repeat: " . ($s['bgImageRepeat'] ?? 'no-repeat');
+        $bgImages[] = "url('{$s['bgImage']}')";
+        $containerStyles[] = "background-size: "       . ($s['bgImageSize']     ?? 'cover');
+        $containerStyles[] = "background-position: "   . ($s['bgImagePosition'] ?? 'center center');
+        $containerStyles[] = "background-repeat: "     . ($s['bgImageRepeat']   ?? 'no-repeat');
         $containerStyles[] = "background-attachment: " . (($s['bgImageParallax'] ?? 'none') === 'fixed' ? 'fixed' : 'scroll');
+        if (!empty($s['bgImageBlendMode']) && $s['bgImageBlendMode'] !== 'normal') {
+            $containerStyles[] = "background-blend-mode: {$s['bgImageBlendMode']}";
+        }
+    }
+    if (!empty($bgImages)) {
+        $containerStyles[] = "background-image: " . implode(', ', $bgImages);
     }
     
     // Spacing
@@ -38,11 +80,14 @@
     $colGap = $isSpaceDist ? '0px' : ($s['columnGap'] ?? '20px');
 
     $alignItems = $s['alignItems'] ?? 'stretch';
+    $isNestedRow = ($container['type'] ?? 'container') === 'row';
 
     // Align-content logic (matched with admin builder):
     // - Auto height: flex-start
     // - Fixed height: follow rowAlignContent or sync with alignItems
-    if ($heightMode === 'auto') {
+    if ($isNestedRow) {
+        $alignContentVal = $s['rowAlignContent'] ?? 'flex-start';
+    } elseif ($heightMode === 'auto') {
         $alignContentVal = 'flex-start';
     } else {
         // For fixed height, we want rows to stretch to fill the height by default,
@@ -80,7 +125,6 @@
     $innerStyles[] = "width: 100%";
 
     $contentWidth = $s['contentWidth'] ?? 'site';
-    $isNestedRow = ($container['type'] ?? 'container') === 'row';
     $innerClass = ($contentWidth === 'site' && !$isNestedRow) ? 'container-custom mx-auto' : 'w-full';
     
     $htmlTag = $s['htmlTag'] ?? 'div';

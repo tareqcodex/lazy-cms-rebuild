@@ -945,10 +945,10 @@
                 let bgStyle = hexToRgba(s.bgColor, s.bgColorOpacity !== undefined ? s.bgColorOpacity : 1);
                 let bgImages = [];
 
-                if (s.bgType === 'gradient' && s.bgGradientStartColor && s.bgGradientEndColor) {
+                if (s.bgGradientStartColor && s.bgGradientEndColor) {
                     const start = hexToRgba(s.bgGradientStartColor, s.bgGradientStartOpacity !== undefined ? s.bgGradientStartOpacity : 1);
                     const end = hexToRgba(s.bgGradientEndColor, s.bgGradientEndOpacity !== undefined ? s.bgGradientEndOpacity : 1);
-                    
+
                     if (s.bgGradientType === 'radial') {
                         bgImages.push(`radial-gradient(circle at center, ${start} ${s.bgGradientStartPosition || 0}%, ${end} ${s.bgGradientEndPosition || 100}%)`);
                     } else {
@@ -983,11 +983,11 @@
                     overflow: s.overflow && s.overflow !== 'default' ? s.overflow : 'visible',
                     backgroundColor: bgStyle,
                     backgroundImage: bgImageStr ? bgImageStr : 'none',
-                    backgroundPosition: s.bgType === 'image' ? (s.bgImagePosition || 'center center') : undefined,
-                    backgroundRepeat: s.bgType === 'image' ? (s.bgImageRepeat || 'no-repeat') : undefined,
-                    backgroundSize: s.bgType === 'image' ? (s.bgImageSize || 'auto') : undefined,
-                    backgroundAttachment: s.bgType === 'image' && s.bgImageParallax === 'fixed' ? 'fixed' : undefined,
-                    backgroundBlendMode: s.bgType === 'image' && s.bgImageBlendMode !== 'normal' ? s.bgImageBlendMode : undefined,
+                    backgroundPosition: s.bgImage ? (s.bgImagePosition || 'center center') : undefined,
+                    backgroundRepeat: s.bgImage ? (s.bgImageRepeat || 'no-repeat') : undefined,
+                    backgroundSize: s.bgImage ? (s.bgImageSize || 'auto') : undefined,
+                    backgroundAttachment: s.bgImage && s.bgImageParallax === 'fixed' ? 'fixed' : undefined,
+                    backgroundBlendMode: s.bgImage && s.bgImageBlendMode !== 'normal' ? s.bgImageBlendMode : undefined,
                     minHeight: s.height === 'full' ? '100vh' : (s.height === 'custom' ? (s.customHeight || 'auto') : (s.minHeight || '100px')),
                     height: 'auto',
                     display: 'flex',
@@ -1008,7 +1008,9 @@
                 // - Fixed height: Default to 'stretch' so rows fill the container,
                 //   allowing internal align-items (Top/Center/Bottom/Stretch) to work.
                 let alignContent = 'stretch';
-                if (!s.height || s.height === 'auto') {
+                if (container.type === 'row') {
+                    alignContent = s.rowAlignContent || 'flex-start';
+                } else if (!s.height || s.height === 'auto') {
                     alignContent = 'flex-start';
                 } else {
                     alignContent = s.rowAlignContent || 'stretch';
@@ -1193,14 +1195,14 @@
 
                 // Layered Background Logic
                 let bgImages = [];
-                if (s.bgType === 'gradient' && s.bgGradientStartColor && s.bgGradientEndColor) {
+                if (s.bgGradientStartColor && s.bgGradientEndColor) {
                     const gType = s.bgGradientType || 'linear';
                     const angle = s.bgGradientAngle !== undefined ? s.bgGradientAngle + 'deg' : '180deg';
                     const start = hexToRgba(s.bgGradientStartColor, s.bgGradientStartOpacity !== undefined ? s.bgGradientStartOpacity : 1);
                     const end = hexToRgba(s.bgGradientEndColor, s.bgGradientEndOpacity !== undefined ? s.bgGradientEndOpacity : 1);
                     const startPos = s.bgGradientStartPosition !== undefined ? s.bgGradientStartPosition + '%' : '0%';
                     const endPos = s.bgGradientEndPosition !== undefined ? s.bgGradientEndPosition + '%' : '100%';
-                    
+
                     if (gType === 'linear') {
                         bgImages.push(`linear-gradient(${angle}, ${start} ${startPos}, ${end} ${endPos})`);
                     } else {

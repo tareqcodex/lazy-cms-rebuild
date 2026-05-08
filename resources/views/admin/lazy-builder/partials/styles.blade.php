@@ -256,6 +256,9 @@
     .column-left-panel:hover {
         z-index: 1100;
     }
+    .container-right-panel:hover {
+        z-index: 1100;
+    }
     .container-row:hover .container-right-panel,
     .container-active .container-right-panel,
     .column-outer:hover .column-left-panel,

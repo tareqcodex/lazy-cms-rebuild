@@ -94,7 +94,7 @@
     if (isset($s['marginLeft']) && $s['marginLeft'] !== '') $innerStyles[] = 'margin-left: ' . $s['marginLeft'] . ($s['marginLeftUnit'] ?? 'px');
     if (isset($s['marginRight']) && $s['marginRight'] !== '') $innerStyles[] = 'margin-right: ' . $s['marginRight'] . ($s['marginRightUnit'] ?? 'px');
 
-    $contentLayout = $s['contentLayout'] ?? '';
+    $contentLayout = $s['contentLayout'] ?: 'column';
     if ($contentLayout && $contentLayout !== 'block') {
         $innerStyles[] = 'display: flex';
         $innerStyles[] = 'flex-wrap: wrap';
@@ -137,7 +137,7 @@
     }
 
     $bgImages = [];
-    if (($s['bgType'] ?? 'color') === 'gradient' && !empty($s['bgGradientStartColor']) && !empty($s['bgGradientEndColor'])) {
+    if (!empty($s['bgGradientStartColor']) && !empty($s['bgGradientEndColor'])) {
         $gType = $s['bgGradientType'] ?? 'linear';
         $angle = $s['bgGradientAngle'] ?? 180;
         $start = $hexToRgba($s['bgGradientStartColor'], $s['bgGradientStartOpacity'] ?? 1);

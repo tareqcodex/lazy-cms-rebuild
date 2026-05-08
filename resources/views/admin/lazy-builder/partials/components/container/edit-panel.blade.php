@@ -17,13 +17,13 @@
         <button @click="activePanelTab = 'general'" :class="activePanelTab === 'general' ? 'bg-[#007cc0] text-white' : 'text-white/70 hover:text-white'" class="flex-1 py-2 text-[12px] font-bold transition-colors">
             <i class="fa fa-sliders-h"></i>
         </button>
-        <button @click="activePanelTab = 'design'" :class="activePanelTab === 'design' ? 'bg-[#007cc0] text-white' : 'text-white/70 hover:text-white'" class="flex-1 py-2 text-[10px] font-bold transition-colors">
+        <button v-if="{{ isset($isNestedRow) && $isNestedRow ? 'false' : 'true' }}" @click="activePanelTab = 'design'" :class="activePanelTab === 'design' ? 'bg-[#007cc0] text-white' : 'text-white/70 hover:text-white'" class="flex-1 py-2 text-[10px] font-bold transition-colors">
             Design
         </button>
-        <button @click="activePanelTab = 'background'" :class="activePanelTab === 'background' ? 'bg-[#007cc0] text-white' : 'text-white/70 hover:text-white'" class="flex-1 py-2 text-[10px] font-bold transition-colors">
+        <button v-if="{{ isset($isNestedRow) && $isNestedRow ? 'false' : 'true' }}" @click="activePanelTab = 'background'" :class="activePanelTab === 'background' ? 'bg-[#007cc0] text-white' : 'text-white/70 hover:text-white'" class="flex-1 py-2 text-[10px] font-bold transition-colors">
             Background
         </button>
-        <button @click="activePanelTab = 'link'" :class="activePanelTab === 'link' ? 'bg-[#007cc0] text-white' : 'text-white/70 hover:text-white'" class="flex-1 py-2 text-[12px] transition-colors">
+        <button v-if="{{ isset($isNestedRow) && $isNestedRow ? 'false' : 'true' }}" @click="activePanelTab = 'link'" :class="activePanelTab === 'link' ? 'bg-[#007cc0] text-white' : 'text-white/70 hover:text-white'" class="flex-1 py-2 text-[12px] transition-colors">
             <i class="fa fa-link"></i>
         </button>
     </div>
@@ -51,20 +51,10 @@
                     <input type="text" v-model="{{ $base }}.settings.minHeight" placeholder="e.g. 50px" class="w-full border border-slate-200 rounded px-3 py-2 text-[12px] focus:outline-none focus:border-[#0091ea]">
                 </div>
 
-                <div class="mb-6">
-                    <div class="flex justify-between items-center mb-2">
-                        <label class="text-[11px] font-bold text-[#444]">Row Maximum Height</label>
-                        <div class="flex gap-2 items-center">
-                            <i class="fa fa-question-circle text-[10px] text-slate-300"></i>
-                            <i class="fa fa-desktop text-[10px] text-slate-300"></i>
-                        </div>
-                    </div>
-                    <input type="text" v-model="{{ $base }}.settings.maxHeight" placeholder="e.g. 500px" class="w-full border border-slate-200 rounded px-3 py-2 text-[12px] focus:outline-none focus:border-[#0091ea]">
-                </div>
             </div>
 
             <!-- Interior Content Width -->
-            <div>
+            <div v-if="{{ isset($isNestedRow) && $isNestedRow ? 'false' : 'true' }}">
                 <div class="flex justify-between items-center mb-2">
                     <label class="text-[11px] font-bold text-[#444]">Interior Content Width</label>
                     <i class="fa fa-question-circle text-[10px] text-slate-300"></i>
@@ -325,32 +315,6 @@
             </div>
         </div>
 
-        <!-- Flex Grow & Shrink -->
-        <div v-if="{{ isset($isNestedRow) && $isNestedRow ? 'true' : 'false' }}">
-            <div class="flex gap-4">
-                <div class="flex-1">
-                    <div class="flex justify-between items-center mb-2">
-                        <label class="text-[11px] font-bold text-[#444]">Flex Grow</label>
-                        <div class="flex gap-1 items-center">
-                            <i class="fa fa-question-circle text-[10px] text-slate-300"></i>
-                            <i class="fa fa-desktop text-[10px] text-slate-300"></i>
-                        </div>
-                    </div>
-                    <input type="text" v-model="{{ $base }}.settings.flexGrow" placeholder="" class="w-full border border-slate-200 rounded px-2 py-1.5 text-[11px] text-[#444] focus:outline-none focus:border-[#0091ea]">
-                </div>
-                <div class="flex-1">
-                    <div class="flex justify-between items-center mb-2">
-                        <label class="text-[11px] font-bold text-[#444]">Flex Shrink</label>
-                        <div class="flex gap-1 items-center">
-                            <i class="fa fa-question-circle text-[10px] text-slate-300"></i>
-                            <i class="fa fa-desktop text-[10px] text-slate-300"></i>
-                        </div>
-                    </div>
-                    <input type="text" v-model="{{ $base }}.settings.flexShrink" placeholder="" class="w-full border border-slate-200 rounded px-2 py-1.5 text-[11px] text-[#444] focus:outline-none focus:border-[#0091ea]">
-                </div>
-            </div>
-        </div>
-
         <!-- Overflow -->
         <div v-if="{{ isset($isNestedRow) && $isNestedRow ? 'true' : 'false' }}">
             <div class="flex justify-between items-center mb-2">
@@ -448,7 +412,7 @@
     </div>
 
     <!-- Design Tab -->
-    <div v-show="activePanelTab === 'design'" class="space-y-6">
+    <div v-if="{{ isset($isNestedRow) && $isNestedRow ? 'false' : 'true' }}" v-show="activePanelTab === 'design'" class="space-y-6">
             <!-- Visual Spacing Tool -->
             <!-- Margin Section -->
             <div class="pt-4 border-t border-slate-50">
@@ -734,7 +698,7 @@
         </div>
 
         <!-- Background Tab -->
-        <div v-show="activePanelTab === 'background'" class="space-y-6">
+        <div v-if="{{ isset($isNestedRow) && $isNestedRow ? 'false' : 'true' }}" v-show="activePanelTab === 'background'" class="space-y-6">
             
             <!-- Background Options -->
             <div>
@@ -1021,7 +985,7 @@
         </div>
 
         <!-- Link Tab -->
-        <div v-show="activePanelTab === 'link'" class="space-y-6">
+        <div v-if="{{ isset($isNestedRow) && $isNestedRow ? 'false' : 'true' }}" v-show="activePanelTab === 'link'" class="space-y-6">
             <div>
                 <div class="flex justify-between items-center mb-2">
                     <label class="text-[11px] font-bold text-[#444]">Link URL</label>
