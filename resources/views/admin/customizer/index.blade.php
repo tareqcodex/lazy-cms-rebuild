@@ -524,7 +524,17 @@ const GOOGLE_FONTS = {
         { family: 'Barlow', variants: ['100', '200', '300', '400', '500', '600', '700', '800', '900'] },
         { family: 'DM Sans', variants: ['400', '500', '700'] },
         { family: 'Questrial', variants: ['400'] },
-        { family: 'Cairo', variants: ['200', '300', '400', '500', '600', '700', '800', '900'] }
+        { family: 'Cairo', variants: ['200', '300', '400', '500', '600', '700', '800', '900'] },
+        { family: 'Titillium Web', variants: ['200', '300', '400', '600', '700', '900'] },
+        { family: 'Hind', variants: ['300', '400', '500', '600', '700'] },
+        { family: 'Josefin Sans', variants: ['100', '200', '300', '400', '500', '600', '700'] },
+        { family: 'Public Sans', variants: ['100', '200', '300', '400', '500', '600', '700', '800', '900'] },
+        { family: 'Signika', variants: ['300', '400', '500', '600', '700'] },
+        { family: 'Exo 2', variants: ['100', '200', '300', '400', '500', '600', '700', '800', '900'] },
+        { family: 'Maven Pro', variants: ['400', '500', '600', '700', '800', '900'] },
+        { family: 'Assistant', variants: ['200', '300', '400', '500', '600', '700', '800'] },
+        { family: 'Oxygen', variants: ['300', '400', '700'] },
+        { family: 'Fira Sans', variants: ['100', '200', '300', '400', '500', '600', '700', '800', '900'] }
     ],
     'Serif': [
         { family: 'Playfair Display', variants: ['400', '500', '600', '700', '800', '900'] },
@@ -543,7 +553,15 @@ const GOOGLE_FONTS = {
         { family: 'Domine', variants: ['400', '500', '600', '700'] },
         { family: 'Spectral', variants: ['200', '300', '400', '500', '600', '700', '800'] },
         { family: 'Zilla Slab', variants: ['300', '400', '500', '600', '700'] },
-        { family: 'Manrope', variants: ['200', '300', '400', '500', '600', '700', '800'] }
+        { family: 'Manrope', variants: ['200', '300', '400', '500', '600', '700', '800'] },
+        { family: 'Tinos', variants: ['400', '700'] },
+        { family: 'Neuton', variants: ['200', '300', '400', '700', '800'] },
+        { family: 'Faustina', variants: ['300', '400', '500', '600', '700', '800'] },
+        { family: 'Bree Serif', variants: ['400'] },
+        { family: 'PT Serif Caption', variants: ['400'] },
+        { family: 'Quattrocento', variants: ['400', '700'] },
+        { family: 'Vollkorn', variants: ['400', '500', '600', '700', '800', '900'] },
+        { family: 'Rasa', variants: ['300', '400', '500', '600', '700'] }
     ],
     'Display': [
         { family: 'Abril Fatface', variants: ['400'] },
@@ -569,7 +587,20 @@ const GOOGLE_FONTS = {
         { family: 'Courgette', variants: ['400'] },
         { family: 'Gloria Hallelujah', variants: ['400'] },
         { family: 'Homemade Apple', variants: ['400'] },
-        { family: 'Yellowtail', variants: ['400'] }
+        { family: 'Yellowtail', variants: ['400'] },
+        { family: 'Special Elite', variants: ['400'] },
+        { family: 'UnifrakturMaguntia', variants: ['400'] },
+        { family: 'Press Start 2P', variants: ['400'] },
+        { family: 'Monoton', variants: ['400'] },
+        { family: 'Staatliches', variants: ['400'] },
+        { family: 'Orbitron', variants: ['400', '500', '600', '700', '800', '900'] },
+        { family: 'Aladin', variants: ['400'] },
+        { family: 'Rye', variants: ['400'] },
+        { family: 'Piedra', variants: ['400'] },
+        { family: 'Eater', variants: ['400'] },
+        { family: 'Metal Mania', variants: ['400'] },
+        { family: 'Black Ops One', variants: ['400'] },
+        { family: 'Faster One', variants: ['400'] }
     ],
     'Monospace': [
         { family: 'Fira Code', variants: ['300', '400', '500', '600', '700'] },
@@ -582,7 +613,11 @@ const GOOGLE_FONTS = {
         { family: 'Courier Prime', variants: ['400', '700'] },
         { family: 'IBM Plex Mono', variants: ['100', '200', '300', '400', '500', '600', '700'] },
         { family: 'Share Tech Mono', variants: ['400'] },
-        { family: 'Anonymous Pro', variants: ['400', '700'] }
+        { family: 'Anonymous Pro', variants: ['400', '700'] },
+        { family: 'Nova Mono', variants: ['400'] },
+        { family: 'Cutive Mono', variants: ['400'] },
+        { family: 'Overpass Mono', variants: ['300', '400', '600', '700'] },
+        { family: 'VT323', variants: ['400'] }
     ]
 };
 
@@ -693,9 +728,9 @@ function typographyComponent(key, initialData) {
 </script>
 
 <style>
-/* Customizer Panel Width - Reduced by 30% */
+/* Customizer Panel Width - Set to 70% */
 #customizer-app {
-    max-width: 980px !important; /* Original was ~1400px, 70% of 1400 is 980 */
+    max-width: 70% !important;
     margin: 20px auto;
 }
 /* Customizer scrollbar */
