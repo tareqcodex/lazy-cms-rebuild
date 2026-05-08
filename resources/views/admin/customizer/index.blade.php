@@ -126,7 +126,6 @@
                                                     @endif
                                                 </th>
                                                 <td class="px-5 py-3.5 align-middle">
-
                                                     @if($type === 'text' || $type === 'url')
                                                         <input type="text" name="{{ $key }}" id="field_{{ $key }}"
                                                                value="{{ $val }}"
@@ -138,11 +137,8 @@
                                                             $tVal = is_array($val) ? $val : (json_decode($val, true) ?: ($field['default'] ?? []));
                                                         @endphp
                                                         <div x-data="typographyComponent('{{ $key }}', {{ json_encode($tVal) }})" x-init="init()" class="typography-container space-y-4">
-                                                            {{-- Hidden input for the actual JSON value --}}
                                                             <input type="hidden" name="{{ $key }}" :value="JSON.stringify(fontData)">
-
                                                             <div class="grid grid-cols-1 md:grid-cols-2 gap-x-6 gap-y-4">
-                                                                {{-- Font Family with Search --}}
                                                                 <div class="space-y-1.5 relative">
                                                                     <label class="text-[11px] font-semibold text-[#646970] uppercase">Font Family</label>
                                                                     <div class="relative" @click.away="open = false">
@@ -151,7 +147,6 @@
                                                                             <span x-text="fontData.family || 'Select Font'"></span>
                                                                             <span class="material-symbols-outlined text-[#8c8f94]" style="font-size:18px !important;">expand_more</span>
                                                                         </button>
-                                                                        
                                                                         <div x-show="open" x-cloak
                                                                              class="absolute z-[100] mt-1 w-full bg-white border border-[#c3c4c7] rounded shadow-xl overflow-hidden">
                                                                             <div class="p-2 border-b border-[#f0f0f1] bg-[#f6f7f7]">
@@ -175,8 +170,6 @@
                                                                         </div>
                                                                     </div>
                                                                 </div>
-
-                                                                {{-- Variant / Weight --}}
                                                                 <div class="space-y-1.5">
                                                                     <label class="text-[11px] font-semibold text-[#646970] uppercase">Variant</label>
                                                                     <select x-model="fontData.variant" class="wp-input w-full h-9 text-[13px]">
@@ -185,26 +178,18 @@
                                                                         </template>
                                                                     </select>
                                                                 </div>
-
-                                                                {{-- Font Size --}}
                                                                 <div class="space-y-1.5">
                                                                     <label class="text-[11px] font-semibold text-[#646970] uppercase">Font Size</label>
                                                                     <input type="text" x-model="fontData.size" placeholder="16px" class="wp-input w-full h-9 text-[13px]">
                                                                 </div>
-
-                                                                {{-- Line Height --}}
                                                                 <div class="space-y-1.5">
                                                                     <label class="text-[11px] font-semibold text-[#646970] uppercase">Line Height</label>
                                                                     <input type="text" x-model="fontData.line_height" placeholder="1.6" class="wp-input w-full h-9 text-[13px]">
                                                                 </div>
-
-                                                                {{-- Letter Spacing --}}
                                                                 <div class="space-y-1.5">
                                                                     <label class="text-[11px] font-semibold text-[#646970] uppercase">Letter Spacing</label>
                                                                     <input type="text" x-model="fontData.letter_spacing" placeholder="0px" class="wp-input w-full h-9 text-[13px]">
                                                                 </div>
-
-                                                                {{-- Text Transform --}}
                                                                 <div class="space-y-1.5">
                                                                     <label class="text-[11px] font-semibold text-[#646970] uppercase">Transform</label>
                                                                     <div class="flex border border-[#c3c4c7] rounded overflow-hidden">
@@ -217,8 +202,6 @@
                                                                         </template>
                                                                     </div>
                                                                 </div>
-
-                                                                {{-- Font Style / Decoration --}}
                                                                 <div class="space-y-1.5">
                                                                     <label class="text-[11px] font-semibold text-[#646970] uppercase">Style & Decor</label>
                                                                     <div class="flex border border-[#c3c4c7] rounded overflow-hidden">
@@ -237,8 +220,6 @@
                                                                     </div>
                                                                 </div>
                                                             </div>
-
-                                                            {{-- Live Preview --}}
                                                             <div class="mt-4 p-4 border border-[#e5e7eb] rounded bg-white overflow-hidden">
                                                                 <div class="flex items-center justify-between mb-3 border-b border-[#f0f0f1] pb-2">
                                                                     <span class="text-[10px] font-bold text-[#8c8f94] uppercase tracking-wider">Live Preview</span>
@@ -250,19 +231,66 @@
                                                             </div>
                                                         </div>
 
-                                                    @elseif($type === 'textarea')
-
-                                                            {{-- Live Preview --}}
-                                                            <div class="mt-4 p-4 border border-[#e5e7eb] rounded bg-white overflow-hidden">
-                                                                <div class="flex items-center justify-between mb-3 border-b border-[#f0f0f1] pb-2">
-                                                                    <span class="text-[10px] font-bold text-[#8c8f94] uppercase tracking-wider">Live Preview</span>
-                                                                    <span class="text-[10px] text-[#2271b1] font-medium" x-text="fontData.family + ' ' + formatVariant(fontData.variant)"></span>
-                                                                </div>
-                                                                <div class="preview-text" :style="getPreviewStyle()">
-                                                                    1234567890ABCDEFGHIJKLMN OPQRSTUVWXY Zabcdefghijklm nopqrstuvwxyz
-                                                                </div>
-                                                            </div>
+                                                    @elseif($type === 'color')
+                                                        {{-- Coloris picker — attaches to the text input --}}
+                                                        <div class="flex items-center gap-2.5">
+                                                            <input type="text" name="{{ $key }}" id="field_{{ $key }}"
+                                                                   value="{{ $val ?: '' }}"
+                                                                   placeholder="#000000"
+                                                                   data-coloris
+                                                                   data-ckey="{{ $key }}"
+                                                                   class="wp-input w-[130px] text-[12px] font-mono tracking-wide">
+                                                            <div id="swatch_{{ $key }}"
+                                                                 class="w-7 h-7 rounded border border-[#c3c4c7] flex-shrink-0 cursor-pointer"
+                                                                 style="background:{{ $val ?: 'transparent' }};"
+                                                                 onclick="document.getElementById('field_{{ $key }}').click()"></div>
                                                         </div>
+
+                                                    @elseif($type === 'select')
+                                                        <select name="{{ $key }}" id="field_{{ $key }}"
+                                                                class="wp-input w-[220px] text-[13px] cursor-pointer">
+                                                            @foreach(($field['options'] ?? []) as $optVal => $optLabel)
+                                                                <option value="{{ $optVal }}" {{ $val == $optVal ? 'selected' : '' }}>{{ $optLabel }}</option>
+                                                            @endforeach
+                                                        </select>
+
+                                                    @elseif($type === 'button_group')
+                                                        {{-- Segmented control — PHP sets initial state, JS updates on change --}}
+                                                        <div class="cstz-btn-group inline-flex border border-[#c3c4c7] overflow-hidden">
+                                                            @foreach(($field['options'] ?? []) as $optVal => $optLabel)
+                                                                <label class="cursor-pointer">
+                                                                    <input type="radio" name="{{ $key }}" value="{{ $optVal }}"
+                                                                           {{ $val == $optVal ? 'checked' : '' }}
+                                                                           class="sr-only"
+                                                                           onchange="customizerBtnGroup(this)">
+                                                                    <span class="cstz-btn-opt block px-6 py-[7px] text-[12px] font-medium select-none border-r border-[#c3c4c7] last:border-r-0 transition-colors"
+                                                                          style="{{ $val == $optVal ? 'background:#2271b1;color:#fff;' : 'background:#f6f7f7;color:#50575e;' }}">
+                                                                        {{ $optLabel }}
+                                                                    </span>
+                                                                </label>
+                                                            @endforeach
+                                                        </div>
+
+                                                    @elseif($type === 'toggle')
+                                                        <label for="toggle_{{ $key }}" class="flex items-center gap-3 cursor-pointer select-none">
+                                                            <div class="relative w-11 h-6 flex-shrink-0">
+                                                                <input type="hidden" name="{{ $key }}" id="hidden_{{ $key }}" value="{{ $val == '1' ? '1' : '0' }}">
+                                                                <input type="checkbox" id="toggle_{{ $key }}" class="sr-only peer"
+                                                                       {{ $val == '1' ? 'checked' : '' }}
+                                                                       onchange="
+                                                                           document.getElementById('hidden_{{ $key }}').value = this.checked ? '1' : '0';
+                                                                           var lbl = document.getElementById('tlabel_{{ $key }}');
+                                                                           lbl.textContent = this.checked ? 'Enabled' : 'Disabled';
+                                                                           lbl.style.color = this.checked ? '#2271b1' : '#8c8f94';
+                                                                       ">
+                                                                <span class="absolute inset-0 rounded-full transition-colors duration-200 bg-[#d1d5db] peer-checked:bg-[#2271b1]"></span>
+                                                                <span class="absolute top-[3px] left-[3px] w-[18px] h-[18px] rounded-full bg-white shadow-sm transition-transform duration-200 peer-checked:translate-x-5"></span>
+                                                            </div>
+                                                            <span id="tlabel_{{ $key }}"
+                                                                  style="font-size:13px; font-weight:500; color:{{ $val == '1' ? '#2271b1' : '#8c8f94' }};">
+                                                                {{ $val == '1' ? 'Enabled' : 'Disabled' }}
+                                                            </span>
+                                                        </label>
 
                                                     @elseif($type === 'textarea')
                                                         <textarea name="{{ $key }}" id="field_{{ $key }}"
@@ -277,7 +305,6 @@
                                                                   class="w-full font-mono text-[12px] bg-[#1d1f27] text-[#c5c8c6] border border-[#3c434a] rounded p-4 resize-y leading-relaxed focus:outline-none focus:border-[#2271b1]"
                                                                   style="min-height:280px; tab-size:4;">{{ $val }}</textarea>
                                                     @endif
-
                                                 </td>
                                             </tr>
                                         @endforeach
