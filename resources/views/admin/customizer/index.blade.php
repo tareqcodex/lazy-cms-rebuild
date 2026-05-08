@@ -240,10 +240,6 @@
                                                                    data-coloris
                                                                    data-ckey="{{ $key }}"
                                                                    class="wp-input w-[130px] text-[12px] font-mono tracking-wide">
-                                                            <div id="swatch_{{ $key }}"
-                                                                 class="w-7 h-7 rounded border border-[#c3c4c7] flex-shrink-0 cursor-pointer"
-                                                                 style="background:{{ $val ?: 'transparent' }};"
-                                                                 onclick="document.getElementById('field_{{ $key }}').click()"></div>
                                                         </div>
 
                                                     @elseif($type === 'select')

@@ -47,7 +47,7 @@ class CustomizerController extends \Illuminate\Routing\Controller
                         'label'   => 'Default Page Template',
                         'desc'    => 'Choose the default page template.',
                         'default' => 'site-width',
-                        'options' => ['100-width' => '100% Width', 'site-width' => 'Site Width'],
+                        'options' => ['default-width' => 'Default Width', 'site-width' => 'Site Width'],
                     ],
                     'theme_100_width_padding' => [
                         'type'        => 'text',
