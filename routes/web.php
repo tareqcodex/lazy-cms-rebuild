@@ -203,6 +203,13 @@ Route::prefix('admin')->name('admin.')->middleware(['web', \Acme\CmsDashboard\Ht
     Route::delete('/widgets/{widget}', [WidgetController::class, 'destroy'])->name('widgets.destroy');
     Route::post('/widgets/order', [WidgetController::class, 'updateOrder'])->name('widgets.update-order');
 
+    // Customizer (Appearance > Customizer)
+    Route::get('/appearance/customizer', [\Acme\CmsDashboard\Http\Controllers\Admin\CustomizerController::class, 'index'])->name('customizer.index');
+    Route::post('/appearance/customizer', [\Acme\CmsDashboard\Http\Controllers\Admin\CustomizerController::class, 'save'])->name('customizer.save');
+    Route::post('/appearance/customizer/reset', [\Acme\CmsDashboard\Http\Controllers\Admin\CustomizerController::class, 'resetSection'])->name('customizer.reset');
+    Route::get('/appearance/customizer/export', [\Acme\CmsDashboard\Http\Controllers\Admin\CustomizerController::class, 'export'])->name('customizer.export');
+    Route::post('/appearance/customizer/import', [\Acme\CmsDashboard\Http\Controllers\Admin\CustomizerController::class, 'import'])->name('customizer.import');
+
     // Themes
     Route::get('/themes', [ThemeController::class, 'index'])->name('themes.index');
     Route::post('/themes/upload', [ThemeController::class, 'upload'])->name('themes.upload');
