@@ -59,12 +59,23 @@ if (!function_exists('get_lazy_content')) {
     {
         if (empty($content)) return '';
         try {
+            // Check if it's builder shortcode format
+            if (is_string($content) && \Acme\CmsDashboard\Services\BuilderShortcodeConverter::isBuilderShortcode($content)) {
+                $content = \Acme\CmsDashboard\Services\BuilderShortcodeConverter::shortcodesToJson($content);
+            }
+
             $layout = is_string($content) ? json_decode($content, true) : $content;
-            if (!is_array($layout)) return '';
+            
+            // If it's not an array, it might be raw HTML or non-builder content
+            if (!is_array($layout)) {
+                return do_lazy_shortcode($content);
+            }
+            
             $rendered = view('cms-dashboard::frontend.builder.render', ['layout' => $layout])->render();
             return do_lazy_shortcode($rendered);
         } catch (\Exception $e) {
-            return '';
+            // Fallback to raw content if processing fails
+            return do_lazy_shortcode($content);
         }
     }
 }
