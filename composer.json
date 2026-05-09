@@ -22,7 +22,8 @@
     },
     "scripts": {
         "post-autoload-dump": [
-            "@php artisan vendor:publish --tag=lazy-themes --force"
+            "@php artisan vendor:publish --tag=lazy-themes --force",
+            "@php artisan vendor:publish --tag=cms-dashboard-assets --force"
         ]
     }
 }

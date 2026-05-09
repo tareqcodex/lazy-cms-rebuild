@@ -94,7 +94,7 @@
     if (isset($s['marginLeft']) && $s['marginLeft'] !== '') $innerStyles[] = 'margin-left: ' . $s['marginLeft'] . ($s['marginLeftUnit'] ?? 'px');
     if (isset($s['marginRight']) && $s['marginRight'] !== '') $innerStyles[] = 'margin-right: ' . $s['marginRight'] . ($s['marginRightUnit'] ?? 'px');
 
-    $contentLayout = $s['contentLayout'] ?: 'column';
+    $contentLayout = ($s['contentLayout'] ?? '') ?: 'column';
     if ($contentLayout && $contentLayout !== 'block') {
         $innerStyles[] = 'display: flex';
         $innerStyles[] = 'flex-wrap: wrap';
@@ -217,11 +217,18 @@
                     @include('cms-dashboard::frontend.builder.elements.title', ['el' => $el])
                 @elseif($el['type'] === 'text')
                     @include('cms-dashboard::frontend.builder.elements.text', ['el' => $el])
+                @elseif($el['type'] === 'button')
+                    @include('cms-dashboard::frontend.builder.elements.button', ['el' => $el])
+                @elseif($el['type'] === 'image')
+                    @include('cms-dashboard::frontend.builder.elements.image', ['el' => $el])
+                @elseif($el['type'] === 'spacer')
+                    @include('cms-dashboard::frontend.builder.elements.spacer', ['el' => $el])
+                @elseif($el['type'] === 'video')
+                    @include('cms-dashboard::frontend.builder.elements.video', ['el' => $el])
                 @elseif($el['type'] === 'row')
                     @if($contentLayout === 'row')
                         <div style="flex-basis: 100%; width: 100%; height: 0; overflow: hidden;"></div>
                     @endif
-                    {{-- Render the row element as if it were a container --}}
                     @include('cms-dashboard::frontend.builder.container', ['container' => $el])
                     @if($contentLayout === 'row')
                         <div style="flex-basis: 100%; width: 100%; height: 0; overflow: hidden;"></div>
