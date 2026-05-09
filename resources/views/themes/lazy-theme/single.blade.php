@@ -3,8 +3,12 @@
 @section('title', $post->title)
 
 @section('content')
-    @php 
-        $isBuilder = ($post->editor_type === 'builder');
+    @php
+        $isBuilder = $post->editor_type === 'builder'
+            || (is_string($post->content) && (
+                str_starts_with($post->content, '[')
+                || str_starts_with($post->content, '{')
+            ));
     @endphp
 
     @if($isBuilder)
