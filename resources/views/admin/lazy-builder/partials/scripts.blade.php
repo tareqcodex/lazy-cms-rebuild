@@ -988,7 +988,7 @@
                     backgroundSize: s.bgImage ? (s.bgImageSize || 'auto') : undefined,
                     backgroundAttachment: s.bgImage && s.bgImageParallax === 'fixed' ? 'fixed' : undefined,
                     backgroundBlendMode: s.bgImage && s.bgImageBlendMode !== 'normal' ? s.bgImageBlendMode : undefined,
-                    minHeight: s.height === 'full' ? '100vh' : (s.height === 'custom' ? (s.customHeight || 'auto') : (s.minHeight || '100px')),
+                    minHeight: s.height === 'full' ? '100vh' : (s.height === 'custom' ? (s.customHeight || 'auto') : (s.minHeight || ((container.columns || []).some(col => (col.elements || []).length > 0) ? '0px' : '100px'))),
                     height: 'auto',
                     display: 'flex',
                     flexDirection: 'column'
@@ -999,7 +999,8 @@
                 const s = container.settings;
                 const isSpaceDistribution = ['space-between', 'space-around', 'space-evenly'].includes(s.justifyContent);
                 const alignItems = s.alignItems || 'stretch';
-                const innerMinHeight = s.minHeight ? s.minHeight : '100px';
+                const hasContent = (container.columns || []).some(col => (col.elements || []).length > 0);
+                const innerMinHeight = s.minHeight ? s.minHeight : (hasContent ? '0px' : '100px');
                 // Use height:100% so flex-grow fills the outer container for custom/full height
                 const innerHeight = (s.height === 'custom' || s.height === 'full') ? '100%' : 'auto';
                 
@@ -1092,7 +1093,7 @@
                 if (isStretch) {
                     style.flexGrow = 1;
                     style.alignSelf = 'stretch';
-                    style.minHeight = isEmpty ? '100px' : '100%';
+                    style.minHeight = isEmpty ? '100px' : 'auto';
                     style.height = 'auto';
                 } else {
                     style.height = 'auto';
