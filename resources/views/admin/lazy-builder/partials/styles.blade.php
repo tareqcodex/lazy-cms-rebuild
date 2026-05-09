@@ -345,7 +345,7 @@
 
     /* Save Button */
     .btn-save {
-        background-color: #4CAF50;
+        background-color: #4A5259;
         color: white;
         border: none;
         padding: 8px 24px;
@@ -361,7 +361,7 @@
         gap: 8px;
     }
     .btn-save:hover {
-        background-color: #45a049;
+        background-color: #3d4449;
     }
     .btn-save:disabled {
         opacity: 0.7;

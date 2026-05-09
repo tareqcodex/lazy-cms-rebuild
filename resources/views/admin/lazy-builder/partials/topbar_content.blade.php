@@ -40,7 +40,8 @@
         
         <div class="h-6 w-px bg-white/10 mx-1"></div>
         
-        <button @click="saveLayout" :disabled="isSaving" class="btn-save">
+        <button @click="saveLayout" :disabled="isSaving" class="btn-save"
+                :style="{ backgroundColor: isDirty ? '#4CAF50' : '#4A5259' }">
             <span v-if="isSaving"><i class="fa fa-spinner fa-spin mr-2"></i> Saving</span>
             <span v-else>Save</span>
         </button>

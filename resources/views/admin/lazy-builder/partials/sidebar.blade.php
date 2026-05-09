@@ -32,7 +32,7 @@
                          :class="editingContext.type === 'container' && editingContext.ci === ci ? 'bg-blue-50' : ''"
                          @click="setEditingContext('container', ci)">
                         <i class="fa fa-caret-down text-[10px] text-slate-400"></i>
-                        <span class="text-[12px] font-bold text-[#0091ea] flex-1">Container</span>
+                        <span class="text-[14px] font-bold text-[#0091ea] flex-1">Container</span>
                         <div class="flex items-center gap-2 opacity-0 group-hover/line:opacity-100 transition-opacity">
                             <i @click.stop="openColumnModal(ci)" class="fa fa-plus text-[9px] text-slate-400 hover:text-[#0091ea]" title="Add Column"></i>
                             <i @click.stop="setEditingContext('container', ci)" class="fa fa-pen text-[9px] text-slate-400 hover:text-[#0091ea]" title="Edit"></i>
@@ -47,7 +47,7 @@
                              :class="editingContext.type === 'column' && editingContext.ci === ci && editingContext.coli === coli ? 'bg-slate-50 border-l-2 border-[#0091ea] -ml-[1px]' : ''"
                              @click="setEditingContext('column', ci, coli)">
                             <i class="fa fa-caret-down text-[10px] text-slate-300"></i>
-                            <span class="text-[11px] font-semibold text-slate-700 flex-1">Column @{{ formatBasisToFraction(col.basis) }}</span>
+                            <span class="text-[14px] font-semibold text-slate-700 flex-1">Column @{{ formatBasisToFraction(col.basis) }}</span>
                             <div class="flex items-center gap-2 opacity-0 group-hover/line:opacity-100 transition-opacity">
                                 <i @click.stop="openElementModal(ci, coli)" class="fa fa-plus text-[9px] text-slate-400 hover:text-[#0091ea]" title="Add Element"></i>
                                 <i @click.stop="setEditingContext('column', ci, coli)" class="fa fa-pen text-[9px] text-slate-400 hover:text-[#0091ea]" title="Edit"></i>
@@ -63,10 +63,10 @@
                                  class="flex items-center gap-3 px-4 py-1.5 hover:bg-slate-50 cursor-pointer group/line"
                                  @click="setEditingContext('element', ci, coli, eli)">
                                 <i :class="el.icon" class="text-[11px] text-slate-400 w-4 text-center"></i>
-                                <span class="text-[11px] text-slate-500 flex-1 capitalize">@{{ el.type }}</span>
+                                <span class="text-[14px] text-slate-500 flex-1 capitalize">@{{ el.type }}</span>
                                 <div class="flex items-center gap-2 opacity-0 group-hover/line:opacity-100 transition-opacity">
                                     <i @click.stop="openElementModal(ci, coli, 'design', false, eli + 1)" class="fa fa-plus text-[9px] text-slate-400 hover:text-[#0091ea]" title="Add Below"></i>
-                                    <i @click.stop="editingContext={type:'element', ci:ci, coli:coli, eli:eli}; activeTab='settings'" class="fa fa-pen text-[9px] text-slate-400 hover:text-[#0091ea]" title="Edit"></i>
+                                    <i @click.stop="setEditingContext('element', ci, coli, eli)" class="fa fa-pen text-[9px] text-slate-400 hover:text-[#0091ea]" title="Edit"></i>
                                     <i @click.stop="duplicateElement(ci, coli, eli)" class="fa fa-copy text-[9px] text-slate-400 hover:text-[#0091ea]" title="Duplicate"></i>
                                     <i @click.stop="col.elements.splice(eli, 1)" class="fa fa-trash-alt text-[9px] text-slate-400 hover:text-red-500" title="Delete"></i>
                                 </div>
@@ -77,11 +77,11 @@
                                 <div class="flex items-center gap-2 px-4 py-1.5 hover:bg-slate-50 cursor-pointer group/line"
                                      @click="setEditingContext('nested-row', ci, coli, eli)">
                                     <i class="fa fa-caret-down text-[10px] text-slate-400"></i>
-                                    <span class="text-[11px] font-bold text-slate-600 flex-1">Nested Row</span>
+                                    <span class="text-[14px] font-bold text-slate-600 flex-1">Nested Row</span>
                                     <div class="flex items-center gap-2 opacity-0 group-hover/line:opacity-100 transition-opacity">
                                         <i @click.stop="openElementModal(ci, coli, 'design', false, eli + 1)" class="fa fa-plus text-[9px] text-slate-400 hover:text-[#0091ea]" title="Add Below"></i>
                                         <i @click.stop="openElementModal(ci, coli, 'nested', true, eli)" class="fa fa-plus-square text-[9px] text-slate-400 hover:text-[#0091ea]" title="Add Nested Column"></i>
-                                        <i @click.stop="editingContext={type:'nested-row', ci:ci, coli:coli, eli:eli}; activeTab='settings'" class="fa fa-pen text-[9px] text-slate-400 hover:text-[#0091ea]" title="Edit"></i>
+                                        <i @click.stop="setEditingContext('nested-row', ci, coli, eli)" class="fa fa-pen text-[9px] text-slate-400 hover:text-[#0091ea]" title="Edit"></i>
                                         <i @click.stop="duplicateElement(ci, coli, eli)" class="fa fa-copy text-[9px] text-slate-400 hover:text-[#0091ea]" title="Duplicate"></i>
                                         <i @click.stop="col.elements.splice(eli, 1)" class="fa fa-trash-alt text-[9px] text-slate-400 hover:text-red-500" title="Delete"></i>
                                     </div>
@@ -91,10 +91,10 @@
                                     <div class="flex items-center gap-2 px-4 py-1.5 hover:bg-slate-50 cursor-pointer group/line"
                                          @click="setEditingContext('nested-column', ci, coli, eli, ncoli)">
                                         <i class="fa fa-caret-down text-[10px] text-slate-300"></i>
-                                        <span class="text-[10px] font-bold text-slate-500 flex-1">Nested Column</span>
+                                        <span class="text-[14px] font-bold text-slate-500 flex-1">Nested Column</span>
                                         <div class="flex items-center gap-2 opacity-0 group-hover/line:opacity-100 transition-opacity">
                                             <i @click.stop="openElementModal(ci, coli, 'design', true, eli, ncoli)" class="fa fa-plus text-[9px] text-slate-400 hover:text-[#0091ea]" title="Add Nested Element"></i>
-                                            <i @click.stop="editingContext={type:'nested-column', ci:ci, coli:coli, eli:eli, ncoli:ncoli}; activeTab='settings'" class="fa fa-pen text-[9px] text-slate-400 hover:text-[#0091ea]" title="Edit"></i>
+                                            <i @click.stop="setEditingContext('nested-column', ci, coli, eli, ncoli)" class="fa fa-pen text-[9px] text-slate-400 hover:text-[#0091ea]" title="Edit"></i>
                                             <i @click.stop="duplicateNestedColumn(ci, coli, eli, ncoli)" class="fa fa-copy text-[9px] text-slate-400 hover:text-[#0091ea]" title="Duplicate"></i>
                                             <i @click.stop="el.columns.splice(ncoli, 1)" class="fa fa-trash-alt text-[9px] text-slate-400 hover:text-red-500" title="Delete"></i>
                                         </div>
@@ -104,10 +104,10 @@
                                         <div class="flex items-center gap-3 px-4 py-1 hover:bg-slate-50 cursor-pointer group/line"
                                              @click="setEditingContext('element', ci, coli, eli, ncoli, neli)">
                                             <i :class="nel.icon" class="text-[10px] text-slate-400 w-4 text-center"></i>
-                                            <span class="text-[10px] text-slate-500 flex-1 capitalize">@{{ nel.type }}</span>
+                                            <span class="text-[14px] text-slate-500 flex-1 capitalize">@{{ nel.type }}</span>
                                             <div class="flex items-center gap-2 opacity-0 group-hover/line:opacity-100 transition-opacity">
                                                 <i @click.stop="openElementModal(ci, coli, 'design', true, eli, ncoli, neli + 1)" class="fa fa-plus text-[9px] text-slate-400 hover:text-[#0091ea]" title="Add Below"></i>
-                                                <i @click.stop="editingContext={type:'element', ci:ci, coli:coli, eli:eli, ncoli:ncoli, neli:neli}; activeTab='settings'" class="fa fa-pen text-[9px] text-slate-400 hover:text-[#0091ea]" title="Edit"></i>
+                                                <i @click.stop="setEditingContext('element', ci, coli, eli, ncoli, neli)" class="fa fa-pen text-[9px] text-slate-400 hover:text-[#0091ea]" title="Edit"></i>
                                                 <i @click.stop="duplicateNestedElement(ci, coli, eli, ncoli, neli)" class="fa fa-copy text-[9px] text-slate-400 hover:text-[#0091ea]" title="Duplicate"></i>
                                                 <i @click.stop="ncol.elements.splice(neli, 1)" class="fa fa-trash-alt text-[9px] text-slate-400 hover:text-red-500" title="Delete"></i>
                                             </div>
@@ -183,10 +183,10 @@
                                             <i class="fa fa-bars text-[10px]"></i>
                                         </div>
                                     </div>
-                                    <textarea v-model="editingElement.settings.title" 
-                                              rows="4" 
+                                    <textarea v-model="editingElement.settings.title"
+                                              rows="4"
                                               placeholder="Enter your title here..."
-                                              class="w-full border border-slate-200 rounded p-3 text-[13px] text-slate-600 focus:outline-none focus:border-[#0091ea] focus:ring-1 focus:ring-[#0091ea]/10 transition-all"></textarea>
+                                              class="w-full border border-slate-200 rounded p-3 text-[13px] text-slate-600 focus:outline-none focus:border-[#0091ea] focus:ring-1 focus:ring-[#0091ea]/10 transition-all resize-none"></textarea>
                                 </div>
 
                                 <!-- Title Link Toggle -->
@@ -196,11 +196,11 @@
                                         <i class="fa fa-question-circle text-[10px] text-slate-300"></i>
                                     </div>
                                     <div class="flex bg-slate-50 border border-slate-100 rounded p-1 w-fit">
-                                        <button @click="editingElement.settings.useLink = true" 
-                                                :class="editingElement.settings.useLink ? 'bg-[#0091ea] text-white shadow-md' : 'text-slate-400'"
+                                        <button @click="editingElement.settings.useLink = true"
+                                                :class="editingElement.settings.useLink ? 'bg-[#0091ea] text-white shadow-md' : 'bg-[#0091ea]/20 text-[#0091ea]'"
                                                 class="px-6 py-1.5 text-[11px] font-black uppercase rounded transition-all">On</button>
-                                        <button @click="editingElement.settings.useLink = false" 
-                                                :class="!editingElement.settings.useLink ? 'bg-white text-slate-600 shadow-sm' : 'text-slate-400'"
+                                        <button @click="editingElement.settings.useLink = false"
+                                                :class="!editingElement.settings.useLink ? 'bg-[#0091ea] text-white shadow-md' : 'bg-[#0091ea]/20 text-[#0091ea]'"
                                                 class="px-6 py-1.5 text-[11px] font-black uppercase rounded transition-all">Off</button>
                                     </div>
                                 </div>
@@ -215,13 +215,26 @@
                                         </div>
                                     </div>
                                     <div class="flex">
-                                        <input type="text" v-model="editingElement.settings.linkUrl" 
+                                        <input type="text" v-model="editingElement.settings.linkUrl"
                                                placeholder="Select Link"
                                                class="flex-1 border border-slate-200 border-r-0 rounded-l px-3 py-2.5 text-[13px] focus:outline-none focus:border-[#0091ea]">
                                         <button class="bg-white border border-slate-200 rounded-r px-3 text-slate-400 hover:text-[#0091ea] transition-colors">
                                             <i class="fa fa-link text-[12px]"></i>
                                         </button>
                                     </div>
+                                </div>
+
+                                <!-- Link Target -->
+                                <div v-if="editingElement.settings.useLink && editingElement.settings.linkUrl">
+                                    <div class="flex justify-between items-center mb-3">
+                                        <label class="text-[12px] font-bold text-[#333]">Link Target</label>
+                                        <i class="fa fa-question-circle text-[10px] text-slate-300"></i>
+                                    </div>
+                                    <select v-model="editingElement.settings.linkTarget"
+                                            class="w-full border border-slate-200 rounded px-3 py-2.5 text-[13px] text-slate-600 focus:outline-none focus:border-[#0091ea]">
+                                        <option value="_self">Same Window</option>
+                                        <option value="_blank">New Window</option>
+                                    </select>
                                 </div>
 
                                 <!-- Visibility -->

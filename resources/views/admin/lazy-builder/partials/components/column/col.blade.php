@@ -175,7 +175,7 @@
                     <i class="{{ $custEl['icon'] ?? 'fa fa-cube' }} text-xl text-slate-400 block mb-1"></i>
                     <p class="text-[11px] font-bold text-slate-500 uppercase tracking-wide">{{ $custEl['name'] ?? $type }}</p>
                     @if($firstTextField)
-                        <p class="text-[10px] text-slate-400 mt-1 truncate">@{{ el.settings.{{ $firstTextField }} || '...' }}</p>
+                        <p class="text-[10px] text-slate-400 mt-1 truncate">{!! "{{ el.settings.{$firstTextField} || '...' }}" !!}</p>
                     @endif
                 </div>
             @endforeach

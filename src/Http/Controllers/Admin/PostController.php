@@ -16,7 +16,17 @@ class PostController extends Controller
     {
         $post = Post::findOrFail($id);
         $customElements = apply_lazy_filters('lazy_builder_elements', []);
-        return view('cms-dashboard::admin.lazy-builder.index', compact('post', 'customElements'));
+
+        $bodyRaw    = get_cms_option('theme_typography_body');
+        $headingRaw = get_cms_option('theme_typography_h1');
+        $bodyFont    = is_array($bodyRaw)    ? $bodyRaw    : json_decode((string)$bodyRaw,    true);
+        $headingFont = is_array($headingRaw) ? $headingRaw : json_decode((string)$headingRaw, true);
+        $themeBodyFont    = $bodyFont['family']    ?? null;
+        $themeHeadingFont = $headingFont['family'] ?? null;
+
+        return view('cms-dashboard::admin.lazy-builder.index', compact(
+            'post', 'customElements', 'themeBodyFont', 'themeHeadingFont'
+        ));
     }
 
     public function saveBuilder(Request $request, $id)

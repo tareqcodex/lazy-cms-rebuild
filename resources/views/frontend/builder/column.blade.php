@@ -1,3 +1,11 @@
+@once
+<style>
+    @media (max-width: 640px) { .lazy-hide-mobile { display: none !important; } }
+    @media (min-width: 641px) and (max-width: 1024px) { .lazy-hide-tablet { display: none !important; } }
+    @media (min-width: 1025px) { .lazy-hide-desktop { display: none !important; } }
+    .lazy-hide-all { display: none !important; }
+</style>
+@endonce
 @php
     $s     = $column['settings'] ?? [];
     $basisRaw = $column['basis'] ?? null;

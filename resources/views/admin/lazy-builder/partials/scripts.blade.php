@@ -6,6 +6,8 @@
             const layout = ref([]);
             const isPreview = ref(false);
             const isSaving = ref(false);
+            const isDirty = ref(false);
+            let _trackLayoutDirty = false;
             const activeTab = ref('navigator'); // Default to Navigator like in screenshot
             const device = ref('desktop');
             const activeCi = ref(null);
@@ -94,6 +96,68 @@
                 { id: '32', label: '1/5', config: '1/5' },
                 { id: '33', label: '1/6', config: '1/6' },
             ];
+
+            // Customizer theme fonts (passed from controller)
+            const themeBodyFont    = @json($themeBodyFont ?? null);
+            const themeHeadingFont = @json($themeHeadingFont ?? null);
+
+            // Google Fonts database (mirrors customizer list)
+            const BUILDER_FONTS = [
+                { family: 'Inter', category: 'Sans-serif', variants: ['100','200','300','400','500','600','700','800','900'] },
+                { family: 'Roboto', category: 'Sans-serif', variants: ['100','300','400','500','700','900'] },
+                { family: 'Open Sans', category: 'Sans-serif', variants: ['300','400','500','600','700','800'] },
+                { family: 'Lato', category: 'Sans-serif', variants: ['100','300','400','700','900'] },
+                { family: 'Poppins', category: 'Sans-serif', variants: ['100','200','300','400','500','600','700','800','900'] },
+                { family: 'Nunito', category: 'Sans-serif', variants: ['200','300','400','500','600','700','800','900'] },
+                { family: 'Montserrat', category: 'Sans-serif', variants: ['100','200','300','400','500','600','700','800','900'] },
+                { family: 'Raleway', category: 'Sans-serif', variants: ['100','200','300','400','500','600','700','800','900'] },
+                { family: 'Ubuntu', category: 'Sans-serif', variants: ['300','400','500','700'] },
+                { family: 'Oswald', category: 'Sans-serif', variants: ['200','300','400','500','600','700'] },
+                { family: 'Quicksand', category: 'Sans-serif', variants: ['300','400','500','600','700'] },
+                { family: 'Work Sans', category: 'Sans-serif', variants: ['100','200','300','400','500','600','700','800','900'] },
+                { family: 'Noto Sans', category: 'Sans-serif', variants: ['100','200','300','400','500','600','700','800','900'] },
+                { family: 'Rubik', category: 'Sans-serif', variants: ['300','400','500','600','700','800','900'] },
+                { family: 'DM Sans', category: 'Sans-serif', variants: ['400','500','700'] },
+                { family: 'Cairo', category: 'Sans-serif', variants: ['200','300','400','500','600','700','800','900'] },
+                { family: 'Josefin Sans', category: 'Sans-serif', variants: ['100','200','300','400','500','600','700'] },
+                { family: 'Public Sans', category: 'Sans-serif', variants: ['100','200','300','400','500','600','700','800','900'] },
+                { family: 'Fira Sans', category: 'Sans-serif', variants: ['100','200','300','400','500','600','700','800','900'] },
+                { family: 'Playfair Display', category: 'Serif', variants: ['400','500','600','700','800','900'] },
+                { family: 'Merriweather', category: 'Serif', variants: ['300','400','700','900'] },
+                { family: 'Lora', category: 'Serif', variants: ['400','500','600','700'] },
+                { family: 'PT Serif', category: 'Serif', variants: ['400','700'] },
+                { family: 'Libre Baskerville', category: 'Serif', variants: ['400','700'] },
+                { family: 'Crimson Text', category: 'Serif', variants: ['400','600','700'] },
+                { family: 'EB Garamond', category: 'Serif', variants: ['400','500','600','700','800'] },
+                { family: 'Fira Code', category: 'Monospace', variants: ['300','400','500','600','700'] },
+                { family: 'Source Code Pro', category: 'Monospace', variants: ['200','300','400','500','600','700','800','900'] },
+                { family: 'Roboto Mono', category: 'Monospace', variants: ['100','200','300','400','500','600','700'] },
+                { family: 'Lobster', category: 'Display', variants: ['400'] },
+                { family: 'Pacifico', category: 'Display', variants: ['400'] },
+                { family: 'Dancing Script', category: 'Display', variants: ['400','500','600','700'] },
+                { family: 'Bebas Neue', category: 'Display', variants: ['400'] },
+                { family: 'Comfortaa', category: 'Display', variants: ['300','400','500','600','700'] },
+            ];
+
+            const builderFontGroups = BUILDER_FONTS.reduce((acc, font) => {
+                if (!acc[font.category]) acc[font.category] = [];
+                acc[font.category].push(font);
+                return acc;
+            }, {});
+
+            const loadBuilderFont = (fontFamily) => {
+                if (!fontFamily || fontFamily === 'inherit') return;
+                const match = fontFamily.match(/['"]?([^'",$]+)/);
+                const name = match ? match[1].trim() : fontFamily.trim();
+                if (!name || name === 'inherit') return;
+                const linkId = 'bfont-' + name.replace(/\s+/g, '-').toLowerCase();
+                if (document.getElementById(linkId)) return;
+                const link = document.createElement('link');
+                link.id   = linkId;
+                link.rel  = 'stylesheet';
+                link.href = `https://fonts.googleapis.com/css2?family=${name.replace(/\s+/g, '+')}:wght@100;200;300;400;500;600;700;800;900&display=swap`;
+                document.head.appendChild(link);
+            };
 
             const availableElements = [
                 { type: 'heading', name: 'Heading', icon: 'fa fa-heading' },
@@ -209,7 +273,13 @@
                     console.error('Failed to parse layout', e);
                     layout.value = [];
                 }
+                // Enable dirty tracking after initial load settles (setTimeout = macro-task, runs after Vue's watcher micro-tasks)
+                setTimeout(() => { _trackLayoutDirty = true; }, 0);
             });
+
+            watch(layout, () => {
+                if (_trackLayoutDirty) isDirty.value = true;
+            }, { deep: true });
 
             // Watch isPreview to directly control layout via DOM
             watch(isPreview, (val) => {
@@ -853,6 +923,7 @@
                     const data = await response.json();
                     if (data.success) {
                         showToast('Layout saved successfully!', 'success');
+                        isDirty.value = false;
                     } else {
                         showToast('Failed to save layout!', 'error');
                     }
@@ -895,6 +966,23 @@
                     return ncol ? ncol.elements[ctx.neli] : null;
                 }
                 return el;
+            });
+
+            // Dynamic font variants for the selected title element's font
+            const titleFontVariants = computed(() => {
+                const rawFamily = editingElement.value?.settings?.fontFamily || '';
+                if (!rawFamily || rawFamily === 'inherit') {
+                    return ['100','200','300','400','500','600','700','800','900'];
+                }
+                const match = rawFamily.match(/['"]?([^'",$]+)/);
+                const familyName = match ? match[1].trim() : rawFamily.trim();
+                const found = BUILDER_FONTS.find(f => f.family === familyName);
+                return found ? found.variants : ['100','200','300','400','500','600','700','800','900'];
+            });
+
+            // Auto-load Google Font when fontFamily setting changes
+            watch(() => editingElement.value?.settings?.fontFamily, (newFamily) => {
+                loadBuilderFont(newFamily);
             });
 
             // Dynamic Styles
@@ -1322,6 +1410,13 @@
                 return classes;
             };
 
+            const getCanvasVisibilityStyle = (settings) => {
+                if (!settings || !settings.visibility) return {};
+                const v = settings.visibility;
+                const anyHidden = v.mobile === false || v.tablet === false || v.desktop === false;
+                return anyHidden ? { opacity: '0.4', outline: '2px dashed #fbbf24', outlineOffset: '-2px' } : {};
+            };
+
             const addElement = (type) => {
                 if (currentTargetCi.value === null || currentTargetColi.value === null) return;
 
@@ -1375,7 +1470,7 @@
 
 
             return {
-                layout, isPreview, isSaving, activeTab, activePanelTab, activeColPanelTab, device, availableElements,
+                layout, isPreview, isSaving, isDirty, activeTab, activePanelTab, activeColPanelTab, device, availableElements,
                 activeCi, editingCi, activeColi, activeColCi, editingContext,
                 clearEditingContext, setEditingContext,
                 showColumnModal, columnModalType, columnLayouts, openColumnModal, selectLayout,
@@ -1385,11 +1480,13 @@
                 isDragging, dragType, dragSource, dragCi, dragColi, dragEli, dragNcoli, startDrag,
                 onDragStart, onDragEnd, onDragOver, onDrop, dragTarget, dragPosition,
                 canvasStyle, containerStyle, containerInnerStyle, columnOuterStyle, columnInnerStyle, formatBasisToFraction, updateBasis, hexToRgba, getUnitVal,
-                getVisibilityClasses,
+                getVisibilityClasses, getCanvasVisibilityStyle,
                 searchColumnQuery, searchElementQuery, filteredColumnLayouts, filteredNestedColumnLayouts, filteredAvailableElements,
                 shouldShowGuide,
                 toasts, showToast,
-                hoveredType, hoveredCi, hoveredColi, hoveredEli, hoveredNcoli, setHover
+                hoveredType, hoveredCi, hoveredColi, hoveredEli, hoveredNcoli, setHover,
+                themeBodyFont, themeHeadingFont, builderFontGroups, builderFonts: BUILDER_FONTS,
+                titleFontVariants, loadBuilderFont
             };
         }
     }).mount('#lazy-builder-app');
