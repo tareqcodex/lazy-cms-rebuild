@@ -7,6 +7,7 @@ use Acme\CmsDashboard\Models\Page;
 use Illuminate\Http\Request;
 use Illuminate\Support\Str;
 use Illuminate\Support\Facades\DB;
+use Acme\CmsDashboard\Services\BuilderShortcodeConverter;
 
 class PageController extends Controller
 {
@@ -203,6 +204,10 @@ class PageController extends Controller
             ->where('post_id', $page->id)
             ->pluck('value', 'field_id')
             ->toArray();
+
+        if (!empty($page->content) && BuilderShortcodeConverter::isBuilderJson($page->content)) {
+            $page->content = BuilderShortcodeConverter::jsonToShortcodes($page->content);
+        }
 
         return view('cms-dashboard::admin.pages.edit', compact('page', 'allPages', 'fieldGroups', 'fieldValues'));
     }

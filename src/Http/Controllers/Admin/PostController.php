@@ -8,6 +8,7 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Str;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Facades\DB;
+use Acme\CmsDashboard\Services\BuilderShortcodeConverter;
 
 class PostController extends Controller
 {
@@ -488,6 +489,12 @@ class PostController extends Controller
             ->toArray();
 
         $postType = \Acme\CmsDashboard\Models\PostType::where('slug', $post->type)->first();
+
+        // Convert builder JSON → shortcodes for display in the rich editor.
+        // The save path (BuilderShortcodeMiddleware) converts them back to JSON automatically.
+        if (!empty($post->content) && BuilderShortcodeConverter::isBuilderJson($post->content)) {
+            $post->content = BuilderShortcodeConverter::jsonToShortcodes($post->content);
+        }
 
         return view('cms-dashboard::admin.posts.edit', compact('post', 'pages', 'type', 'supports', 'assignedTaxonomies', 'fieldGroups', 'fieldValues', 'postType', 'overriddenTaxonomies'));
     }
