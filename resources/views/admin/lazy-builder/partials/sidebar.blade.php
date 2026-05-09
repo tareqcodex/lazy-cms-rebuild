@@ -275,15 +275,172 @@
                                  <!-- We can add these later to match the same style -->
                                  <component :is="editingElement?.settingsComponent || 'div'" :settings="editingElement?.settings"></component>
                             </div>
+
+                            <!-- ══ CUSTOM REGISTERED ELEMENTS ══ -->
+                            @foreach($customElements ?? [] as $type => $custEl)
+                            <div v-else-if="editingElement?.type === '{{ $type }}'" class="space-y-8">
+
+                                @foreach($custEl['fields'] ?? [] as $fieldKey => $field)
+                                @if(($field['type'] ?? 'text') === 'text')
+                                <div>
+                                    <div class="flex justify-between items-center mb-3">
+                                        <label class="text-[12px] font-bold text-[#333]">{{ $field['label'] ?? $fieldKey }}</label>
+                                        <i class="fa fa-question-circle text-[10px] text-slate-300"></i>
+                                    </div>
+                                    <input type="text" v-model="editingElement.settings.{{ $fieldKey }}"
+                                           placeholder="{{ $field['placeholder'] ?? '' }}"
+                                           class="w-full border border-slate-200 rounded px-3 py-2.5 text-[13px] text-slate-600 focus:outline-none focus:border-[#0091ea]">
+                                </div>
+                                @elseif($field['type'] === 'textarea')
+                                <div>
+                                    <div class="flex justify-between items-center mb-3">
+                                        <label class="text-[12px] font-bold text-[#333]">{{ $field['label'] ?? $fieldKey }}</label>
+                                        <i class="fa fa-question-circle text-[10px] text-slate-300"></i>
+                                    </div>
+                                    <textarea v-model="editingElement.settings.{{ $fieldKey }}"
+                                              rows="{{ $field['rows'] ?? 4 }}"
+                                              placeholder="{{ $field['placeholder'] ?? '' }}"
+                                              class="w-full border border-slate-200 rounded p-3 text-[13px] text-slate-600 focus:outline-none focus:border-[#0091ea] focus:ring-1 focus:ring-[#0091ea]/10 transition-all"></textarea>
+                                </div>
+                                @elseif($field['type'] === 'number')
+                                <div>
+                                    <div class="flex justify-between items-center mb-3">
+                                        <label class="text-[12px] font-bold text-[#333]">{{ $field['label'] ?? $fieldKey }}</label>
+                                        <i class="fa fa-question-circle text-[10px] text-slate-300"></i>
+                                    </div>
+                                    <input type="number" v-model.number="editingElement.settings.{{ $fieldKey }}"
+                                           @if(isset($field['min'])) min="{{ $field['min'] }}" @endif
+                                           @if(isset($field['max'])) max="{{ $field['max'] }}" @endif
+                                           class="w-full border border-slate-200 rounded px-3 py-2.5 text-[13px] text-slate-600 focus:outline-none focus:border-[#0091ea]">
+                                </div>
+                                @elseif($field['type'] === 'select')
+                                <div>
+                                    <div class="flex justify-between items-center mb-3">
+                                        <label class="text-[12px] font-bold text-[#333]">{{ $field['label'] ?? $fieldKey }}</label>
+                                        <i class="fa fa-question-circle text-[10px] text-slate-300"></i>
+                                    </div>
+                                    <select v-model="editingElement.settings.{{ $fieldKey }}"
+                                            class="w-full border border-slate-200 rounded px-3 py-2.5 text-[13px] text-slate-600 focus:outline-none focus:border-[#0091ea]">
+                                        @foreach($field['options'] ?? [] as $optVal => $optLabel)
+                                            <option value="{{ $optVal }}">{{ $optLabel }}</option>
+                                        @endforeach
+                                    </select>
+                                </div>
+                                @elseif($field['type'] === 'toggle')
+                                <div>
+                                    <div class="flex justify-between items-center mb-3">
+                                        <label class="text-[12px] font-bold text-[#333]">{{ $field['label'] ?? $fieldKey }}</label>
+                                        <i class="fa fa-question-circle text-[10px] text-slate-300"></i>
+                                    </div>
+                                    <div class="flex bg-slate-50 border border-slate-100 rounded p-1 w-fit">
+                                        <button @click="editingElement.settings.{{ $fieldKey }} = true"
+                                                :class="editingElement.settings.{{ $fieldKey }} ? 'bg-[#0091ea] text-white shadow-md' : 'text-slate-400'"
+                                                class="px-6 py-1.5 text-[11px] font-black uppercase rounded transition-all">On</button>
+                                        <button @click="editingElement.settings.{{ $fieldKey }} = false"
+                                                :class="!editingElement.settings.{{ $fieldKey }} ? 'bg-white text-slate-600 shadow-sm' : 'text-slate-400'"
+                                                class="px-6 py-1.5 text-[11px] font-black uppercase rounded transition-all">Off</button>
+                                    </div>
+                                </div>
+                                @elseif($field['type'] === 'color')
+                                <div>
+                                    <div class="flex justify-between items-center mb-3">
+                                        <label class="text-[12px] font-bold text-[#333]">{{ $field['label'] ?? $fieldKey }}</label>
+                                        <i class="fa fa-question-circle text-[10px] text-slate-300"></i>
+                                    </div>
+                                    <div class="flex gap-2 items-center">
+                                        <input type="color" v-model="editingElement.settings.{{ $fieldKey }}"
+                                               class="w-10 h-10 border border-slate-200 rounded cursor-pointer p-0.5 shrink-0">
+                                        <input type="text" v-model="editingElement.settings.{{ $fieldKey }}"
+                                               placeholder="#000000"
+                                               class="flex-1 border border-slate-200 rounded px-3 py-2.5 text-[13px] text-slate-600 focus:outline-none focus:border-[#0091ea]">
+                                    </div>
+                                </div>
+                                @elseif($field['type'] === 'image')
+                                <div>
+                                    <div class="flex justify-between items-center mb-3">
+                                        <label class="text-[12px] font-bold text-[#333]">{{ $field['label'] ?? $fieldKey }}</label>
+                                        <i class="fa fa-question-circle text-[10px] text-slate-300"></i>
+                                    </div>
+                                    <div class="space-y-2">
+                                        <div v-if="editingElement.settings.{{ $fieldKey }}" class="border border-slate-100 rounded overflow-hidden">
+                                            <img :src="editingElement.settings.{{ $fieldKey }}" class="w-full h-24 object-cover">
+                                        </div>
+                                        <input type="text" v-model="editingElement.settings.{{ $fieldKey }}"
+                                               placeholder="Image URL..."
+                                               class="w-full border border-slate-200 rounded px-3 py-2.5 text-[13px] text-slate-600 focus:outline-none focus:border-[#0091ea]">
+                                        <button @click="openMediaModal('{{ $fieldKey }}')"
+                                                class="w-full py-2 bg-slate-100 text-slate-600 text-[11px] font-bold rounded hover:bg-[#0091ea] hover:text-white transition-all">
+                                            Browse Media Library
+                                        </button>
+                                    </div>
+                                </div>
+                                @endif
+                                @endforeach
+
+                                <!-- Default: Element Visibility -->
+                                <div class="pt-4 border-t border-slate-50">
+                                    <div class="flex justify-between items-center mb-3">
+                                        <label class="text-[12px] font-bold text-[#333]">Element Visibility</label>
+                                        <i class="fa fa-question-circle text-[10px] text-slate-300"></i>
+                                    </div>
+                                    <div class="grid grid-cols-3 gap-1">
+                                        <button @click="editingElement.settings.visibility.mobile = !editingElement.settings.visibility.mobile"
+                                                :class="editingElement.settings.visibility.mobile ? 'bg-[#0091ea] text-white' : 'bg-slate-100 text-slate-400'"
+                                                class="py-3 rounded transition-all flex items-center justify-center">
+                                            <i class="fa fa-mobile-alt text-sm"></i>
+                                        </button>
+                                        <button @click="editingElement.settings.visibility.tablet = !editingElement.settings.visibility.tablet"
+                                                :class="editingElement.settings.visibility.tablet ? 'bg-[#0091ea] text-white' : 'bg-slate-100 text-slate-400'"
+                                                class="py-3 rounded transition-all flex items-center justify-center">
+                                            <i class="fa fa-tablet-alt text-sm"></i>
+                                        </button>
+                                        <button @click="editingElement.settings.visibility.desktop = !editingElement.settings.visibility.desktop"
+                                                :class="editingElement.settings.visibility.desktop ? 'bg-[#0091ea] text-white' : 'bg-slate-100 text-slate-400'"
+                                                class="py-3 rounded transition-all flex items-center justify-center">
+                                            <i class="fa fa-desktop text-sm"></i>
+                                        </button>
+                                    </div>
+                                </div>
+
+                                <!-- Default: CSS Class & ID -->
+                                <div class="grid grid-cols-1 gap-6 pt-4 border-t border-slate-50">
+                                    <div>
+                                        <div class="flex justify-between items-center mb-3">
+                                            <label class="text-[12px] font-bold text-[#333]">CSS Class</label>
+                                            <i class="fa fa-question-circle text-[10px] text-slate-300"></i>
+                                        </div>
+                                        <input type="text" v-model="editingElement.settings.cssClass"
+                                               class="w-full border border-slate-200 rounded px-3 py-2.5 text-[13px] text-slate-600 focus:outline-none focus:border-[#0091ea]">
+                                    </div>
+                                    <div>
+                                        <div class="flex justify-between items-center mb-3">
+                                            <label class="text-[12px] font-bold text-[#333]">CSS ID</label>
+                                            <i class="fa fa-question-circle text-[10px] text-slate-300"></i>
+                                        </div>
+                                        <input type="text" v-model="editingElement.settings.cssId"
+                                               class="w-full border border-slate-200 rounded px-3 py-2.5 text-[13px] text-slate-600 focus:outline-none focus:border-[#0091ea]">
+                                    </div>
+                                </div>
+                            </div>
+                            @endforeach
                         </div>
 
                         <!-- ══ DESIGN TAB ══ -->
                         <div v-else-if="editingContext.tab === 'design'" class="p-5 space-y-6">
                              <!-- Design Settings for Title -->
                              <div v-if="editingElement?.type === 'title'" class="space-y-6">
-                                 <!-- Already implemented in previous step, we just wrap it in the new container -->
                                  @include('cms-dashboard::admin.lazy-builder.partials.components.elements.title-design')
                              </div>
+                             <!-- Custom Elements: empty design tab -->
+                             @foreach($customElements ?? [] as $type => $custEl)
+                             <div v-else-if="editingElement?.type === '{{ $type }}'" class="space-y-6">
+                                 <div class="p-4 bg-slate-50 rounded border border-dashed border-slate-200 text-center">
+                                     <i class="{{ $custEl['icon'] ?? 'fa fa-cube' }} text-slate-300 text-3xl mb-3 block"></i>
+                                     <p class="text-[11px] text-slate-400 font-bold uppercase tracking-widest">{{ $custEl['name'] ?? $type }}</p>
+                                     <p class="text-[10px] text-slate-400 mt-1">Add design settings via the <code>design_fields</code> key.</p>
+                                 </div>
+                             </div>
+                             @endforeach
                         </div>
 
                         <!-- ══ EXTRAS TAB ══ -->

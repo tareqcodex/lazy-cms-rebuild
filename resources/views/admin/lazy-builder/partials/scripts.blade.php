@@ -99,7 +99,7 @@
                 { type: 'heading', name: 'Heading', icon: 'fa fa-heading' },
                 { type: 'text', name: 'Text Block', icon: 'fa fa-paragraph' },
                 { type: 'image', name: 'Image', icon: 'fa fa-image' },
-                { type: 'title', name: 'Modern Title', icon: 'fa fa-heading' },
+                { type: 'title', name: 'Title', icon: 'fa fa-heading' },
                 { type: 'button', name: 'Button', icon: 'fa fa-rectangle-ad' },
                 { type: 'video', name: 'Video', icon: 'fa fa-play-circle' },
                 { type: 'spacer', name: 'Spacer', icon: 'fa fa-arrows-alt-v' },
@@ -766,6 +766,9 @@
                 } else if (ctx.type === 'column' || ctx.type === 'nested-column') {
                     const col = editingColumn.value;
                     if (col) targetSettings = col.settings;
+                } else if (ctx.type === 'element' || ctx.type === 'nested-element') {
+                    const el = editingElement.value;
+                    if (el) targetSettings = el.settings;
                 }
 
                 if (!targetSettings) return;
@@ -1328,8 +1331,8 @@
                     settings: {
                         visibility: { mobile: true, tablet: true, desktop: true },
                         ...(type === 'heading' ? { title: 'New Heading', textAlign: 'left' } : {}),
-                        ...(type === 'title' ? { 
-                            title: 'Modern Title', titleColor: '#222', fontSize: 36, fontSizeUnit: 'px', fontWeight: '800', textAlign: 'center',
+                        ...(type === 'title' ? {
+                            title: 'Title', titleColor: '#222', fontSize: 36, fontSizeUnit: 'px', fontWeight: '800', textAlign: 'center',
                             useLink: false, linkUrl: '', linkColor: '#0091ea', linkHoverColor: '#007cc0',
                             separator: 'default', separatorColor: '#0091ea', dividerWidth: 60, dividerHeight: 3,
                             paddingTop: 20, paddingBottom: 20, marginTop: 0, marginBottom: 0, marginLeft: 0, marginRight: 0,
@@ -1340,6 +1343,14 @@
                         ...(type === 'image' ? { url: '', alt: '' } : {}),
                     }
                 };
+
+                // Apply custom element defaults
+                const customDef = Object.values(customElements).find(e => e.type === type);
+                if (customDef && customDef.fields) {
+                    Object.entries(customDef.fields).forEach(([key, field]) => {
+                        if (field.default !== undefined) newEl.settings[key] = field.default;
+                    });
+                }
 
                 if (currentTargetNeli.value !== null) {
                     // Nested insertion inside a nested column at specific index

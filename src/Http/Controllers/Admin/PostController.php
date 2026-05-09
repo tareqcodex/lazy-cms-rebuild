@@ -15,7 +15,8 @@ class PostController extends Controller
     public function builder($id)
     {
         $post = Post::findOrFail($id);
-        return view('cms-dashboard::admin.lazy-builder.index', compact('post'));
+        $customElements = apply_lazy_filters('lazy_builder_elements', []);
+        return view('cms-dashboard::admin.lazy-builder.index', compact('post', 'customElements'));
     }
 
     public function saveBuilder(Request $request, $id)

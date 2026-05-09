@@ -162,8 +162,21 @@
 
             <!-- Custom Registered Blocks -->
             @foreach($customElements ?? [] as $type => $custEl)
-                <div v-if="el.type === '{{ $type }}'">
-                    @includeIf($custEl['view'])
+                @php
+                    $firstTextField = null;
+                    foreach ($custEl['fields'] ?? [] as $fk => $fv) {
+                        if (in_array($fv['type'] ?? 'text', ['text', 'textarea'])) {
+                            $firstTextField = $fk;
+                            break;
+                        }
+                    }
+                @endphp
+                <div v-if="el.type === '{{ $type }}'" class="p-4 text-center border border-dashed border-slate-200 rounded bg-slate-50/50">
+                    <i class="{{ $custEl['icon'] ?? 'fa fa-cube' }} text-xl text-slate-400 block mb-1"></i>
+                    <p class="text-[11px] font-bold text-slate-500 uppercase tracking-wide">{{ $custEl['name'] ?? $type }}</p>
+                    @if($firstTextField)
+                        <p class="text-[10px] text-slate-400 mt-1 truncate">@{{ el.settings.{{ $firstTextField }} || '...' }}</p>
+                    @endif
                 </div>
             @endforeach
 

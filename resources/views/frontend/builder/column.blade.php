@@ -233,6 +233,18 @@
                     @if($contentLayout === 'row')
                         <div style="flex-basis: 100%; width: 100%; height: 0; overflow: hidden;"></div>
                     @endif
+                @else
+                    @php
+                        $customBuilderDefs = apply_lazy_filters('lazy_builder_elements', []);
+                        $customBuilderDef  = $customBuilderDefs[$el['type']] ?? null;
+                    @endphp
+                    @if($customBuilderDef)
+                        @if(!empty($customBuilderDef['template']))
+                            @include($customBuilderDef['template'], ['el' => $el, 's' => $el['settings'] ?? []])
+                        @else
+                            @include('cms-dashboard::frontend.builder.elements.custom', ['el' => $el, 'customDef' => $customBuilderDef])
+                        @endif
+                    @endif
                 @endif
             @endforeach
         @endif
