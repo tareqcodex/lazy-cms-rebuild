@@ -1,5 +1,6 @@
 <x-cms-dashboard::layouts.admin title="Edit Taxonomy">
     <div class="max-w-[1280px] mx-auto pb-12" x-data="taxonomyForm()">
+        <x-cms-dashboard::admin.delete-modal />
         <form action="{{ route('admin.acpt.taxonomies.update', $taxonomy->id) }}" method="POST">
             @csrf
             @method('PUT')
@@ -90,9 +91,9 @@
         </form>
 
         <div class="flex justify-between items-center -mt-10 mb-10 px-6">
-            <form action="{{ route('admin.acpt.taxonomies.destroy', $taxonomy->id) }}" method="POST" onsubmit="return confirm('Delete this taxonomy?')">
+            <form id="delete-taxonomy-form" action="{{ route('admin.acpt.taxonomies.destroy', $taxonomy->id) }}" method="POST">
                 @csrf @method('DELETE')
-                <button type="submit" class="text-[#d63638] text-[13px] hover:underline">Delete Taxonomy</button>
+                <button type="button" onclick="confirmDeleteTaxonomy()" class="text-[#d63638] text-[13px] hover:underline">Delete Taxonomy</button>
             </form>
         </div>
     </div>
@@ -109,6 +110,19 @@
                 taxonomyKey: '{{ $taxonomy->slug }}',
             }));
         });
+
+        window.confirmDeleteTaxonomy = async function() {
+            const confirmed = await window.lazyConfirm({
+                title: 'Delete Taxonomy',
+                message: 'Are you sure you want to delete this taxonomy? This will remove all associated terms and their relationships with posts. This action cannot be undone.',
+                confirmText: 'Delete Taxonomy',
+                isDanger: true
+            });
+
+            if (confirmed) {
+                document.getElementById('delete-taxonomy-form').submit();
+            }
+        };
     </script>
     <style>[x-cloak] { display: none !important; }</style>
     @endpush

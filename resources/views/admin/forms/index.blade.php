@@ -1,5 +1,6 @@
 <x-cms-dashboard::layouts.admin>
     <x-slot name="title">Forms - Lazy CMS</x-slot>
+    <x-cms-dashboard::admin.delete-modal />
 
     <div class="px-6 py-4">
         <div class="flex items-center justify-between mb-6">
@@ -59,9 +60,9 @@
                                         <a href="{{ route('admin.forms.submissions', $form->id) }}" class="inline-flex items-center gap-1 bg-purple-50 text-purple-700 hover:bg-purple-100 px-3 py-1.5 rounded-lg text-xs font-semibold transition-colors">
                                             <span class="material-symbols-outlined text-[14px]">inbox</span> Entries
                                         </a>
-                                        <form method="POST" action="{{ route('admin.forms.destroy', $form) }}" onsubmit="return confirm('Delete this form?')">
+                                        <form id="delete-form-{{ $form->id }}" method="POST" action="{{ route('admin.forms.destroy', $form) }}">
                                             @csrf @method('DELETE')
-                                            <button class="inline-flex items-center gap-1 bg-red-50 text-red-700 hover:bg-red-100 px-3 py-1.5 rounded-lg text-xs font-semibold transition-colors">
+                                            <button type="button" onclick="confirmFormDelete({{ $form->id }})" class="inline-flex items-center gap-1 bg-red-50 text-red-700 hover:bg-red-100 px-3 py-1.5 rounded-lg text-xs font-semibold transition-colors">
                                                 <span class="material-symbols-outlined text-[14px]">delete</span>
                                             </button>
                                         </form>
@@ -75,4 +76,18 @@
             </div>
         @endif
     </div>
+    <script>
+        window.confirmFormDelete = async function(id) {
+            const confirmed = await window.lazyConfirm({
+                title: 'Delete Form',
+                message: 'Are you sure you want to delete this form? This action cannot be undone and will delete all associated submissions.',
+                confirmText: 'Delete Form',
+                isDanger: true
+            });
+
+            if (confirmed) {
+                document.getElementById(`delete-form-${id}`).submit();
+            }
+        };
+    </script>
 </x-cms-dashboard::layouts.admin>

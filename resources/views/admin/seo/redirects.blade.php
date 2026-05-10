@@ -1,5 +1,6 @@
 <x-cms-dashboard::layouts.admin>
     <x-slot name="title">Redirection Manager - Lazy CMS</x-slot>
+    <x-cms-dashboard::admin.delete-modal />
 
     <div class="px-2">
         <div class="flex items-center justify-between mb-6">
@@ -69,7 +70,7 @@
                                 <option value="-1">Bulk Actions</option>
                                 <option value="delete">Delete</option>
                             </select>
-                            <button type="submit" class="wp-btn-secondary h-8 px-3">Apply</button>
+                            <button type="button" onclick="handleBulkAction('bulk-form')" class="wp-btn-secondary h-8 px-3">Apply</button>
                         </div>
 
                         <div class="overflow-x-auto">
@@ -97,9 +98,9 @@
                                                     <div>
                                                         <div class="font-semibold text-[#2271b1] break-all">{{ $redirect->old_url }}</div>
                                                         <div class="flex items-center gap-2 mt-1 opacity-0 group-hover:opacity-100 transition-opacity">
-                                                            <form action="{{ route('admin.redirects.destroy', $redirect) }}" method="POST" onsubmit="return confirm('Are you sure?')">
+                                                            <form id="delete-redirect-{{ $redirect->id }}" action="{{ route('admin.redirects.destroy', $redirect) }}" method="POST">
                                                                 @csrf @method('DELETE')
-                                                                <button type="submit" class="text-[11px] text-[#d63638] hover:underline font-medium">Delete Permanently</button>
+                                                                <button type="button" onclick="confirmRedirectDelete({{ $redirect->id }})" class="text-[11px] text-[#d63638] hover:underline font-medium">Delete Permanently</button>
                                                             </form>
                                                         </div>
                                                     </div>
@@ -155,6 +156,46 @@
         document.getElementById('select-all').addEventListener('change', function() {
             document.querySelectorAll('.item-checkbox').forEach(cb => cb.checked = this.checked);
         });
+
+        window.handleBulkAction = async function(formId) {
+            const form = document.getElementById(formId);
+            const action = form.querySelector('select[name="action"]').value;
+            const selected = form.querySelectorAll('.item-checkbox:checked');
+
+            if (action === '-1') return;
+            if (selected.length === 0) {
+                window.showToast('Please select at least one item.', 'warning');
+                return;
+            }
+
+            if (action === 'delete') {
+                const confirmed = await window.lazyConfirm({
+                    title: 'Delete Redirects',
+                    message: `Are you sure you want to permanently delete ${selected.length} redirects? This action cannot be undone.`,
+                    confirmText: 'Delete Redirects',
+                    isDanger: true
+                });
+
+                if (confirmed) {
+                    form.submit();
+                }
+            } else {
+                form.submit();
+            }
+        };
+
+        window.confirmRedirectDelete = async function(id) {
+            const confirmed = await window.lazyConfirm({
+                title: 'Delete Redirect',
+                message: 'Are you sure you want to permanently delete this redirect? This action cannot be undone.',
+                confirmText: 'Delete Redirect',
+                isDanger: true
+            });
+
+            if (confirmed) {
+                document.getElementById(`delete-redirect-${id}`).submit();
+            }
+        };
     </script>
     @endpush
 </x-cms-dashboard::layouts.admin>

@@ -1,4 +1,5 @@
 <x-cms-dashboard::layouts.admin title="Tags">
+    <x-cms-dashboard::admin.delete-modal />
     <div class="flex justify-between items-center mb-4">
         <h1 class="text-[23px] font-normal text-[#1d2327]">Tags</h1>
         <div class="flex space-x-1">
@@ -10,6 +11,17 @@
     @if(session('success'))
         <div class="bg-[#fff] border-l-4 border-[#00a32a] shadow-[0_1px_1px_rgba(0,0,0,.04)] p-3 mb-4 rounded-sm text-[13px]">
             <p>{{ session('success') }}</p>
+        </div>
+    @endif
+    
+    @if($errors->any())
+        <div class="bg-[#fff] border-l-4 border-[#d63638] shadow-[0_1px_1px_rgba(0,0,0,.04)] p-3 mb-4 rounded-sm text-[13px]">
+            <p class="font-bold mb-2">Error: Please check the following fields:</p>
+            <ul class="list-disc list-inside text-[#d63638] space-y-1">
+                @foreach ($errors->all() as $error)
+                    <li>{{ $error }}</li>
+                @endforeach
+            </ul>
         </div>
     @endif
 
@@ -39,7 +51,10 @@
                 @endif
                 <div class="mb-4">
                     <label class="block text-[13px] text-[#1d2327] mb-1">Name</label>
-                    <input type="text" name="name" class="wp-input w-full" required>
+                    <input type="text" name="name" class="wp-input w-full @error('name') border-[#d63638] @enderror" value="{{ old('name') }}" required>
+                    @error('name')
+                        <p class="text-[#d63638] text-[12px] mt-1">{{ $message }}</p>
+                    @enderror
                     <p class="text-[12px] text-[#646970] mt-1">The name is how it appears on your site.</p>
                 </div>
 
@@ -68,7 +83,7 @@
                 </form>
             </div>
 
-            <form action="{{ route('admin.tags.bulk') }}" method="POST">
+            <form action="{{ route('admin.tags.bulk') }}" method="POST" id="tags-bulk-form">
                 @csrf
             <div class="flex justify-between items-center mb-2">
                 <div class="flex items-center space-x-2">
@@ -76,7 +91,7 @@
                         <option value="-1">Bulk actions</option>
                         <option value="delete">Delete</option>
                     </select>
-                    <button type="submit" class="wp-btn-secondary h-[30px] leading-[1]">Apply</button>
+                    <button type="button" onclick="handleBulkAction('tags-bulk-form')" class="wp-btn-secondary h-[30px] leading-[1]">Apply</button>
                 </div>
                 <x-cms-dashboard::admin.pagination :paginator="$tags" />
             </div>
@@ -99,7 +114,7 @@
                                 <strong><a href="{{ route('admin.tags.edit', [$tag, 'type' => 'post']) }}" class="text-[#2271b1] hover:text-[#135e96]">{{ $tag->name }}</a></strong>
                                 <div class="invisible group-hover:visible mt-1 text-[13px] space-x-1">
                                     <a href="{{ route('admin.tags.edit', [$tag, 'type' => 'post']) }}" class="text-[#2271b1]">Edit</a> <span class="text-[#c3c4c7]">|</span>
-                                    <button form="delete-form-{{ $tag->id }}" type="submit" class="text-[#b32d2e] hover:text-[#8a2424]" onclick="return confirm('Delete this tag?');">Delete</button>
+                                    <button type="button" onclick="confirmDeleteTag({{ $tag->id }})" class="text-[#b32d2e] hover:text-[#8a2424] cursor-pointer">Delete</button>
                                      <span class="text-[#c3c4c7]">|</span>
                                     <a href="#" class="text-[#2271b1]">View</a>
                                 </div>
@@ -130,7 +145,7 @@
                         <option value="-1">Bulk actions</option>
                         <option value="delete">Delete</option>
                     </select>
-                    <button type="submit" class="wp-btn-secondary h-[30px] leading-[1]">Apply</button>
+                    <button type="button" onclick="handleBulkAction('tags-bulk-form', 'action2')" class="wp-btn-secondary h-[30px] leading-[1]">Apply</button>
                 </div>
                 <x-cms-dashboard::admin.pagination :paginator="$tags" />
             </div>
@@ -155,5 +170,47 @@
                 document.getElementById('cb-select-all-2').checked = isChecked;
             });
         });
+
+        window.handleBulkAction = async function(formId, selectName = 'action') {
+            const form = document.getElementById(formId);
+            const action = form.querySelector(`select[name="${selectName}"]`).value;
+            const selected = form.querySelectorAll('.cb-select-item:checked');
+
+            if (action === '-1' || action === 'none') return;
+            if (selected.length === 0) {
+                window.showToast('Please select at least one item.', 'warning');
+                return;
+            }
+
+            if (action === 'delete') {
+                const confirmed = await window.lazyConfirm({
+                    title: 'Bulk Delete Tags',
+                    message: `Are you sure you want to delete ${selected.length} selected tags? This action cannot be undone.`,
+                    confirmText: 'Delete',
+                    isDanger: true
+                });
+
+                if (confirmed) {
+                    if (selectName === 'action2') {
+                        form.querySelector('select[name="action"]').value = action;
+                    }
+                    form.submit();
+                }
+            } else {
+                form.submit();
+            }
+        };
+
+        window.confirmDeleteTag = async function(id) {
+            const confirmed = await window.lazyConfirm({
+                title: 'Delete Tag',
+                message: 'Are you sure you want to delete this tag? This action cannot be undone.',
+                confirmText: 'Delete',
+                isDanger: true
+            });
+            if (confirmed) {
+                document.getElementById(`delete-form-${id}`).submit();
+            }
+        };
     </script>
 </x-cms-dashboard::layouts.admin>

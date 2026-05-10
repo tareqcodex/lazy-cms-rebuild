@@ -46,6 +46,15 @@
         .collapse-icon svg { transition: transform 0.2s; }
         .rotate-180 { transform: rotate(180deg); }
         [x-cloak] { display: none !important; }
+        
+        /* Toast Notifications */
+        .toast-container { position: fixed; top: 40px; right: 20px; z-index: 10000; display: flex; flex-col-reverse: column; gap: 10px; pointer-events: none; }
+        .toast-item { pointer-events: auto; min-width: 280px; max-width: 400px; background: #fff; border-left: 4px solid #2271b1; box-shadow: 0 10px 15px -3px rgba(0,0,0,0.1), 0 4px 6px -2px rgba(0,0,0,0.05); padding: 12px 16px; border-radius: 4px; display: flex; align-items: flex-start; gap: 12px; transform: translateX(120%); transition: all 0.3s cubic-bezier(0.68, -0.55, 0.265, 1.55); opacity: 0; }
+        .toast-item.show { transform: translateX(0); opacity: 1; }
+        .toast-success { border-left-color: #46b450; }
+        .toast-error { border-left-color: #d63638; }
+        .toast-info { border-left-color: #2271b1; }
+        .toast-warning { border-left-color: #ffb900; }
     </style>
     <script defer src="{{ asset('vendor/cms-dashboard/js/alpine.min.js') }}"></script>
     <link rel="stylesheet" href="{{ asset('vendor/cms-dashboard/css/material-symbols.css') }}" />
@@ -75,7 +84,7 @@
         <div class="flex items-center space-x-4 pr-1 text-sm relative group" x-data="{ open: false }">
             {!! do_lazy_action('lazy_admin_bar_right_before') !!}
             <button @click="open = !open" class="flex items-center space-x-2 text-[#c3c4c7] group-hover:text-[#72aee6] transition py-1 px-2 focus:outline-none">
-                <span>Howdy, <span class="font-semibold">{{ auth()->user()->name ?? 'Admin' }}</span></span>
+                <span>Howdy, <span class="font-semibold">{{ auth()->user()->username ?? auth()->user()->name ?? 'Admin' }}</span></span>
                 <img src="https://secure.gravatar.com/avatar/{{ md5(strtolower(trim(optional(auth()->user())->email ?? 'admin@example.com'))) }}?s=26&d=mm&r=g" class="w-6 h-6 rounded-sm ml-1">
             </button>
             <div x-show="open" @click.away="open = false" 
@@ -100,6 +109,43 @@
 
     <!-- Media Modal Global Inclusion -->
     <x-cms-dashboard::admin.media-modal />
+
+    <!-- Toast Container -->
+    <div id="lazy-toast-container" class="toast-container"></div>
+
+    <script>
+        window.showToast = function(message, type = 'success', duration = 4000) {
+            const container = document.getElementById('lazy-toast-container');
+            const toast = document.createElement('div');
+            toast.className = `toast-item toast-${type}`;
+            
+            let icon = 'check_circle';
+            if(type === 'error') icon = 'error';
+            if(type === 'info') icon = 'info';
+            if(type === 'warning') icon = 'warning';
+
+            toast.innerHTML = `
+                <span class="material-symbols-outlined text-${type === 'success' ? '[#46b450]' : (type === 'error' ? '[#d63638]' : (type === 'warning' ? '[#ffb900]' : '[#2271b1]'))}">${icon}</span>
+                <div class="flex-grow">
+                    <p class="text-[13px] font-semibold text-[#1d2327]">${message}</p>
+                </div>
+                <button onclick="this.parentElement.remove()" class="text-[#8c8f94] hover:text-[#1d2327]">
+                    <span class="material-symbols-outlined text-[16px]">close</span>
+                </button>
+            `;
+
+            container.appendChild(toast);
+            
+            // Trigger animation
+            setTimeout(() => toast.classList.add('show'), 10);
+
+            // Auto remove
+            setTimeout(() => {
+                toast.classList.remove('show');
+                setTimeout(() => toast.remove(), 300);
+            }, duration);
+        };
+    </script>
 
     @stack('scripts')
     {!! do_lazy_action('lazy_admin_footer') !!}

@@ -1,5 +1,6 @@
 <x-cms-dashboard::layouts.admin>
     <x-slot name="title">Backup & Snapshots - Lazy CMS</x-slot>
+    <x-cms-dashboard::admin.delete-modal />
 
     <div class="px-2">
         <div class="flex items-center justify-between mb-6">
@@ -54,9 +55,9 @@
                                 <td class="p-3 text-[#646970]">{{ $backup['date'] }}</td>
                                 <td class="p-3 text-right">
                                     <div class="flex justify-end gap-3">
-                                        <form action="{{ route('admin.backup.restore', $backup['name']) }}" method="POST" onsubmit="return confirm('WARNING: This will overwrite your current database. Are you sure you want to restore this snapshot?')">
+                                        <form id="restore-backup-{{ $loop->index }}" action="{{ route('admin.backup.restore', $backup['name']) }}" method="POST">
                                             @csrf
-                                            <button type="submit" class="text-[#b16d22] hover:underline flex items-center gap-1">
+                                            <button type="button" onclick="confirmRestore('{{ $backup['name'] }}', 'restore-backup-{{ $loop->index }}')" class="text-[#b16d22] hover:underline flex items-center gap-1">
                                                 <span class="material-symbols-outlined text-[18px]">history</span>
                                                 Restore
                                             </button>
@@ -65,10 +66,10 @@
                                             <span class="material-symbols-outlined text-[18px]">download</span>
                                             Download
                                         </a>
-                                        <form action="{{ route('admin.backup.destroy', $backup['name']) }}" method="POST" onsubmit="return confirm('Are you sure you want to delete this snapshot?')">
+                                        <form id="delete-backup-{{ $loop->index }}" action="{{ route('admin.backup.destroy', $backup['name']) }}" method="POST">
                                             @csrf
                                             @method('DELETE')
-                                            <button type="submit" class="text-[#b32d2e] hover:underline flex items-center gap-1">
+                                            <button type="button" onclick="confirmDelete('{{ $backup['name'] }}', 'delete-backup-{{ $loop->index }}')" class="text-[#b32d2e] hover:underline flex items-center gap-1">
                                                 <span class="material-symbols-outlined text-[18px]">delete</span>
                                                 Delete
                                             </button>
@@ -100,4 +101,31 @@
             </p>
         </div>
     </div>
+    <script>
+        window.confirmRestore = async function(name, formId) {
+            const confirmed = await window.lazyConfirm({
+                title: 'Restore Snapshot',
+                message: `WARNING: This will overwrite your current database with the contents of "${name}". Any changes made since this snapshot was created will be lost. This action cannot be undone.`,
+                confirmText: 'Yes, Restore Database',
+                isDanger: true
+            });
+
+            if (confirmed) {
+                document.getElementById(formId).submit();
+            }
+        };
+
+        window.confirmDelete = async function(name, formId) {
+            const confirmed = await window.lazyConfirm({
+                title: 'Delete Snapshot',
+                message: `Are you sure you want to delete the snapshot "${name}"? This action cannot be undone.`,
+                confirmText: 'Delete Snapshot',
+                isDanger: true
+            });
+
+            if (confirmed) {
+                document.getElementById(formId).submit();
+            }
+        };
+    </script>
 </x-cms-dashboard::layouts.admin>

@@ -8,6 +8,17 @@
             </div>
         </div>
 
+        @if($errors->any())
+            <div class="bg-white border-l-4 border-[#d63638] p-3 mb-6 shadow-sm text-[13px] text-[#1d2327]">
+                <p class="font-bold mb-2">Error: Please check the following fields:</p>
+                <ul class="list-disc list-inside text-[#d63638] space-y-1">
+                    @foreach($errors->all() as $error)
+                        <li>{{ $error }}</li>
+                    @endforeach
+                </ul>
+            </div>
+        @endif
+
         <form id="field-group-form" action="{{ route('admin.acpt.fields.store') }}" method="POST">
             @csrf
             <div class="space-y-5">

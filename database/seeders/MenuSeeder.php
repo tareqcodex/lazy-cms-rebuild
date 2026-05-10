@@ -180,6 +180,36 @@ class MenuSeeder extends Seeder
             ['title' => 'Documentation', 'route' => 'admin.documentation', 'order' => 1],
         ]);
 
+        // 14. Products
+        $productMenu = Menu::create([
+            'title' => 'Products',
+            'route' => 'admin.posts.index',
+            'params' => json_encode(['type' => 'product']),
+            'icon'  => 'inventory_2',
+            'group' => 'Main',
+            'order' => 55,
+        ]);
+        $productMenu->children()->createMany([
+            ['title' => 'All Products',  'route' => 'admin.posts.index', 'params' => json_encode(['type' => 'product']), 'order' => 1],
+            ['title' => 'Add New',    'route' => 'admin.posts.create', 'params' => json_encode(['type' => 'product']), 'order' => 2],
+            ['title' => 'Categories', 'route' => 'admin.categories.index', 'params' => json_encode(['type' => 'product']), 'order' => 3],
+            ['title' => 'Tags',       'route' => 'admin.tags.index', 'params' => json_encode(['type' => 'product']), 'order' => 4],
+        ]);
+
+        // 15. eCommerce Menu
+        $ecommerceMenu = Menu::create([
+            'title' => 'Shop',
+            'route' => '#',
+            'params' => null,
+            'icon'  => 'storefront',
+            'group' => 'Main',
+            'order' => 60,
+        ]);
+        $ecommerceMenu->children()->createMany([
+            ['title' => 'Orders',   'route' => 'admin.shop.orders.index', 'order' => 1],
+            ['title' => 'Settings', 'route' => 'admin.shop.settings',     'order' => 2],
+        ]);
+
         // Dynamic CPTs
         $customCPTs = PostType::where('is_builtin', false)->where('is_active', true)->get();
         foreach ($customCPTs as $cpt) {

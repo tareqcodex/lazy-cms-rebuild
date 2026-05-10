@@ -139,19 +139,36 @@
         const detailsView = document.getElementById('details-view');
         const detailsEmpty = document.getElementById('details-empty');
         const insertBtn = document.getElementById('insert-media-btn');
-        let selectedMedia = null;
+        const selectedCount = document.getElementById('selected-count');
+
+        let selectedMediaItems = [];
+        let isMultiple = false;
         let currentCallback = null;
 
         // Global opener
-        window.openMediaModal = function(callback) {
+        window.openMediaModal = function(callback, options = {}) {
             modal.classList.remove('hidden');
             currentCallback = callback;
+            isMultiple = options.multiple || false;
+            selectedMediaItems = [];
+            resetUI();
             loadLibrary();
+        };
+
+        const resetUI = () => {
+            selectedCount.innerText = '0';
+            insertBtn.disabled = true;
+            insertBtn.classList.add('opacity-50', 'cursor-not-allowed');
+            detailsEmpty.classList.remove('hidden');
+            detailsView.classList.add('hidden');
+            grid.querySelectorAll('.check-overlay').forEach(el => el.classList.add('hidden'));
+            grid.querySelectorAll('.check-icon').forEach(el => el.classList.add('hidden'));
+            grid.querySelectorAll('.border-[#2271b1]').forEach(el => el.classList.remove('border-[#2271b1]'));
         };
 
         const closeModal = () => {
             modal.classList.add('hidden');
-            selectedMedia = null;
+            selectedMediaItems = [];
         };
         document.getElementById('close-media-modal').addEventListener('click', closeModal);
 
@@ -248,8 +265,8 @@
                     const div = document.createElement('div');
                     div.className = `relative aspect-square border-2 border-transparent bg-gray-100 cursor-pointer overflow-hidden group item-media-${item.id}`;
                     div.innerHTML = `<img src="/storage/${item.path}" class="w-full h-full object-cover">
-                                     <div class="absolute inset-0 border-4 border-[#2271b1] hidden check-overlay"></div>
-                                     <div class="absolute top-1 right-1 bg-[#2271b1] text-white rounded-full p-0.5 hidden check-icon"><svg class="w-4 h-4" fill="currentColor" viewBox="0 0 20 20"><path d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z"/></svg></div>`;
+                                     <div class="absolute inset-0 border-4 border-[#2271b1] hidden check-overlay" id="overlay-${item.id}"></div>
+                                     <div class="absolute top-1 right-1 bg-[#2271b1] text-white rounded-full p-0.5 hidden check-icon" id="icon-${item.id}"><svg class="w-4 h-4" fill="currentColor" viewBox="0 0 20 20"><path d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z"/></svg></div>`;
                     div.addEventListener('click', () => selectItem(item, div));
                     grid.appendChild(div);
                 });
@@ -268,22 +285,59 @@
             return parseFloat((bytes / Math.pow(k, i)).toFixed(dm)) + ' ' + sizes[i];
         }
 
+
         function selectItem(item, el) {
-            document.querySelectorAll('#media-library-grid > div').forEach(d => {
-                d.classList.remove('border-[#2271b1]');
-                d.querySelector('.check-overlay').classList.add('hidden');
-                d.querySelector('.check-icon').classList.add('hidden');
-            });
-            el.classList.add('border-[#2271b1]');
-            el.querySelector('.check-overlay').classList.remove('hidden');
-            el.querySelector('.check-icon').classList.remove('hidden');
+            const index = selectedMediaItems.findIndex(m => m.id === item.id);
             
-            selectedMedia = item;
+            if (!isMultiple) {
+                // Clear previous selections
+                document.querySelectorAll('#media-library-grid > div').forEach(d => {
+                    d.classList.remove('border-[#2271b1]');
+                    d.querySelector('.check-overlay').classList.add('hidden');
+                    d.querySelector('.check-icon').classList.add('hidden');
+                });
+                selectedMediaItems = [item];
+                el.classList.add('border-[#2271b1]');
+                el.querySelector('.check-overlay').classList.remove('hidden');
+                el.querySelector('.check-icon').classList.remove('hidden');
+            } else {
+                // Toggle selection
+                if (index > -1) {
+                    selectedMediaItems.splice(index, 1);
+                    el.classList.remove('border-[#2271b1]');
+                    el.querySelector('.check-overlay').classList.add('hidden');
+                    el.querySelector('.check-icon').classList.add('hidden');
+                } else {
+                    selectedMediaItems.push(item);
+                    el.classList.add('border-[#2271b1]');
+                    el.querySelector('.check-overlay').classList.remove('hidden');
+                    el.querySelector('.check-icon').classList.remove('hidden');
+                }
+            }
+
+            if (selectedMediaItems.length > 0) {
+                const latest = selectedMediaItems[selectedMediaItems.length - 1];
+                showDetails(latest);
+                insertBtn.classList.remove('opacity-50', 'cursor-not-allowed');
+                insertBtn.disabled = false;
+            } else {
+                detailsEmpty.classList.remove('hidden');
+                detailsView.classList.add('hidden');
+                insertBtn.classList.add('opacity-50', 'cursor-not-allowed');
+                insertBtn.disabled = true;
+            }
+            
+            selectedCount.innerText = selectedMediaItems.length;
+        }
+
+        function showDetails(item) {
+            if (!item) {
+                detailsEmpty.classList.remove('hidden');
+                detailsView.classList.add('hidden');
+                return;
+            }
             detailsEmpty.classList.add('hidden');
             detailsView.classList.remove('hidden');
-            insertBtn.classList.remove('opacity-50', 'cursor-not-allowed');
-            insertBtn.disabled = false;
-            document.getElementById('selected-count').innerText = '1';
 
             // Fill details
             document.getElementById('detail-thumb').src = `/storage/${item.path}`;
@@ -320,7 +374,8 @@
         }
 
         document.getElementById('save-media-meta-btn').addEventListener('click', function() {
-            if (!selectedMedia) return;
+            if (selectedMediaItems.length === 0) return;
+            const currentItem = selectedMediaItems[selectedMediaItems.length - 1];
             const btn = this;
             const originalText = btn.innerText;
             
@@ -336,7 +391,7 @@
                 _method: 'PUT'
             };
 
-            fetch(`/admin/media/${selectedMedia.id}`, {
+            fetch(`/admin/media/${currentItem.id}`, {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
@@ -349,7 +404,8 @@
             .then(response => {
                 if (response.success) {
                     const updatedItem = response.data;
-                    Object.assign(selectedMedia, updatedItem);
+                    const index = selectedMediaItems.findIndex(m => m.id === updatedItem.id);
+                    if (index > -1) selectedMediaItems[index] = updatedItem;
                     
                     const gridItem = document.querySelector(`.item-media-${updatedItem.id}`);
                     if (gridItem) {
@@ -357,7 +413,7 @@
                         if (img) img.src = `/storage/${updatedItem.path}?v=${new Date().getTime()}`;
                     }
 
-                    selectItem(selectedMedia, gridItem);
+                    showDetails(updatedItem);
                     
                     const statusMsg = document.getElementById('save-status-msg');
                     statusMsg.classList.remove('opacity-0');
@@ -380,8 +436,9 @@
         });
 
         document.getElementById('delete-media-permanently').addEventListener('click', function() {
-           if (!selectedMedia || !confirm('Are you sure you want to delete this file permanently?')) return;
-            fetch(`/admin/media/${selectedMedia.id}`, {
+           if (selectedMediaItems.length === 0 || !confirm('Are you sure you want to delete this file permanently?')) return;
+           const currentItem = selectedMediaItems[selectedMediaItems.length - 1];
+            fetch(`/admin/media/${currentItem.id}`, {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
@@ -391,17 +448,22 @@
                 body: JSON.stringify({_token: '{{ csrf_token() }}', _method: 'DELETE'})
             }).then(() => {
                loadLibrary();
+               showDetails(null); // or clear UI
                detailsView.classList.add('hidden');
                detailsEmpty.classList.remove('hidden');
-               selectedMedia = null;
+               selectedMediaItems = [];
                insertBtn.disabled = true;
                insertBtn.classList.add('opacity-50', 'cursor-not-allowed');
            });
         });
 
         insertBtn.addEventListener('click', function() {
-            if (selectedMedia && currentCallback) {
-                currentCallback(selectedMedia);
+            if (selectedMediaItems.length > 0 && currentCallback) {
+                if (isMultiple) {
+                    currentCallback(selectedMediaItems);
+                } else {
+                    currentCallback(selectedMediaItems[0]);
+                }
                 closeModal();
             }
         });

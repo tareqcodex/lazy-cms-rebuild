@@ -181,27 +181,39 @@ class Sidebar extends Component
         if (str_contains($targetPath, 'admin/menus')) return $user->hasPermission('access_menus') || $user->hasPermission('manage_settings');
         if (str_contains($targetPath, 'admin/widgets')) return $user->hasPermission('access_widgets') || $user->hasPermission('manage_settings');
 
+        // Shop / eCommerce
+        if (str_contains($targetPath, 'admin/shop')) return $user->hasPermission('manage_settings') || $user->hasPermission('manage_posts');
+
         // ACPT
         if (str_contains($targetPath, 'admin/acpt')) return $user->hasPermission('manage_settings');
 
         return false;
     }
 
-    public function resolveRoute($routeStr, $title = '')
+    public function resolveRoute($menu)
     {
+        if (is_string($menu)) return '#';
+        if (is_array($menu)) $routeStr = $menu['route'] ?? '#';
+        else $routeStr = $menu->route ?? '#';
+
+        $title = is_array($menu) ? ($menu['title'] ?? '') : ($menu->title ?? '');
+        $params = is_array($menu) ? ($menu['params'] ?? []) : ($menu->params ?? []);
+        if (is_string($params)) $params = json_decode($params, true);
+        if (!is_array($params)) $params = [];
+
         if (!$routeStr || $routeStr === '#') {
-            if ($title === 'Categories') return route('admin.categories.index');
-            if ($title === 'Tags') return route('admin.tags.index');
-            if ($title === 'All Posts') return route('admin.posts.index');
-            if ($title === 'Add Post') return route('admin.posts.create');
-            if ($title === 'All Pages') return route('admin.pages.index');
-            if ($title === 'Add New' || $title === 'Add Page') return route('admin.pages.create');
-            if ($title === 'Comments') return route('admin.comments.index');
+            if ($title === 'Categories') return route('admin.categories.index', $params);
+            if ($title === 'Tags') return route('admin.tags.index', $params);
+            if ($title === 'All Posts') return route('admin.posts.index', $params);
+            if ($title === 'Add Post') return route('admin.posts.create', $params);
+            if ($title === 'All Pages') return route('admin.pages.index', $params);
+            if ($title === 'Add New' || $title === 'Add Page') return route('admin.pages.create', $params);
+            if ($title === 'Comments') return route('admin.comments.index', $params);
 
             try {
                 $postType = \Acme\CmsDashboard\Models\PostType::where('name', $title)->first();
                 if ($postType) {
-                    return url('/admin/posts?type=' . $postType->slug);
+                    return route('admin.posts.index', ['type' => $postType->slug]);
                 }
             } catch (\Exception $e) {}
 
@@ -218,14 +230,22 @@ class Sidebar extends Component
         }
 
         if (str_starts_with($routeStr, '/') || str_starts_with($routeStr, 'http')) return url($routeStr);
-        return Route::has($routeStr) ? route($routeStr) : $routeStr;
+        return Route::has($routeStr) ? route($routeStr, $params) : $routeStr;
     }
 
     public function getPermission($menu)
     {
-        if ($menu->permission) return $menu->permission;
+        if (is_string($menu)) return 'access_dashboard';
+        if (is_array($menu)) {
+            if (!empty($menu['permission'])) return $menu['permission'];
+            $title = strtolower($menu['title'] ?? '');
+            $parentId = $menu['parent_id'] ?? null;
+        } else {
+            if (!empty($menu->permission)) return $menu->permission;
+            $title = strtolower($menu->title ?? '');
+            $parentId = $menu->parent_id ?? null;
+        }
         
-        $title = strtolower($menu->title);
         if ($title === 'dashboard') return 'access_dashboard';
         if ($title === 'posts') return 'manage_posts';
         if ($title === 'pages') return 'manage_pages';
@@ -233,11 +253,12 @@ class Sidebar extends Component
         if ($title === 'users') return 'manage_users';
         if ($title === 'settings') return 'manage_settings';
         
-        $slug = \Illuminate\Support\Str::slug($menu->title, '_');
+        $titleStr = is_array($menu) ? ($menu['title'] ?? '') : ($menu->title ?? '');
+        $slug = \Illuminate\Support\Str::slug($titleStr, '_');
 
         // Match RoleController unique slug logic for children
-        if ($menu->parent_id && in_array($title, ['add new', 'categories', 'tags', 'all posts', 'all pages'])) {
-            $parent = \Acme\CmsDashboard\Models\Menu::find($menu->parent_id);
+        if ($parentId && in_array($title, ['add new', 'categories', 'tags', 'all posts', 'all pages'])) {
+            $parent = \Acme\CmsDashboard\Models\Menu::find($parentId);
             if ($parent) {
                 $slug .= '_' . \Illuminate\Support\Str::slug($parent->title, '_');
             }

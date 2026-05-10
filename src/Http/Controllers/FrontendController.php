@@ -184,7 +184,15 @@ class FrontendController extends Controller
                         ->paginate(12);
                     $title = $postType->name;
                     $type = $postType->name;
-                    return view($this->resolveThemeView('archive'), compact('posts', 'title', 'type'));
+
+                    $archiveView = 'archive-' . $postType->slug;
+                    $resolvedArchiveView = $this->resolveThemeView($archiveView);
+                    
+                    if (!view()->exists($resolvedArchiveView)) {
+                        $resolvedArchiveView = $this->resolveThemeView('archive');
+                    }
+                    
+                    return view($resolvedArchiveView, compact('posts', 'title', 'type'));
                 }
             }
 
@@ -240,6 +248,18 @@ class FrontendController extends Controller
         }
 
         $viewName = ($post->type === 'page') ? 'page' : 'single';
+        
+        // Try to find a type-specific view first (e.g. single-product)
+        if ($post->type !== 'page' && $post->type !== 'post') {
+            $typeView = "single-{$post->type}";
+            $resolvedTypeView = $this->resolveThemeView($typeView);
+            // Check if resolveThemeView actually found the type-specific one or fell back
+            // resolveThemeView falls back to lazy-theme.single if not found
+            if (!str_ends_with($resolvedTypeView, 'lazy-theme.single')) {
+                $viewName = $typeView;
+            }
+        }
+
         $view = $this->resolveThemeView($viewName);
         
         if (preg_match('/^[a-z0-9-]+$/', $post->slug) && view()->exists($post->slug)) {

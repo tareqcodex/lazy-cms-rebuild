@@ -15,17 +15,17 @@ class SystemSyncSeeder extends Seeder
         // 1. Sync Base Permissions
         $permissions = [
             ['name' => 'Access Dashboard', 'slug' => 'access_dashboard'],
-            ['name' => 'Manage Content', 'slug' => 'manage_content'],
-            ['name' => 'Manage Users', 'slug' => 'manage_users'],
-            ['name' => 'Manage Roles', 'slug' => 'manage_roles'],
-            ['name' => 'Manage Settings', 'slug' => 'manage_settings'],
-            ['name' => 'Manage Media', 'slug' => 'manage_media'],
-            ['name' => 'Manage Posts', 'slug' => 'manage_posts'],
-            ['name' => 'Manage Pages', 'slug' => 'manage_pages'],
+            ['name' => 'Manage Content',   'slug' => 'manage_content'],
+            ['name' => 'Manage Users',     'slug' => 'manage_users'],
+            ['name' => 'Manage Roles',     'slug' => 'manage_roles'],
+            ['name' => 'Manage Settings',  'slug' => 'manage_settings'],
+            ['name' => 'Manage Media',     'slug' => 'manage_media'],
+            ['name' => 'Manage Posts',     'slug' => 'manage_posts'],
+            ['name' => 'Manage Pages',     'slug' => 'manage_pages'],
             ['name' => 'Manage Categories', 'slug' => 'manage_categories'],
-            ['name' => 'Manage Tags', 'slug' => 'manage_tags'],
-            ['name' => 'View Analytics', 'slug' => 'manage_analytics'],
-            ['name' => 'Manage Comments', 'slug' => 'manage_comments'],
+            ['name' => 'Manage Tags',       'slug' => 'manage_tags'],
+            ['name' => 'View Analytics',    'slug' => 'manage_analytics'],
+            ['name' => 'Manage Comments',   'slug' => 'manage_comments'],
         ];
 
         foreach ($permissions as $p) {
@@ -69,12 +69,13 @@ class SystemSyncSeeder extends Seeder
         }
 
         // 5. Gather ALL permissions (Now fully populated)
+        $allPermissionIds = Permission::pluck('id')->toArray();
         $allPermissionSlugs = Permission::pluck('slug')->toArray();
 
         // 6. Assign Permissions to Roles
         $roleAssignments = [
-            'super-admin'   => $allPermissionSlugs, 
-            'administrator' => $allPermissionSlugs, 
+            'super-admin'   => 'all', 
+            'administrator' => 'all', 
             'editor'        => ['access_dashboard', 'manage_posts', 'access_all_posts_posts', 'access_add_new_posts', 'access_categories_posts', 'access_tags_posts', 'manage_media', 'access_library', 'access_add_new_media', 'access_comments', 'manage_analytics'],
             'author'        => ['access_dashboard', 'manage_posts', 'access_all_posts_posts', 'access_add_new_posts', 'access_categories_posts', 'access_tags_posts', 'manage_media', 'access_library', 'access_add_new_media', 'access_comments'],
             'contributor'   => ['access_dashboard', 'manage_posts', 'manage_media', 'access_library', 'access_add_new_media', 'access_comments'],
@@ -92,12 +93,15 @@ class SystemSyncSeeder extends Seeder
         foreach ($roleAssignments as $roleSlug => $perms) {
             $role = Role::where('slug', $roleSlug)->first();
             if ($role) {
-                if ($roleSlug === 'super-admin' || $roleSlug === 'administrator') {
-                    $ids = Permission::pluck('id')->toArray();
+                if ($perms === 'all') {
+                    $role->permissions()->sync($allPermissionIds);
                 } else {
-                    $ids = Permission::whereIn('slug', $perms)->pluck('id')->toArray();
+                    // Only sync if role has NO permissions yet, to preserve user's hard work
+                    if ($role->permissions()->count() === 0) {
+                        $ids = Permission::whereIn('slug', $perms)->pluck('id')->toArray();
+                        $role->permissions()->sync($ids);
+                    }
                 }
-                $role->permissions()->sync($ids);
             }
         }
     }

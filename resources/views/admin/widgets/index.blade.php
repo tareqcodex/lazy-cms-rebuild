@@ -1,4 +1,5 @@
 <x-cms-dashboard::layouts.admin title="Manage Widgets">
+    <x-cms-dashboard::admin.delete-modal />
 <div class="max-w-[1400px] mx-auto px-6 py-8">
     <div class="flex items-center justify-between mb-8">
         <div>
@@ -69,10 +70,10 @@
                                         <button onclick="toggleWidgetSettings({{ $widget->id }})" class="p-1 text-slate-400 hover:text-primary transition-colors">
                                             <span class="material-symbols-outlined text-[18px]">settings</span>
                                         </button>
-                                        <form action="{{ route('admin.widgets.destroy', $widget->id) }}" method="POST" onsubmit="return confirm('Remove this widget?')">
+                                        <form id="delete-widget-{{ $widget->id }}" action="{{ route('admin.widgets.destroy', $widget->id) }}" method="POST">
                                             @csrf
                                             @method('DELETE')
-                                            <button type="submit" class="p-1 text-slate-400 hover:text-red-500 transition-colors">
+                                            <button type="button" onclick="confirmWidgetDelete({{ $widget->id }})" class="p-1 text-slate-400 hover:text-red-500 transition-colors">
                                                 <span class="material-symbols-outlined text-[18px]">delete</span>
                                             </button>
                                         </form>
@@ -325,6 +326,19 @@
                 }
             });
         }
+
+        window.confirmWidgetDelete = async function(id) {
+            const confirmed = await window.lazyConfirm({
+                title: 'Remove Widget',
+                message: 'Are you sure you want to remove this widget from the area? This action cannot be undone.',
+                confirmText: 'Remove Widget',
+                isDanger: true
+            });
+
+            if (confirmed) {
+                document.getElementById(`delete-widget-${id}`).submit();
+            }
+        };
     });
 </script>
 </x-cms-dashboard::layouts.admin>

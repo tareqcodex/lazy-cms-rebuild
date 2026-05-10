@@ -128,6 +128,7 @@ class DashboardController extends Controller
         
         // Handle Checkboxes
         $data['users_can_register'] = $request->has('users_can_register') ? '1' : '0';
+        $data['allow_multi_device'] = $request->has('allow_multi_device') ? '1' : '0';
         
         // Only update these if we are on the page that contains them to avoid overwriting theme options
         if ($request->has('site_title')) {
@@ -250,7 +251,7 @@ class DashboardController extends Controller
             $query->where('action', $request->action);
         }
 
-        $logs = $query->paginate(20)->withQueryString();
+        $logs = $query->paginate(10)->withQueryString();
         $users = User::all();
 
         return view('cms-dashboard::admin.settings.activity-logs', compact('logs', 'users'));
@@ -315,10 +316,26 @@ class DashboardController extends Controller
         $content = '';
         if (file_exists($readmePath)) {
             $content = file_get_contents($readmePath);
-            // Simple markdown parsing for the view (or you can use a library if available)
-            // For now, we'll pass the raw content and handle it in the view
         }
 
         return view('cms-dashboard::admin.documentation', compact('content'));
+    }
+    
+    public function bulkDeleteLogs(Request $request)
+    {
+        if (!auth()->user()->hasPermission('manage_settings')) {
+            abort(403);
+        }
+
+        $ids = $request->input('log_ids', []);
+        $action = $request->input('bulk_action');
+
+        if ($action === 'delete' && !empty($ids)) {
+            ActivityLog::whereIn('id', $ids)->delete();
+            lazy_log_activity('logs_bulk_deleted', "Deleted " . count($ids) . " activity log entries");
+            return redirect()->back()->with('success', 'Selected logs deleted successfully!');
+        }
+
+        return redirect()->back();
     }
 }

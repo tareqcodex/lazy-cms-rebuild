@@ -1,4 +1,5 @@
 <x-cms-dashboard::layouts.admin title="Menus">
+    <x-cms-dashboard::admin.delete-modal />
     <div class="mb-4">
         <h1 class="text-[23px] font-normal text-[#1d2327]">Menus</h1>
     </div>
@@ -324,7 +325,7 @@
     ────────────────────────────────── */
     function addChecked() {
         const cbs = document.querySelectorAll('.item-cb:checked');
-        if (!cbs.length) { alert('Please select at least one item.'); return; }
+        if (!cbs.length) { window.showToast('Please select at least one item.', 'warning'); return; }
         cbs.forEach(cb => {
             items.push({
                 id: newId(),
@@ -343,7 +344,7 @@
     function addCustom() {
         const title = document.getElementById('cl-title').value.trim();
         const url   = document.getElementById('cl-url').value.trim() || '#';
-        if (!title) { alert('Please enter link text.'); return; }
+        if (!title) { window.showToast('Please enter link text.', 'warning'); return; }
         items.push({ id: newId(), title, url, type: 'custom', depth: 0 });
         document.getElementById('cl-title').value = '';
         document.getElementById('cl-url').value   = '#';
@@ -548,8 +549,16 @@
         document.getElementById('save-form').submit();
     }
 
-    function doDelete() {
-        if (!confirm('Delete this menu permanently?')) return;
+    async function doDelete() {
+        const confirmed = await window.lazyConfirm({
+            title: 'Delete Menu',
+            message: 'Are you sure you want to delete this menu permanently? This action cannot be undone.',
+            confirmText: 'Delete Menu',
+            isDanger: true
+        });
+
+        if (!confirmed) return;
+
         const f = document.createElement('form');
         f.method = 'POST';
         f.action = '{{ $menu ? route("admin.menus.destroy", $menu->id) : "" }}';

@@ -102,6 +102,10 @@ class InstallLazyCms extends Command
             'role_id' => $adminRole->id,
         ])->save();
 
+        // 10. Auto-create E-commerce pages
+        $this->info('Step 10: Auto-creating E-commerce pages...');
+        $this->createEcommercePages();
+
         $this->info('---------------------------------------');
         $this->info('Lazy CMS installed successfully!');
         $this->info("Login Email: {$email}");
@@ -156,6 +160,30 @@ class InstallLazyCms extends Command
 
         if ($content !== $original) {
             file_put_contents($path, $content);
+        }
+    }
+
+    protected function createEcommercePages()
+    {
+        $pages = [
+            ['title' => 'Shop', 'slug' => 'product'],
+            ['title' => 'Cart', 'slug' => 'cart'],
+            ['title' => 'Checkout', 'slug' => 'checkout'],
+        ];
+
+        $adminId = User::first()->id ?? 1;
+
+        foreach ($pages as $page) {
+            \Acme\CmsDashboard\Models\Post::firstOrCreate(
+                ['slug' => $page['slug'], 'type' => 'page'],
+                [
+                    'title' => $page['title'],
+                    'status' => 'published',
+                    'lang_code' => 'en',
+                    'user_id' => $adminId,
+                    'editor_type' => 'rich'
+                ]
+            );
         }
     }
 }

@@ -193,6 +193,33 @@
                         </select>
                     </td>
                 </tr>
+
+                <!-- Multi-device Login -->
+                <tr>
+                    <th scope="row" class="w-[200px] text-left align-top pt-2">
+                        <label class="text-[14px] font-semibold text-[#1d2327]">Multi-device Login</label>
+                    </th>
+                    <td>
+                        <label class="inline-flex items-center cursor-pointer">
+                            <input type="checkbox" name="allow_multi_device" id="allow_multi_device"
+                                class="w-4 h-4 mr-2"
+                                {{ ($settings['allow_multi_device'] ?? '0') == '1' ? 'checked' : '' }}>
+                            <span class="text-[14px] text-[#1d2327]">Allow multiple device login</span>
+                        </label>
+                    </td>
+                </tr>
+
+                <tr id="max-devices-row">
+                    <th scope="row" class="w-[200px] text-left align-top pt-2">
+                        <label for="max_devices" class="text-[14px] font-semibold text-[#1d2327]">Max devices allowed</label>
+                    </th>
+                    <td>
+                        <input type="number" name="max_devices" id="max_devices" 
+                            value="{{ $settings['max_devices'] ?? '3' }}" min="1"
+                            class="wp-input w-[100px] h-8 shadow-sm mb-1">
+                        <p class="text-[12px] text-[#646970]">Limit the number of concurrent sessions per user. (Default: 3)</p>
+                    </td>
+                </tr>
             </table>
 
             {!! do_lazy_action('lazy_settings_form_bottom') !!}
@@ -213,6 +240,9 @@
                     document.getElementById('default-role-row')
                 ];
 
+                const multiDeviceCheckbox = document.getElementById('allow_multi_device');
+                const maxDevicesRow = document.getElementById('max-devices-row');
+
                 function toggleRegistrationFields() {
                     const isVisible = registerCheckbox.checked;
                     regRows.forEach(row => {
@@ -222,11 +252,19 @@
                     });
                 }
 
-                // Initial check
+                function toggleMultiDeviceFields() {
+                    if (maxDevicesRow) {
+                        maxDevicesRow.style.display = multiDeviceCheckbox.checked ? 'table-row' : 'none';
+                    }
+                }
+
+                // Initial checks
                 toggleRegistrationFields();
+                toggleMultiDeviceFields();
 
                 // Listen for changes
                 registerCheckbox.addEventListener('change', toggleRegistrationFields);
+                multiDeviceCheckbox.addEventListener('change', toggleMultiDeviceFields);
                 
                 // Media Modal for settings
                 document.querySelectorAll('.open-media-for-setting').forEach(btn => {

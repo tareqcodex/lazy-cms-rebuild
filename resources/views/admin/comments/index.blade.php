@@ -1,4 +1,5 @@
 <x-cms-dashboard::layouts.admin title="Comments">
+    <x-cms-dashboard::admin.delete-modal />
     <div class="flex items-center mb-4">
         <h1 class="text-[23px] font-normal text-[#1d2327] mr-3">Comments</h1>
     </div>
@@ -38,7 +39,7 @@
                     <option value="unapprove">Unapprove</option>
                     <option value="delete">Delete Permanently</option>
                 </select>
-                <button type="submit" class="wp-btn-secondary h-[30px] leading-[1] text-[13px]">Apply</button>
+                <button type="button" onclick="handleBulkCommentAction('comments-bulk', 'action')" class="wp-btn-secondary h-[30px] leading-[1] text-[13px]">Apply</button>
             </div>
         </div>
         
@@ -77,7 +78,7 @@
                                 {{ $comment->is_approved ? 'Unapprove' : 'Approve' }}
                             </button>
                             <span class="text-[#c3c4c7]">|</span>
-                            <button form="delete-form-{{ $comment->id }}" type="submit" class="text-[#b32d2e] hover:underline cursor-pointer" onclick="return confirm('Are you sure you want to trash this comment?')">Trash</button>
+                            <button type="button" class="text-[#b32d2e] hover:underline cursor-pointer" onclick="confirmCommentTrash({{ $comment->id }})">Trash</button>
                         </div>
                     </td>
                     <td class="wp-table-cell align-top text-[14px] text-left w-48">
@@ -128,7 +129,7 @@
                 <option value="unapprove">Unapprove</option>
                 <option value="delete">Delete Permanently</option>
             </select>
-            <button type="submit" class="wp-btn-secondary h-[30px] leading-[1] text-[13px]">Apply</button>
+            <button type="button" onclick="handleBulkCommentAction('comments-bulk', 'action2')" class="wp-btn-secondary h-[30px] leading-[1] text-[13px]">Apply</button>
         </div>
         
         <x-cms-dashboard::admin.pagination :paginator="$comments" />
@@ -155,5 +156,50 @@
                 document.getElementById('cb-select-all-2').checked = isChecked;
             });
         });
+
+        window.confirmCommentTrash = async function(id) {
+            const confirmed = await window.lazyConfirm({
+                title: 'Trash Comment',
+                message: 'Are you sure you want to move this comment to trash? This action can be undone from the trash section later.',
+                confirmText: 'Move to Trash',
+                isDanger: true
+            });
+
+            if (confirmed) {
+                document.getElementById(`delete-form-${id}`).submit();
+            }
+        };
+
+        window.handleBulkCommentAction = async function(formId, selectName) {
+            const form = document.getElementById(formId);
+            const action = form.querySelector(`select[name="${selectName}"]`).value;
+            const selected = form.querySelectorAll('.cb-select-item:checked');
+
+            if (action === '-1') return;
+            if (selected.length === 0) {
+                window.showToast('Please select at least one comment.', 'warning');
+                return;
+            }
+
+            if (action === 'delete') {
+                const confirmed = await window.lazyConfirm({
+                    title: 'Delete Comments Permanently',
+                    message: `Are you sure you want to permanently delete ${selected.length} comments? This action cannot be undone.`,
+                    confirmText: 'Delete Permanently',
+                    isDanger: true
+                });
+
+                if (confirmed) {
+                    // Sync action2 if action is selected or vice-versa
+                    form.querySelector('select[name="action"]').value = action;
+                    if(form.querySelector('select[name="action2"]')) form.querySelector('select[name="action2"]').value = action;
+                    form.submit();
+                }
+            } else {
+                form.querySelector('select[name="action"]').value = action;
+                if(form.querySelector('select[name="action2"]')) form.querySelector('select[name="action2"]').value = action;
+                form.submit();
+            }
+        };
     </script>
 </x-cms-dashboard::layouts.admin>

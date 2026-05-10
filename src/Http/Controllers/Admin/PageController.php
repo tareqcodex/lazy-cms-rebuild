@@ -80,12 +80,18 @@ class PageController extends Controller
         $dates = Page::selectRaw('YEAR(created_at) as year, MONTH(created_at) as month')
             ->groupBy('year', 'month')->orderBy('year', 'desc')->orderBy('month', 'desc')->get();
 
-        $allCount = Page::count();
-        $publishedCount = Page::where('status', 'published')->count();
-        $draftCount = Page::where('status', 'draft')->count();
-        $trashCount = Page::onlyTrashed()->count();
+        $countQuery = Page::query();
+        if ($lang && $lang !== 'all') {
+            $countQuery->where('lang_code', $lang);
+        }
 
-        return view('cms-dashboard::admin.pages.index', compact('pages', 'dates', 'allCount', 'publishedCount', 'draftCount', 'trashCount'));
+        $allCount = (clone $countQuery)->count();
+        $publishedCount = (clone $countQuery)->where('status', 'published')->count();
+        $draftCount = (clone $countQuery)->where('status', 'draft')->count();
+        $scheduledCount = (clone $countQuery)->where('status', 'scheduled')->count();
+        $trashCount = (clone $countQuery)->onlyTrashed()->count();
+
+        return view('cms-dashboard::admin.pages.index', compact('pages', 'dates', 'allCount', 'publishedCount', 'draftCount', 'scheduledCount', 'trashCount'));
     }
 
     public function create()

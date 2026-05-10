@@ -1,5 +1,6 @@
 <x-cms-dashboard::layouts.admin>
 <x-slot name="title">Customizer &lsaquo; Lazy CMS</x-slot>
+<x-cms-dashboard::admin.delete-modal />
 
 {{-- Toast container --}}
 <div id="customizer-toast" class="fixed top-6 right-6 z-[99999] flex flex-col gap-2 pointer-events-none" style="min-width:280px;"></div>
@@ -92,11 +93,11 @@
                                     </div>
                                     <div class="px-4 py-4">
                                         <p class="text-[12px] text-[#646970] mb-3">Upload a previously exported JSON file to restore settings.</p>
-                                        <form method="POST" action="{{ route('admin.customizer.import') }}" enctype="multipart/form-data" class="flex items-center gap-3">
+                                        <form id="import-settings-form" method="POST" action="{{ route('admin.customizer.import') }}" enctype="multipart/form-data" class="flex items-center gap-3">
                                             @csrf
                                             <input type="file" name="import_file" accept=".json" class="text-[12px]" required>
-                                            <button type="submit" class="wp-btn-secondary h-8 px-4 text-[12px] flex items-center gap-1.5"
-                                                    onclick="return confirm('This will overwrite current settings. Continue?')">
+                                            <button type="button" class="wp-btn-secondary h-8 px-4 text-[12px] flex items-center gap-1.5"
+                                                    @click="confirmImport()">
                                                 <span class="material-symbols-outlined" style="font-size:15px !important;">upload</span>
                                                 Import
                                             </button>
@@ -395,7 +396,7 @@
                                                     @elseif($type === 'action_button')
                                                         <div class="flex flex-col gap-2">
                                                             <button type="button" 
-                                                                    onclick="runCustomizerAction('{{ $field['action'] }}', this)"
+                                                                    @click="runAction('{{ $field['action'] }}', $event)"
                                                                     class="wp-btn-secondary px-6 self-start">
                                                                 {{ $field['text'] ?? 'Run Action' }}
                                                             </button>
@@ -569,7 +570,7 @@ function openCmsMediaModal(fieldId) {
     } else if (typeof window.openMediaModal === 'function') {
         window.openMediaModal(updateImageField);
     } else {
-        alert('Media picker not available. Please ensure the media modal component is loaded.');
+        window.showToast('Media picker not available. Please ensure the media modal component is loaded.', 'error');
     }
 }
 
@@ -673,40 +674,63 @@ function customizerApp(initialSection) {
         },
 
         async runAction(action, event) {
+            let confirmed = false;
             if (action === 'optimizeImages') {
-                if (!confirm('Caution: This will replace all existing original images with optimized versions. This process cannot be undone. Continue?')) return;
-            } else if (!confirm('Are you sure you want to run this action?')) {
-                return;
+                confirmed = await window.lazyConfirm({
+                    title: 'Optimize Images',
+                    message: 'Caution: This will replace all existing original images with optimized versions. This process cannot be undone. Continue?',
+                    confirmText: 'Yes, Optimize All',
+                    isDanger: true
+                });
+            } else {
+                confirmed = await window.lazyConfirm({
+                    title: 'Run Action',
+                    message: 'Are you sure you want to run this action?',
+                    confirmText: 'Run Action',
+                    isDanger: false
+                });
             }
 
+            if (!confirmed) return;
+
             const btn = event.target;
-            const originalText = btn.innerText;
+            const originalText = btn.innerHTML;
             btn.disabled = true;
-            btn.innerText = 'Processing...';
+            btn.innerHTML = '<span class="animate-spin inline-block mr-2">↻</span> Processing...';
 
             try {
                 const res = await fetch(`{{ url('admin/appearance/customizer/action') }}/${action}`, {
                     method: 'POST',
                     headers: { 
                         'X-Requested-With': 'XMLHttpRequest',
-                        'X-CSRF-TOKEN': '{{ csrf_token() }}'
+                        'X-CSRF-TOKEN': '{{ csrf_token() }}',
+                        'Accept': 'application/json'
                     }
                 });
                 const data = await res.json();
                 this.showToast(data.message || 'Action completed.', data.success ? 'success' : 'error');
             } catch (err) {
-                this.showToast('Error executing action.', 'error');
+                this.showToast('Error executing action: ' + err.message, 'error');
             } finally {
                 btn.disabled = false;
-                btn.innerText = originalText;
+                btn.innerHTML = originalText;
             }
         },
 
         async ajaxReset(type) {
+            const title = type === 'all' ? 'Reset All Settings' : 'Reset Section';
             const msg = type === 'all'
                 ? 'Reset ALL settings to defaults? This cannot be undone.'
                 : 'Reset this section to default values?';
-            if (!confirm(msg)) return;
+            
+            const confirmed = await window.lazyConfirm({
+                title: title,
+                message: msg,
+                confirmText: 'Yes, Reset',
+                isDanger: true
+            });
+
+            if (!confirmed) return;
 
             const fd = new FormData();
             fd.append('_token', this.getCsrf());
@@ -750,6 +774,19 @@ function customizerApp(initialSection) {
                 setTimeout(() => el.remove(), 220);
             }, 3200);
         },
+
+        async confirmImport() {
+            const confirmed = await window.lazyConfirm({
+                title: 'Import Settings',
+                message: 'This will overwrite your current settings with the ones from the uploaded file. Continue?',
+                confirmText: 'Import Now',
+                isDanger: true
+            });
+
+            if (confirmed) {
+                document.getElementById('import-settings-form').submit();
+            }
+        }
     };
 }
 
@@ -941,39 +978,6 @@ function typographyComponent(key, initialData) {
             };
         }
     };
-}
-
-async function runCustomizerAction(action, btn) {
-    if (action === 'optimizeImages' && !confirm('Are you sure? This will replace existing original images and cannot be undone.')) {
-        return;
-    }
-
-    const originalText = btn.innerHTML;
-    btn.disabled = true;
-    btn.innerHTML = '<span class="animate-spin inline-block mr-2">↻</span> Processing...';
-
-    try {
-        const response = await fetch(`{{ url('admin/appearance/customizer/action') }}/${action}`, {
-            method: 'POST',
-            headers: {
-                'X-CSRF-TOKEN': '{{ csrf_token() }}',
-                'Accept': 'application/json',
-                'Content-Type': 'application/json'
-            }
-        });
-        const data = await response.json();
-        
-        if (data.success) {
-            alert(data.message || 'Action completed successfully.');
-        } else {
-            alert(data.message || 'Something went wrong.');
-        }
-    } catch (err) {
-        alert('Error: ' + err.message);
-    } finally {
-        btn.disabled = false;
-        btn.innerHTML = originalText;
-    }
 }
 </script>
 

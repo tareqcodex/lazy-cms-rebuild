@@ -8,6 +8,7 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Str;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Facades\DB;
+use Acme\CmsDashboard\Models\ProductData;
 use Acme\CmsDashboard\Services\BuilderShortcodeConverter;
 
 class PostController extends Controller
@@ -158,6 +159,10 @@ class PostController extends Controller
             $query->whereYear('created_at', $year)->whereMonth('created_at', $month);
         }
 
+        if ($request->filled('author')) {
+            $query->where('user_id', $request->author);
+        }
+
         // Ownership Check: Author and Contributor can only see their own posts
         if (auth()->user()->hasRole('author') || auth()->user()->hasRole('contributor')) {
             $query->where('user_id', auth()->id());
@@ -172,10 +177,16 @@ class PostController extends Controller
             ->orderBy('month', 'desc')
             ->get();
 
-        $allCount = Post::where('type', $type)->where('lang_code', $lang)->count();
-        $publishedCount = Post::where('type', $type)->where('lang_code', $lang)->where('status', 'published')->count();
-        $draftCount = Post::where('type', $type)->where('lang_code', $lang)->where('status', 'draft')->count();
-        $trashCount = Post::where('type', $type)->where('lang_code', $lang)->onlyTrashed()->count();
+        $countQuery = Post::where('type', $type);
+        if ($lang && $lang !== 'all') {
+            $countQuery->where('lang_code', $lang);
+        }
+
+        $allCount = (clone $countQuery)->count();
+        $publishedCount = (clone $countQuery)->where('status', 'published')->count();
+        $draftCount = (clone $countQuery)->where('status', 'draft')->count();
+        $scheduledCount = (clone $countQuery)->where('status', 'scheduled')->count();
+        $trashCount = (clone $countQuery)->onlyTrashed()->count();
 
         $postType = \Acme\CmsDashboard\Models\PostType::where('slug', $type)->first();
         
@@ -185,7 +196,7 @@ class PostController extends Controller
 
         $overriddenTaxonomies = $assignedTaxonomies->whereIn('slug', ['categories', 'tags'])->pluck('slug')->toArray();
 
-        return view('cms-dashboard::admin.posts.index', compact('posts', 'type', 'categories', 'dates', 'allCount', 'publishedCount', 'draftCount', 'trashCount', 'postType', 'assignedTaxonomies', 'overriddenTaxonomies'));
+        return view('cms-dashboard::admin.posts.index', compact('posts', 'type', 'categories', 'dates', 'allCount', 'publishedCount', 'draftCount', 'scheduledCount', 'trashCount', 'postType', 'assignedTaxonomies', 'overriddenTaxonomies'));
     }
 
     public function create(Request $request)
@@ -270,7 +281,7 @@ class PostController extends Controller
 
         $status = $request->input('status', 'draft');
 
-        $validated = $request->validate([
+        $rules = [
             'title'   => ($status === 'draft' ? 'nullable' : 'required') . '|string|max:255',
             'slug'    => 'nullable|string|max:255',
             'content' => 'nullable|string',
@@ -285,43 +296,74 @@ class PostController extends Controller
             'editor_type'    => 'nullable|string|in:rich,builder',
             'lang_code'      => 'nullable|string|max:10',
             'seo'            => 'nullable|array',
+            'gallery'        => 'nullable|array',
+        ];
 
-        ]);
+        if ($type === 'product') {
+            $rules['price'] = 'required|numeric|min:0';
+            $rules['sale_price'] = 'nullable|numeric|min:0|lt:price';
+            $rules['sku'] = 'nullable|string|max:100';
+            $rules['stock_quantity'] = 'nullable|integer|min:0';
+            $rules['stock_status'] = 'nullable|string|in:instock,outofstock,onbackorder';
+            $rules['manage_stock'] = 'nullable|boolean';
+            $rules['short_description'] = 'nullable|string';
+        }
 
-        $validated['seo_meta'] = $request->input('seo');
-        unset($validated['seo']);
+        $validated = $request->validate($rules);
 
-        $lang = $validated['lang_code'] ?? null;
+        // Separate Post data and Product data
+        $postData = $validated;
+        $productData = [];
+
+        if (isset($postData['seo'])) {
+            $postData['seo_meta'] = $postData['seo'];
+            unset($postData['seo']);
+        }
+
+        $productFieldKeys = ['price', 'sale_price', 'sku', 'stock_quantity', 'stock_status', 'manage_stock', 'short_description'];
+        foreach ($productFieldKeys as $key) {
+            if (array_key_exists($key, $postData)) {
+                $productData[$key] = $postData[$key];
+                unset($postData[$key]);
+            }
+        }
+
+        $lang = $postData['lang_code'] ?? null;
         if (!$lang || $lang === 'all') {
             $lang = app()->getLocale();
-            $validated['lang_code'] = $lang;
+            $postData['lang_code'] = $lang;
         }
 
-        $slugSource = !empty($validated['slug']) ? $validated['slug'] : (!empty($validated['title']) ? $validated['title'] : 'no-title');
-        $validated['slug'] = $this->generateUniqueSlug($slugSource, 0, $validated['type'], $lang);
-        if (empty($validated['title'])) $validated['title'] = '(no title)';
-        $validated['user_id'] = auth()->id();
+        $slugSource = !empty($postData['slug']) ? $postData['slug'] : (!empty($postData['title']) ? $postData['title'] : 'no-title');
+        $postData['slug'] = $this->generateUniqueSlug($slugSource, 0, $postData['type'], $lang);
+        if (empty($postData['title'])) $postData['title'] = '(no title)';
+        $postData['user_id'] = auth()->id();
 
         if ($request->hasFile('featured_image')) {
-            $validated['featured_image'] = $request->file('featured_image')->store('posts', 'public');
+            $postData['featured_image'] = $request->file('featured_image')->store('posts', 'public');
         } elseif ($request->filled('featured_image')) {
-            $validated['featured_image'] = $request->input('featured_image');
+            $postData['featured_image'] = $request->input('featured_image');
         }
 
-        if (empty($validated['template']) || $validated['template'] === 'default') {
-            $validated['template'] = 'site-width';
+        if (empty($postData['template']) || $postData['template'] === 'default') {
+            $postData['template'] = 'site-width';
         }
 
-        $postType = \Acme\CmsDashboard\Models\PostType::where('slug', $validated['type'])->first();
+        $postType = \Acme\CmsDashboard\Models\PostType::where('slug', $postData['type'])->first();
         $overriddenTaxonomies = [];
         if ($postType) {
             $overriddenTaxonomies = \Acme\CmsDashboard\Models\CustomTaxonomy::where('is_active', true)
-                ->whereJsonContains('post_types', $validated['type'])
+                ->whereJsonContains('post_types', $postData['type'])
                 ->pluck('slug')
                 ->toArray();
         }
 
-        $post = Post::create($validated);
+        $post = Post::create($postData);
+
+        // Save Product Data
+        if ($type === 'product') {
+            $post->shopData()->create($productData);
+        }
 
         // Sync Built-in Categories
         if ($request->has('categories')) {
@@ -359,7 +401,7 @@ class PostController extends Controller
             }
         }
 
-        lazy_log_activity('created', "Created a new {$validated['type']}: {$post->title}", $post);
+        lazy_log_activity('created', "Created a new {$postData['type']}: {$post->title}", $post);
 
         // Multilingual Copy Logic
         if ($request->has('make_multilingual_copy') && $request->has('copy_to_languages')) {
@@ -411,11 +453,11 @@ class PostController extends Controller
 
         if ($request->has('redirect_to_builder')) {
             clear_page_cache();
-            return redirect()->route('admin.lazy-builder', $post->id)->with('success', ucfirst($validated['type']) . ' created successfully.');
+            return redirect()->route('admin.lazy-builder', $post->id)->with('success', ucfirst($postData['type']) . ' created successfully.');
         }
 
         clear_page_cache();
-        return redirect()->route('admin.posts.edit', $post)->with('success', ucfirst($validated['type']) . ' created successfully.');
+        return redirect()->route('admin.posts.edit', $post)->with('success', ucfirst($postData['type']) . ' created successfully.');
     }
 
     public function edit(Post $post)
@@ -539,7 +581,7 @@ class PostController extends Controller
 
         $status = $request->input('status', 'draft');
 
-        $validated = $request->validate([
+        $rules = [
             'title'   => ($status === 'draft' ? 'nullable' : 'required') . '|string|max:255',
             'slug'    => 'nullable|string|max:255',
             'content' => 'nullable|string',
@@ -554,32 +596,59 @@ class PostController extends Controller
             'editor_type'    => 'nullable|string|in:rich,builder',
             'lang_code'      => 'nullable|string|max:10',
             'seo'            => 'nullable|array',
-        ]);
+            'gallery'        => 'nullable|array',
+        ];
 
-        $validated['seo_meta'] = $request->input('seo');
-        unset($validated['seo']);
+        if ($type === 'product') {
+            $rules['price'] = 'required|numeric|min:0';
+            $rules['sale_price'] = 'nullable|numeric|min:0|lt:price';
+            $rules['sku'] = 'nullable|string|max:100';
+            $rules['stock_quantity'] = 'nullable|integer|min:0';
+            $rules['stock_status'] = 'nullable|string|in:instock,outofstock,onbackorder';
+            $rules['manage_stock'] = 'nullable|boolean';
+            $rules['short_description'] = 'nullable|string';
+        }
 
-        $slugSource = !empty($validated['slug']) ? $validated['slug'] : (!empty($validated['title']) ? $validated['title'] : 'no-title');
-        $validated['slug'] = $this->generateUniqueSlug($slugSource, $post->id, $post->type, $validated['lang_code'] ?? $post->lang_code);
-        if (empty($validated['title'])) $validated['title'] = '(no title)';
+        $validated = $request->validate($rules);
+
+        // Separate Post data and Product data
+        $postData = $validated;
+        $productData = [];
+
+        if (isset($postData['seo'])) {
+            $postData['seo_meta'] = $postData['seo'];
+            unset($postData['seo']);
+        }
+
+        $productFieldKeys = ['price', 'sale_price', 'sku', 'stock_quantity', 'stock_status', 'manage_stock', 'short_description'];
+        foreach ($productFieldKeys as $key) {
+            if (array_key_exists($key, $postData)) {
+                $productData[$key] = $postData[$key];
+                unset($postData[$key]);
+            }
+        }
+
+        $slugSource = !empty($postData['slug']) ? $postData['slug'] : (!empty($postData['title']) ? $postData['title'] : 'no-title');
+        $postData['slug'] = $this->generateUniqueSlug($slugSource, $post->id, $post->type, $postData['lang_code'] ?? $post->lang_code);
+        if (empty($postData['title'])) $postData['title'] = '(no title)';
 
         if ($request->hasFile('featured_image')) {
-            $validated['featured_image'] = $request->file('featured_image')->store('posts', 'public');
+            $postData['featured_image'] = $request->file('featured_image')->store('posts', 'public');
         } elseif ($request->input('remove_featured_image') === '1') {
-            $validated['featured_image'] = null;
+            $postData['featured_image'] = null;
         } elseif ($request->filled('featured_image')) {
-            $validated['featured_image'] = $request->input('featured_image');
+            $postData['featured_image'] = $request->input('featured_image');
         }
 
-        if (empty($validated['template']) || $validated['template'] === 'default') {
-            $validated['template'] = 'site-width';
+        if (empty($postData['template']) || $postData['template'] === 'default') {
+            $postData['template'] = 'site-width';
         }
 
-        $postType = \Acme\CmsDashboard\Models\PostType::where('slug', $validated['type'])->first();
+        $postType = \Acme\CmsDashboard\Models\PostType::where('slug', $postData['type'])->first();
         $overriddenTaxonomies = [];
         if ($postType) {
             $overriddenTaxonomies = \Acme\CmsDashboard\Models\CustomTaxonomy::where('is_active', true)
-                ->whereJsonContains('post_types', $validated['type'])
+                ->whereJsonContains('post_types', $postData['type'])
                 ->pluck('slug')
                 ->toArray();
         }
@@ -589,38 +658,38 @@ class PostController extends Controller
         $oldUrl = '/' . ltrim($prefix . $oldSlug, '/');
 
         // Ensure editor_type is never set to null, which would trigger the DB default 'rich'
-        if (empty($validated['editor_type'])) {
-            $validated['editor_type'] = $post->editor_type ?: 'rich';
+        if (empty($postData['editor_type'])) {
+            $postData['editor_type'] = $post->editor_type ?: 'rich';
         }
 
         // Robust Protection: Prevent builder content from being overwritten by empty/HTML content from standard editor
         $currentContent = $post->content;
         $isCurrentBuilder = $post->editor_type === 'builder' || (is_string($currentContent) && (str_starts_with($currentContent, '[') || str_starts_with($currentContent, '{')));
         
-        $targetEditorType = $validated['editor_type'] ?? $post->editor_type;
-        $incomingContent = $validated['content'] ?? '';
+        $targetEditorType = $postData['editor_type'] ?? $post->editor_type;
+        $incomingContent = $postData['content'] ?? '';
         $isIncomingBuilder = is_string($incomingContent) && (Str::startsWith($incomingContent, '[') || Str::startsWith($incomingContent, '{'));
 
         // If we are currently in builder mode, and we're staying in builder mode, protect the content
         if ($isCurrentBuilder && $targetEditorType === 'builder' && !$isIncomingBuilder) {
-            unset($validated['content']);
+            unset($postData['content']);
         }
 
         $locale = $request->input('locale');
         if ($locale && $locale !== app()->getLocale()) {
             // Save as translation instead of main post
             $translationData = [
-                'slug'    => Str::slug($validated['title']),
-                'title'   => $validated['title'],
-                'excerpt' => $validated['excerpt'],
-                'meta_title' => $validated['seo_meta']['title'] ?? null,
-                'meta_description' => $validated['seo_meta']['description'] ?? null,
+                'slug'    => Str::slug($postData['title']),
+                'title'   => $postData['title'],
+                'excerpt' => $postData['excerpt'],
+                'meta_title' => $postData['seo_meta']['title'] ?? null,
+                'meta_description' => $postData['seo_meta']['description'] ?? null,
                 'updated_at' => now(),
             ];
 
             // Only update content in translation if it's not a builder page OR if we're sending JSON
-            if (isset($validated['content'])) {
-                $translationData['content'] = $validated['content'];
+            if (isset($postData['content'])) {
+                $translationData['content'] = $postData['content'];
             }
             
             // Also preserve editor_type in translation
@@ -636,7 +705,15 @@ class PostController extends Controller
             return redirect()->back()->with('success', ucfirst($post->type) . ' translation updated successfully.');
         }
 
-        $post->update($validated);
+        $post->update($postData);
+
+        // Update Product Data
+        if ($post->type === 'product') {
+            $post->shopData()->updateOrCreate(
+                ['post_id' => $post->id],
+                $productData
+            );
+        }
 
         // Multilingual Copy Logic (on Update)
         if ($request->has('make_multilingual_copy') && $request->has('copy_to_languages')) {

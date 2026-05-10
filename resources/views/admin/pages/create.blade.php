@@ -13,7 +13,12 @@
 
     @if($errors->any())
         <div class="bg-[#fff] border-l-4 border-[#d63638] shadow-[0_1px_1px_rgba(0,0,0,.04)] p-3 mb-4 rounded-sm text-[13px]">
-            <p><strong>Error:</strong> Please check the fields.</p>
+            <p class="font-bold mb-2">Error: Please check the following fields:</p>
+            <ul class="list-disc list-inside text-[#d63638] space-y-1">
+                @foreach ($errors->all() as $error)
+                    <li>{{ $error }}</li>
+                @endforeach
+            </ul>
         </div>
     @endif
 
@@ -26,8 +31,11 @@
             <div class="flex-grow min-w-0">
                 <div class="mb-4">
                     <input type="text" name="title" id="title-input" value="{{ old('title') }}" 
-                           class="w-full text-[1.7em] leading-normal border border-[#8c8f94] rounded-sm py-[3px] px-[8px] focus:ring-[#2271b1] focus:border-[#2271b1] shadow-none m-0 bg-white" 
+                           class="w-full text-[1.7em] leading-normal border @error('title') border-[#d63638] @else border-[#8c8f94] @enderror rounded-sm py-[3px] px-[8px] focus:ring-[#2271b1] focus:border-[#2271b1] shadow-none m-0 bg-white" 
                            placeholder="Add title" required>
+                    @error('title')
+                        <p class="text-[#d63638] text-[12px] mt-1">{{ $message }}</p>
+                    @enderror
                     
                     <div id="permalink-container" class="mt-2 text-[13px] {{ old('title') ? 'flex' : 'hidden' }} items-center font-medium">
                         <span class="text-[#646970] mr-1">Permalink:</span>

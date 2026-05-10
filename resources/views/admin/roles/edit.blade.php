@@ -105,7 +105,7 @@
                 const anyChecked = Array.from(children).some(c => c.checked);
                 if (!anyChecked) {
                     parent.checked = false;
-                    alert('Please select at least one sub-option (e.g. All Books, Add New) to enable this section.');
+                    window.showToast('Please select at least one sub-option (e.g. All Books, Add New) to enable this section.', 'warning');
                 }
             } else if (!parent.checked) {
                 children.forEach(c => c.checked = false);

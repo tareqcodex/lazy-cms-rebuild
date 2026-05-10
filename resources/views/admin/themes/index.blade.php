@@ -1,5 +1,6 @@
 <x-cms-dashboard::layouts.admin>
     <x-slot name="title">Themes - Lazy CMS</x-slot>
+    <x-cms-dashboard::admin.delete-modal />
 
     <div class="px-2">
         <div class="flex items-center gap-4 mb-6">
@@ -90,10 +91,10 @@
                                 
                                 {{-- Delete Button (Only for inactive and non-core themes) --}}
                                 @if($theme['slug'] !== 'lazy-theme')
-                                    <form action="{{ route('admin.themes.destroy', $theme['slug']) }}" method="POST" onsubmit="return confirm('Are you sure you want to delete this theme? This action cannot be undone.')">
+                                    <form id="delete-theme-{{ $theme['slug'] }}" action="{{ route('admin.themes.destroy', $theme['slug']) }}" method="POST">
                                         @csrf
                                         @method('DELETE')
-                                        <button type="submit" class="text-[#d63638] text-[12px] hover:underline mt-2">Delete</button>
+                                        <button type="button" onclick="confirmThemeDelete('{{ $theme['slug'] }}')" class="text-[#d63638] text-[12px] hover:underline mt-2">Delete</button>
                                     </form>
                                 @endif
                             @endif
@@ -196,6 +197,19 @@
                     });
                 }
             });
+
+            window.confirmThemeDelete = async function(slug) {
+                const confirmed = await window.lazyConfirm({
+                    title: 'Delete Theme',
+                    message: 'Are you sure you want to delete this theme? This action cannot be undone and will remove all theme files from the server.',
+                    confirmText: 'Delete Theme',
+                    isDanger: true
+                });
+
+                if (confirmed) {
+                    document.getElementById(`delete-theme-${slug}`).submit();
+                }
+            };
         </script>
     @endpush
 </x-cms-dashboard::layouts.admin>

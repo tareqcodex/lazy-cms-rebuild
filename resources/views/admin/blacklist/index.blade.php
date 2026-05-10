@@ -1,5 +1,6 @@
 <x-cms-dashboard::layouts.admin>
     <x-slot name="title">IP Blacklist - Lazy CMS</x-slot>
+    <x-cms-dashboard::admin.delete-modal />
 
     <div class="px-2">
         <div class="flex items-baseline gap-2 mb-6">
@@ -31,7 +32,7 @@
                     <option value="">Bulk Actions</option>
                     <option value="delete">Delete (Unblock)</option>
                 </select>
-                <button type="submit" form="blacklist-bulk-form" class="border border-[#2271b1] text-[#2271b1] px-3 py-1 rounded-[3px] text-[13px] font-semibold hover:bg-[#f0f6fa]">Apply</button>
+                <button type="button" onclick="handleBulkBlacklistAction('blacklist-bulk-form', 'action')" class="border border-[#2271b1] text-[#2271b1] px-3 py-1 rounded-[3px] text-[13px] font-semibold hover:bg-[#f0f6fa]">Apply</button>
             </div>
             <x-cms-dashboard::admin.pagination :paginator="$blockedIps" />
         </div>
@@ -68,9 +69,9 @@
                             <td class="p-2 text-[#646970]">{{ $ip->reason }}</td>
                             <td class="p-2">{{ $ip->created_at->format('M d, Y H:i') }}</td>
                             <td class="p-2">
-                                <form action="{{ route('admin.blacklist.destroy', $ip->id) }}" method="POST" class="inline" onsubmit="return confirm('Are you sure you want to unblock this IP?')">
+                                <form id="delete-blacklist-{{ $ip->id }}" action="{{ route('admin.blacklist.destroy', $ip->id) }}" method="POST" class="inline">
                                     @csrf @method('DELETE')
-                                    <button type="submit" class="text-[#b32d2e] hover:underline font-semibold">Unblock</button>
+                                    <button type="button" onclick="confirmBlacklistDelete({{ $ip->id }})" class="text-[#b32d2e] hover:underline font-semibold">Unblock</button>
                                 </form>
                             </td>
                         </tr>
@@ -89,7 +90,7 @@
                     <option value="">Bulk Actions</option>
                     <option value="delete">Delete (Unblock)</option>
                 </select>
-                <button type="submit" form="blacklist-bulk-form" class="border border-[#2271b1] text-[#2271b1] px-3 py-1 rounded-[3px] text-[13px] font-semibold hover:bg-[#f0f6fa]">Apply</button>
+                <button type="button" onclick="handleBulkBlacklistAction('blacklist-bulk-form', 'action2')" class="border border-[#2271b1] text-[#2271b1] px-3 py-1 rounded-[3px] text-[13px] font-semibold hover:bg-[#f0f6fa]">Apply</button>
             </div>
             <x-cms-dashboard::admin.pagination :paginator="$blockedIps" />
         </div>
@@ -102,6 +103,55 @@
                 cb.checked = this.checked;
             });
         });
+
+        window.confirmBlacklistDelete = async function(id) {
+            const confirmed = await window.lazyConfirm({
+                title: 'Unblock IP',
+                message: 'Are you sure you want to unblock this IP address? This will allow requests from this IP again.',
+                confirmText: 'Unblock IP',
+                isDanger: true
+            });
+
+            if (confirmed) {
+                document.getElementById(`delete-blacklist-${id}`).submit();
+            }
+        };
+
+        window.handleBulkBlacklistAction = async function(formId, selectName) {
+            const form = document.getElementById(formId);
+            const select = document.querySelector(`select[name="${selectName}"]`);
+            const action = select.value;
+            const selected = document.querySelectorAll('.ip-checkbox:checked');
+
+            if (!action) return;
+            if (selected.length === 0) {
+                window.showToast('Please select at least one IP.', 'warning');
+                return;
+            }
+
+            if (action === 'delete') {
+                const confirmed = await window.lazyConfirm({
+                    title: 'Unblock Multiple IPs',
+                    message: `Are you sure you want to unblock ${selected.length} IP addresses?`,
+                    confirmText: 'Unblock All Selected',
+                    isDanger: true
+                });
+
+                if (confirmed) {
+                    // Sync action inputs if needed, though they are inside the same form conceptually
+                    // In this case they are separate selects but both use form="blacklist-bulk-form"
+                    // We need to make sure the form knows which action is being used.
+                    const hiddenAction = document.createElement('input');
+                    hiddenAction.type = 'hidden';
+                    hiddenAction.name = 'action';
+                    hiddenAction.value = action;
+                    form.appendChild(hiddenAction);
+                    form.submit();
+                }
+            } else {
+                form.submit();
+            }
+        };
     </script>
     @endpush
 </x-cms-dashboard::layouts.admin>

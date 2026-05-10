@@ -28,6 +28,7 @@
         'text-transform: ' . ($s['textTransform'] ?? 'none'),
         'text-align: ' . ($s['textAlign'] ?? 'center'),
         'margin: 0',
+        'transition: color 0.3s ease',
     ];
 
     $useLink = !empty($s['useLink']) && !empty($s['linkUrl']);
@@ -117,8 +118,12 @@
 @endif
 @if($titleHoverColor)
 <style>
-    #{{ $titleElemId }} { transition: color 0.3s ease, -webkit-text-fill-color 0.3s ease; }
+    @if(empty($s['useGradient']))
+    #{{ $titleElemId }} { transition: color 0.3s ease; }
+    #{{ $titleElemId }}:hover { color: {{ $titleHoverColor }} !important; }
+    @else
     #{{ $titleElemId }}:hover { color: {{ $titleHoverColor }} !important; -webkit-text-fill-color: {{ $titleHoverColor }} !important; background-image: none !important; }
+    @endif
 </style>
 @endif
 

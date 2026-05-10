@@ -16,6 +16,8 @@ use Acme\CmsDashboard\Http\Controllers\Admin\AcptTermController;
 use Acme\CmsDashboard\Http\Controllers\Admin\WidgetController;
 use Acme\CmsDashboard\Http\Controllers\Admin\LanguageController;
 use Acme\CmsDashboard\Http\Controllers\Admin\ThemeController;
+use Acme\CmsDashboard\Http\Controllers\Admin\ShopController;
+use Acme\CmsDashboard\Http\Controllers\ShopFrontendController;
 use Acme\CmsDashboard\Http\Controllers\FrontendController;
 
 // 1. Dynamic Login & Registration URLs (Highest Priority - Outside any group)
@@ -164,6 +166,7 @@ Route::prefix('admin')->name('admin.')->middleware(['web', \Acme\CmsDashboard\Ht
     Route::get('settings/seo', [DashboardController::class, 'seoSettings'])->name('settings.seo');
     Route::post('settings/seo', [DashboardController::class, 'updateSeoSettings'])->name('settings.seo.update');
     Route::get('settings/activity-logs', [DashboardController::class, 'activityLogs'])->name('settings.activity-logs');
+    Route::post('settings/activity-logs/bulk', [DashboardController::class, 'bulkDeleteLogs'])->name('settings.activity-logs.bulk');
     Route::get('settings/api', [DashboardController::class, 'apiSettings'])->name('settings.api');
     
     // Backups
@@ -226,6 +229,15 @@ Route::prefix('admin')->name('admin.')->middleware(['web', \Acme\CmsDashboard\Ht
     Route::delete('forms/submissions/{submission}', [\Acme\CmsDashboard\Http\Controllers\Admin\FormController::class, 'destroySubmission'])->name('forms.submissions.destroy');
     Route::delete('forms/{form}', [\Acme\CmsDashboard\Http\Controllers\Admin\FormController::class, 'destroy'])->name('forms.destroy');
 
+    // Shop Management
+    Route::prefix('shop')->name('shop.')->group(function() {
+        Route::get('orders', [ShopController::class, 'orders'])->name('orders.index');
+        Route::get('orders/{id}', [ShopController::class, 'orderShow'])->name('orders.show');
+        Route::post('orders/{id}/status', [ShopController::class, 'orderUpdateStatus'])->name('orders.status');
+        Route::get('settings', [ShopController::class, 'settings'])->name('settings');
+        Route::post('settings', [ShopController::class, 'saveSettings'])->name('settings.save');
+    });
+
 });
  
 // 3. Frontend Routes (Catch-all for posts/pages) - Outside Admin Group
@@ -269,6 +281,20 @@ Route::middleware(['web', \Acme\CmsDashboard\Http\Middleware\PageCacheMiddleware
     Route::get('/search', [FrontendController::class, 'search'])->name('frontend.search');
     Route::post('/comment', [FrontendController::class, 'storeComment'])->name('frontend.comment.store');
     Route::post('/form-submit', [FrontendController::class, 'submitForm'])->name('frontend.form.submit');
+
+    // Shop Frontend
+    Route::prefix('cart')->name('shop.')->group(function() {
+        Route::get('/', [ShopFrontendController::class, 'cart'])->name('cart');
+        Route::post('/add', [ShopFrontendController::class, 'addToCart'])->name('cart.add');
+        Route::post('/update', [ShopFrontendController::class, 'updateCart'])->name('cart.update');
+        Route::get('/remove/{key}', [ShopFrontendController::class, 'removeFromCart'])->name('cart.remove');
+        Route::post('/apply-coupon', [ShopFrontendController::class, 'applyCoupon'])->name('cart.coupon');
+        Route::post('/review', [ShopFrontendController::class, 'storeReview'])->name('review.store');
+    });
+    Route::get('/checkout', [ShopFrontendController::class, 'checkout'])->name('shop.checkout');
+    Route::post('/checkout', [ShopFrontendController::class, 'placeOrder'])->name('shop.place-order');
+    Route::get('/order-confirmation/{id}', [ShopFrontendController::class, 'confirmation'])->name('shop.confirmation');
+
     Route::get('/robots.txt', [FrontendController::class, 'robots'])->name('frontend.robots');
     Route::get('/sitemap.xml', [\Acme\CmsDashboard\Http\Controllers\SitemapController::class, 'index'])->name('frontend.sitemap');
     Route::get('/{typeOrSlug}/{slug?}', [FrontendController::class, 'single'])->name('frontend.show')->where('slug', '.*');

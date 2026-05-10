@@ -764,3 +764,64 @@ if (!function_exists('lazy_translate')) {
         return $text; 
     }
 }
+
+if (!function_exists('get_lazy_cart_count')) {
+    function get_lazy_cart_count() {
+        $cart = session()->get('lazy_cart', []);
+        $total = 0;
+        foreach($cart as $item) {
+            $total += $item['quantity'] ?? 0;
+        }
+        return $total;
+    }
+}
+
+if (!function_exists('get_lazy_cart_subtotal')) {
+    function get_lazy_cart_subtotal() {
+        $cart = session()->get('lazy_cart', []);
+        $subtotal = 0;
+        foreach($cart as $item) {
+            $price = $item['sale_price'] ?? $item['price'];
+            $subtotal += $price * $item['quantity'];
+        }
+        return $subtotal;
+    }
+}
+
+if (!function_exists('get_lazy_cart_shipping')) {
+    function get_lazy_cart_shipping() {
+        return (float) get_cms_option('shop_flat_rate_cost', 0);
+    }
+}
+
+if (!function_exists('get_lazy_cart_total')) {
+    function get_lazy_cart_total() {
+        $subtotal = get_lazy_cart_subtotal();
+        $shipping = get_lazy_cart_shipping();
+        
+        $coupon = session()->get('lazy_coupon');
+        $discount = 0;
+        if ($coupon) {
+            if ($coupon['type'] === 'fixed') {
+                $discount = $coupon['discount'];
+            } else {
+                $discount = $subtotal * ($coupon['discount'] / 100);
+            }
+        }
+        
+        return max(0, $subtotal + $shipping - $discount);
+    }
+}
+
+if (!function_exists('get_lazy_image_url')) {
+    function get_lazy_image_url($path, $default = 'https://via.placeholder.com/300?text=No+Image') {
+        if (empty($path)) return $default;
+        if (str_starts_with($path, 'http')) return $path;
+        
+        // Check common paths
+        if (file_exists(public_path($path))) return asset($path);
+        if (file_exists(public_path('storage/' . $path))) return asset('storage/' . $path);
+        
+        return asset('storage/' . $path); // Fallback to storage
+    }
+}

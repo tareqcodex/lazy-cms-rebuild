@@ -13,6 +13,10 @@ class CmsDashboardServiceProvider extends ServiceProvider
             return $user->role && $user->role->slug === 'super-admin' ? true : null;
         });
 
+        // Share activeTheme globally with all views
+        $activeTheme = get_cms_option('active_theme', 'lazy-theme');
+        view()->share('activeTheme', $activeTheme);
+
         // Register Middlewares
         $this->app['router']->prependMiddlewareToGroup('web', \Acme\CmsDashboard\Http\Middleware\RedirectMiddleware::class);
         $this->app['router']->pushMiddlewareToGroup('web', \Acme\CmsDashboard\Http\Middleware\TrackVisits::class);

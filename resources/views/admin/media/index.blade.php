@@ -1,4 +1,5 @@
-<x-cms-dashboard::layouts.admin>
+<x-cms-dashboard::layouts.admin title="Media Library">
+    <x-cms-dashboard::admin.delete-modal />
     <div class="flex items-center justify-between mb-6">
         <div class="flex items-center gap-4">
             <h1 class="text-[23px] font-normal text-[#1d2327]">Media Library</h1>
@@ -226,7 +227,7 @@
                         <div><label class="block text-[12px] font-bold text-[#646970] mb-1">Title</label><input type="text" id="modal-meta-title" class="wp-input w-full text-[13px] h-8"></div>
                         <div><label class="block text-[12px] font-bold text-[#646970] mb-1">Caption</label><textarea id="modal-meta-caption" class="wp-input w-full text-[13px] h-16"></textarea></div>
                         <div><label class="block text-[12px] font-bold text-[#646970] mb-1">Description</label><textarea id="modal-meta-desc" class="wp-input w-full text-[13px] h-16"></textarea></div>
-                        <div><label class="block text-[12px] font-bold text-[#646970] mb-1">File URL:</label><div class="flex gap-1"><input type="text" id="modal-meta-url" readonly class="wp-input grow text-[11px] h-8 bg-[#f6f7f7]"><button onclick="document.getElementById('modal-meta-url').select();document.execCommand('copy');alert('Copied!')" class="wp-btn-secondary h-8 px-2 text-[11px]">Copy</button></div></div>
+                        <div><label class="block text-[12px] font-bold text-[#646970] mb-1">File URL:</label><div class="flex gap-1"><input type="text" id="modal-meta-url" readonly class="wp-input grow text-[11px] h-8 bg-[#f6f7f7]"><button onclick="document.getElementById('modal-meta-url').select();document.execCommand('copy');window.showToast('Copied to clipboard!', 'success')" class="wp-btn-secondary h-8 px-2 text-[11px]">Copy</button></div></div>
                     </div>
 
                     <div class="mt-6 pt-4 border-t border-[#c3c4c7] space-y-4">
@@ -448,8 +449,16 @@
             const applyTop = document.getElementById('apply-bulk-action-top');
             const applyBottom = document.getElementById('apply-bulk-action-bottom');
             
-            function executeBulkDelete(ids) {
-                if (!confirm('Are you sure you want to delete selected items permanently?')) return;
+            async function executeBulkDelete(ids) {
+                const confirmed = await window.lazyConfirm({
+                    title: 'Delete Media',
+                    message: `Are you sure you want to delete ${ids.length > 1 ? ids.length + ' selected items' : 'this item'} permanently? This action cannot be undone.`,
+                    confirmText: 'Delete Permanently',
+                    isDanger: true
+                });
+
+                if (!confirmed) return;
+
                 fetch('{{ route('admin.media.bulk-delete') }}', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json', 'X-Requested-With': 'XMLHttpRequest', 'X-CSRF-TOKEN': '{{ csrf_token() }}' },
@@ -571,8 +580,18 @@
                 }
             });
 
-            document.getElementById('modal-delete-btn').addEventListener('click', function() {
-                if (currentIndex === -1 || !confirm('Delete permanently?')) return;
+            document.getElementById('modal-delete-btn').addEventListener('click', async function() {
+                if (currentIndex === -1) return;
+                
+                const confirmed = await window.lazyConfirm({
+                    title: 'Delete Media',
+                    message: 'Are you sure you want to delete this media item permanently? This action cannot be undone.',
+                    confirmText: 'Delete Permanently',
+                    isDanger: true
+                });
+
+                if (!confirmed) return;
+
                 const item = items[currentIndex];
                 fetch(`/admin/media/${item.id}`, {
                     method: 'POST',

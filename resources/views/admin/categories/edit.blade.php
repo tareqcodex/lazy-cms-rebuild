@@ -4,8 +4,19 @@
     </div>
 
     @if(session('success'))
-        <div class="bg-[#fff] border-l-4 border-[#00a32a] shadow-[0_1px_1px_rgba(0,0,0,.04)] p-3 mb-4 rounded-sm text-[13px]">
+        <div class="bg-[#fff] border-l-4 border-[#00a32a] shadow-[0_1px_11px_rgba(0,0,0,.04)] p-3 mb-4 rounded-sm text-[13px]">
             <p>{{ session('success') }}</p>
+        </div>
+    @endif
+
+    @if($errors->any())
+        <div class="bg-[#fff] border-l-4 border-[#d63638] shadow-[0_1px_1px_rgba(0,0,0,.04)] p-3 mb-4 rounded-sm text-[13px]">
+            <p class="font-bold mb-2">Error: Please check the following fields:</p>
+            <ul class="list-disc list-inside text-[#d63638] space-y-1">
+                @foreach ($errors->all() as $error)
+                    <li>{{ $error }}</li>
+                @endforeach
+            </ul>
         </div>
     @endif
 
@@ -64,7 +75,10 @@
                 <tr class="align-top border-b border-[#f0f0f1]">
                     <th class="w-[200px] text-left py-4 px-2 font-medium">Name</th>
                     <td class="py-4 px-2">
-                        <input type="text" name="name" value="{{ old('name', $category->name) }}" class="wp-input w-full max-w-[400px]" required>
+                        <input type="text" name="name" value="{{ old('name', $category->name) }}" class="wp-input w-full max-w-[400px] @error('name') border-[#d63638] @enderror" required>
+                        @error('name')
+                            <p class="text-[#d63638] text-[12px] mt-1">{{ $message }}</p>
+                        @enderror
                         <p class="text-[12px] text-[#646970] mt-1">The name is how it appears on your site.</p>
                     </td>
                 </tr>

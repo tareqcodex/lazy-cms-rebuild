@@ -22,7 +22,10 @@
             <div>
                 <label class="block text-[13px] font-bold text-[#2c3338] mb-1">Focus Keyword</label>
                 <input type="text" name="seo[focus_keyword]" id="seo-focus-keyword" value="{{ old('seo.focus_keyword', $focusKeyword) }}" 
-                       class="wp-input w-full" placeholder="Enter main keyword...">
+                       class="wp-input w-full @error('seo.focus_keyword') border-[#d63638] @enderror" placeholder="Enter main keyword...">
+                @error('seo.focus_keyword')
+                    <p class="text-[#d63638] text-[12px] mt-1">{{ $message }}</p>
+                @enderror
                 <p class="text-[11px] text-[#646970] mt-1">What keyword should this post rank for?</p>
             </div>
 
@@ -43,7 +46,10 @@
                     <span id="seo-title-count" class="text-[11px] text-[#646970]">0 characters</span>
                 </div>
                 <input type="text" name="seo[title]" id="seo-title-input" value="{{ old('seo.title', $seoTitle) }}" 
-                       class="wp-input w-full" placeholder="Enter SEO title...">
+                       class="wp-input w-full @error('seo.title') border-[#d63638] @enderror" placeholder="Enter SEO title...">
+                @error('seo.title')
+                    <p class="text-[#d63638] text-[12px] mt-1">{{ $message }}</p>
+                @enderror
                 <div class="mt-1.5 h-1 w-full bg-[#f0f0f1] rounded-full overflow-hidden">
                     <div id="seo-title-bar" class="h-full w-0 transition-all duration-300"></div>
                 </div>
@@ -56,8 +62,11 @@
                     <label class="block text-[13px] font-bold text-[#2c3338]">Meta Description</label>
                     <span id="seo-desc-count" class="text-[11px] text-[#646970]">0 characters</span>
                 </div>
-                <textarea name="seo[description]" id="seo-desc-input" rows="3" class="wp-input w-full" 
+                <textarea name="seo[description]" id="seo-desc-input" rows="3" class="wp-input w-full @error('seo.description') border-[#d63638] @enderror" 
                           placeholder="Enter meta description...">{{ old('seo.description', $seo['description'] ?? '') }}</textarea>
+                @error('seo.description')
+                    <p class="text-[#d63638] text-[12px] mt-1">{{ $message }}</p>
+                @enderror
                 <div class="mt-1.5 h-1 w-full bg-[#f0f0f1] rounded-full overflow-hidden">
                     <div id="seo-desc-bar" class="h-full w-0 transition-all duration-300"></div>
                 </div>
@@ -79,11 +88,17 @@
                 <p class="text-[14px] font-bold text-[#2c3338] border-b pb-2">Facebook (OpenGraph)</p>
                 <div>
                     <label class="block text-[13px] font-bold text-[#2c3338] mb-1">Facebook Title</label>
-                    <input type="text" name="seo[og_title]" value="{{ old('seo.og_title', $seo['og_title'] ?? '') }}" class="wp-input w-full" placeholder="Defaults to SEO title">
+                    <input type="text" name="seo[og_title]" value="{{ old('seo.og_title', $seo['og_title'] ?? '') }}" class="wp-input w-full @error('seo.og_title') border-[#d63638] @enderror" placeholder="Defaults to SEO title">
+                    @error('seo.og_title')
+                        <p class="text-[#d63638] text-[12px] mt-1">{{ $message }}</p>
+                    @enderror
                 </div>
                 <div>
                     <label class="block text-[13px] font-bold text-[#2c3338] mb-1">Facebook Description</label>
-                    <textarea name="seo[og_description]" rows="2" class="wp-input w-full" placeholder="Defaults to meta description">{{ old('seo.og_description', $seo['og_description'] ?? '') }}</textarea>
+                    <textarea name="seo[og_description]" rows="2" class="wp-input w-full @error('seo.og_description') border-[#d63638] @enderror" placeholder="Defaults to meta description">{{ old('seo.og_description', $seo['og_description'] ?? '') }}</textarea>
+                    @error('seo.og_description')
+                        <p class="text-[#d63638] text-[12px] mt-1">{{ $message }}</p>
+                    @enderror
                 </div>
                 <div>
                     <label class="block text-[13px] font-bold text-[#2c3338] mb-2">Facebook Image</label>
@@ -107,7 +122,10 @@
                 <p class="text-[14px] font-bold text-[#2c3338] border-b pb-2">X (Twitter Cards)</p>
                 <div>
                     <label class="block text-[13px] font-bold text-[#2c3338] mb-1">X Title</label>
-                    <input type="text" name="seo[twitter_title]" value="{{ old('seo.twitter_title', $seo['twitter_title'] ?? '') }}" class="wp-input w-full" placeholder="Defaults to SEO title">
+                    <input type="text" name="seo[twitter_title]" value="{{ old('seo.twitter_title', $seo['twitter_title'] ?? '') }}" class="wp-input w-full @error('seo.twitter_title') border-[#d63638] @enderror" placeholder="Defaults to SEO title">
+                    @error('seo.twitter_title')
+                        <p class="text-[#d63638] text-[12px] mt-1">{{ $message }}</p>
+                    @enderror
                 </div>
                 <div>
                     <label class="block text-[13px] font-bold text-[#2c3338] mb-2">X Image</label>
@@ -144,7 +162,10 @@
             <div>
                 <label class="block text-[13px] font-bold text-[#2c3338] mb-1">Canonical URL</label>
                 <input type="text" name="seo[canonical_url]" value="{{ old('seo.canonical_url', $seo['canonical_url'] ?? '') }}" 
-                       class="wp-input w-full" placeholder="https://example.com/canonical-page">
+                       class="wp-input w-full @error('seo.canonical_url') border-[#d63638] @enderror" placeholder="https://example.com/canonical-page">
+                @error('seo.canonical_url')
+                    <p class="text-[#d63638] text-[12px] mt-1">{{ $message }}</p>
+                @enderror
                 <p class="text-[11px] text-[#646970] mt-1">If this is a duplicate page, specify the original URL.</p>
             </div>
             
@@ -220,7 +241,7 @@
 
     function copyToClipboard(text) {
         navigator.clipboard.writeText(text).then(() => {
-            alert('URL copied to clipboard!');
+            window.showToast('URL copied to clipboard!', 'success');
         });
     }
 

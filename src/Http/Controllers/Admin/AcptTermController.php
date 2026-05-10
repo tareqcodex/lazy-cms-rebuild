@@ -230,9 +230,11 @@ class AcptTermController extends Controller
         $request->validate([
             'name' => 'required|string|max:255',
             'taxonomy_slug' => 'required|string',
+            'lang_code' => 'nullable|string'
         ]);
 
-        $slug = TaxonomyTerm::generateUniqueSlug($request->name, 0, $request->cpt_slug);
+        $lang = $request->input('lang_code', app()->getLocale());
+        $slug = TaxonomyTerm::generateUniqueSlug($request->name, 0, $request->cpt_slug, $lang);
 
         $term = TaxonomyTerm::create([
             'name' => $request->name,
@@ -240,6 +242,7 @@ class AcptTermController extends Controller
             'taxonomy_slug' => $request->taxonomy_slug,
             'cpt_slug' => $request->cpt_slug,
             'parent_id' => $request->parent_id,
+            'lang_code' => $lang,
         ]);
 
         return response()->json($term);

@@ -1,5 +1,6 @@
 <x-cms-dashboard::layouts.admin>
     <x-slot name="title">Submissions {{ $form ? '— ' . $form->title : '(All Forms)' }}</x-slot>
+    <x-cms-dashboard::admin.delete-modal />
 
     {{-- Centered Detail Modal --}}
     <div id="sub-modal" class="fixed inset-0 z-50 hidden">
@@ -97,11 +98,11 @@
                                     {{ $sub->created_at->diffForHumans() }}
                                 </td>
                                 <td class="px-5 py-3.5 text-right" onclick="event.stopPropagation()">
-                                    <form action="{{ route('admin.forms.submissions.destroy', $sub->id) }}" method="POST"
-                                          onsubmit="return confirm('Delete this submission?')">
+                                    <form id="delete-sub-{{ $sub->id }}" action="{{ route('admin.forms.submissions.destroy', $sub->id) }}" method="POST">
                                         @csrf
                                         @method('DELETE')
-                                        <button type="submit"
+                                        <button type="button"
+                                                onclick="confirmDeleteSubmission({{ $sub->id }})"
                                                 class="opacity-0 group-hover:opacity-100 p-1.5 rounded-lg text-red-400 hover:text-red-600 hover:bg-red-50 transition-all">
                                             <span class="material-symbols-outlined text-[17px]">delete</span>
                                         </button>
@@ -195,5 +196,18 @@
     }
 
     document.addEventListener('keydown', e => { if (e.key === 'Escape') closeModal(); });
+
+    window.confirmDeleteSubmission = async function(id) {
+        const confirmed = await window.lazyConfirm({
+            title: 'Delete Submission',
+            message: 'Are you sure you want to permanently delete this form submission? This action cannot be undone.',
+            confirmText: 'Delete Permanently',
+            isDanger: true
+        });
+
+        if (confirmed) {
+            document.getElementById(`delete-sub-${id}`).submit();
+        }
+    };
     </script>
 </x-cms-dashboard::layouts.admin>

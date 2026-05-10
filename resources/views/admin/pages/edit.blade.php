@@ -1,7 +1,8 @@
 <x-cms-dashboard::layouts.admin title="Edit Page">
     
     <div class="flex items-center mb-4">
-        <h1 class="text-[23px] font-normal text-[#1d2327]">Edit Page</h1>
+        <h1 class="text-[23px] font-normal text-[#1d2327] mr-3">Edit Page</h1>
+        <a href="{{ route('admin.pages.create') }}" class="wp-btn-secondary px-2 py-0.5 text-[12px] bg-white hover:bg-[#f6f7f7] border-[#2271b1] text-[#2271b1] leading-normal">Add New</a>
     </div>
 
     @if(session('success'))
@@ -13,7 +14,12 @@
 
     @if($errors->any())
         <div class="bg-[#fff] border-l-4 border-[#d63638] shadow-[0_1px_1px_rgba(0,0,0,.04)] p-3 mb-4 rounded-sm text-[13px]">
-            <p><strong>Error:</strong> Please check the fields.</p>
+            <p class="font-bold mb-2">Error: Please check the following fields:</p>
+            <ul class="list-disc list-inside text-[#d63638] space-y-1">
+                @foreach ($errors->all() as $error)
+                    <li>{{ $error }}</li>
+                @endforeach
+            </ul>
         </div>
     @endif
 
@@ -27,8 +33,11 @@
             <div class="flex-grow min-w-0">
                 <div class="mb-4">
                     <input type="text" name="title" id="title-input" value="{{ old('title', $page->title) }}" 
-                           class="w-full text-[1.7em] leading-normal border border-[#8c8f94] rounded-sm py-[3px] px-[8px] focus:ring-[#2271b1] focus:border-[#2271b1] shadow-none m-0 bg-white" 
+                           class="w-full text-[1.7em] leading-normal border @error('title') border-[#d63638] @else border-[#8c8f94] @enderror rounded-sm py-[3px] px-[8px] focus:ring-[#2271b1] focus:border-[#2271b1] shadow-none m-0 bg-white" 
                            placeholder="Add title" required>
+                    @error('title')
+                        <p class="text-[#d63638] text-[12px] mt-1">{{ $message }}</p>
+                    @enderror
                     
                     <div id="permalink-container" class="mt-2 text-[13px] flex items-center">
                         <strong class="text-[#646970] mr-1">Permalink:</strong>
@@ -74,7 +83,7 @@
                         <h2 class="text-[#2c3338] text-[22px] font-bold mb-3">Welcome to the Page Builder</h2>
                         <p class="text-[#646970] text-[14px] mb-8">This post is now using the amazing page builder.</p>
                         
-                        <button type="button" @if(isset($page->id)) onclick="window.location.href='{{ route('admin.lazy-builder', $page->id) }}'" @else onclick="alert('Please save the page first to enable the Page Builder.')" @endif class="wp-btn-primary px-6 py-2 h-auto text-[15px] rounded-md shadow-sm">
+                        <button type="button" @if(isset($page->id)) onclick="window.location.href='{{ route('admin.lazy-builder', $page->id) }}'" @else onclick="window.showToast('Please save the page first to enable the Page Builder.', 'warning')" @endif class="wp-btn-primary px-6 py-2 h-auto text-[15px] rounded-md shadow-sm">
                             Edit with Page Builder
                         </button>
                     </div>

@@ -1,4 +1,5 @@
 <x-cms-dashboard::layouts.admin title="{{ ucfirst($type ?? 'Posts') }}" active-menu="{{ ($type ?? 'post') === 'page' ? 'pages' : ($type ?? 'posts') }}">
+    <x-cms-dashboard::admin.delete-modal />
     <div class="mb-4 flex items-center">
         <h1 class="text-[23px] font-normal text-[#1d2327] inline-block mr-3">{{ ucfirst($type ?? 'Posts') }}</h1>
         <a href="{{ route('admin.posts.create', ['type' => $type ?? 'post']) }}" class="wp-btn-outline">Add New</a>
@@ -24,11 +25,11 @@
             <span class="mx-1 text-[#c3c4c7]">|</span>
             <a href="{{ route('admin.posts.index', ['type' => $type, 'status' => 'published']) }}" class="{{ request('status') == 'published' ? 'text-black font-semibold' : 'text-[#2271b1]' }}">Published <span class="text-[#646970]">({{ $publishedCount }})</span></a>
             <span class="mx-1 text-[#c3c4c7]">|</span>
+            <a href="{{ route('admin.posts.index', ['type' => $type, 'status' => 'scheduled']) }}" class="{{ request('status') == 'scheduled' ? 'text-black font-semibold' : 'text-[#2271b1]' }}">Scheduled <span class="text-[#646970]">({{ $scheduledCount }})</span></a>
+            <span class="mx-1 text-[#c3c4c7]">|</span>
             <a href="{{ route('admin.posts.index', ['type' => $type, 'status' => 'draft']) }}" class="{{ request('status') == 'draft' ? 'text-black font-semibold' : 'text-[#2271b1]' }}">Draft <span class="text-[#646970]">({{ $draftCount }})</span></a>
-            @if($trashCount > 0)
-                <span class="mx-1 text-[#c3c4c7]">|</span>
-                <a href="{{ route('admin.posts.index', ['type' => $type, 'status' => 'trash']) }}" class="{{ request('status') == 'trash' ? 'text-black font-semibold' : 'text-[#2271b1]' }}">Trash <span class="text-[#646970]">({{ $trashCount }})</span></a>
-            @endif
+            <span class="mx-1 text-[#c3c4c7]">|</span>
+            <a href="{{ route('admin.posts.index', ['type' => $type, 'status' => 'trash']) }}" class="{{ request('status') == 'trash' ? 'text-black font-semibold' : 'text-[#2271b1]' }}">Trash <span class="text-[#646970]">({{ $trashCount }})</span></a>
         </div>
 
         
@@ -63,7 +64,7 @@
                         <option value="trash">Move to Trash</option>
                     @endif
                 </select>
-                <button type="submit" class="wp-btn-secondary h-[30px] leading-[1] text-[13px]">Apply</button>
+                <button type="button" onclick="handleBulkAction('posts-filter')" class="wp-btn-secondary h-[30px] leading-[1] text-[13px]">Apply</button>
             </div>
 
             @if(request('status') !== 'trash')
@@ -102,7 +103,7 @@
                 <th class="wp-table-header text-left">Author</th>
                 <th class="wp-table-header text-left">Slug</th>
 
-                @if(!in_array('categories', $overriddenTaxonomies))
+                @if(!in_array('categories', $overriddenTaxonomies) && ($type ?? 'post') !== 'product')
                     <th class="wp-table-header text-left">Categories</th>
                 @endif
 
@@ -110,7 +111,9 @@
                     @php $slugLower = strtolower($taxonomy->slug); @endphp
                     @if(!in_array($slugLower, ['categories', 'tags', 'category', 'post_tag']))
                         <th class="wp-table-header text-left">{{ $taxonomy->name }}</th>
-                    @elseif(in_array($slugLower, ['categories', 'tags']))
+                    @elseif(in_array($slugLower, ['categories', 'tags', 'category']) && ($type ?? 'post') !== 'product')
+                         <th class="wp-table-header text-left">{{ $taxonomy->name }}</th>
+                    @elseif($slugLower === 'tags' && ($type ?? 'post') === 'product')
                          <th class="wp-table-header text-left">{{ $taxonomy->name }}</th>
                     @endif
                 @endforeach
@@ -128,15 +131,21 @@
                 <tr class="{{ $idx % 2 === 0 ? 'bg-[#f6f7f7]' : 'bg-[#fff]' }} group">
                     <td class="wp-table-cell text-center"><input type="checkbox" name="post_ids[]" value="{{ $post->id }}" class="cb-select-item rounded-sm border-[#8c8f94] text-[#2271b1]"></td>
                     <td class="wp-table-cell align-top text-[14px] text-left">
-                        <strong><a href="{{ $post->trashed() ? '#' : route('admin.posts.edit', $post) }}" class="text-[#2271b1] hover:text-[#135e96]">{{ $post->title }}</a>@if($post->status === 'draft' && !$post->trashed()) <span class="font-normal text-[#646970]"> — Draft</span> @endif @if($post->trashed()) <span class="font-normal text-[#646970]"> — Trash</span> @endif</strong>
+                        <strong>
+                            <a href="{{ $post->trashed() ? '#' : route('admin.posts.edit', $post) }}" class="text-[#2271b1] hover:text-[#135e96]">{{ $post->title }}</a>
+                            @if($post->status === 'draft' && !$post->trashed()) <span class="font-normal text-[#646970]"> — Draft</span> @endif 
+                            @if($post->status === 'scheduled' && !$post->trashed()) <span class="font-normal text-[#646970]"> — Scheduled</span> @endif
+                            @if(is_lazy_homepage($post)) <span class="font-normal text-[#646970]"> — Front Page</span> @endif
+                            @if($post->trashed()) <span class="font-normal text-[#646970]"> — Trash</span> @endif
+                        </strong>
                         <div class="invisible group-hover:visible mt-1 text-[13px] space-x-1">
                             @if($post->trashed())
                                 <button form="restore-form-{{ $post->id }}" type="submit" class="text-[#2271b1] hover:underline cursor-pointer">Restore</button>
                                 <span class="text-[#c3c4c7]">|</span>
-                                <button form="force-delete-form-{{ $post->id }}" type="submit" class="text-[#b32d2e] hover:text-[#8a2424] hover:underline cursor-pointer" onclick="return confirm('Delete this post permanently?');">Delete Permanently</button>
+                                <button type="button" onclick="confirmForceDelete({{ $post->id }})" class="text-[#b32d2e] hover:text-[#8a2424] hover:underline cursor-pointer">Delete Permanently</button>
                             @else
                                 <a href="{{ route('admin.posts.edit', $post) }}" class="text-[#2271b1] hover:underline">Edit</a> <span class="text-[#c3c4c7]">|</span>
-                                <button form="delete-form-{{ $post->id }}" type="submit" class="text-[#b32d2e] hover:text-[#8a2424] hover:underline cursor-pointer">Trash</button> 
+                                <button type="button" onclick="moveToTrash({{ $post->id }})" class="text-[#b32d2e] hover:text-[#8a2424] hover:underline cursor-pointer">Trash</button> 
                                 @if(!isset($postType) || $postType->is_public)
                                 <span class="text-[#c3c4c7]">|</span>
                                 <a href="{{ get_lazy_permalink($post) }}" target="_blank" class="text-[#2271b1] hover:underline">View</a>
@@ -144,10 +153,10 @@
                             @endif
                         </div>
                     </td>
-                    <td class="wp-table-cell text-[#2271b1] text-left">{{ $post->user?->name ?? 'admin' }}</td>
+                    <td class="wp-table-cell text-[#2271b1] text-left">{{ $post->user?->username ?? $post->user?->name ?? 'admin' }}</td>
                     <td class="wp-table-cell text-[#646970] text-left">{{ $post->slug }}</td>
                     
-                    @if(!in_array('categories', $overriddenTaxonomies))
+                    @if(!in_array('categories', $overriddenTaxonomies) && ($type ?? 'post') !== 'product')
                     <td class="wp-table-cell text-left">
                         @if($post->categories->count() > 0)
                             {{ $post->categories->pluck('name')->implode(', ') }}
@@ -159,7 +168,7 @@
 
                     @foreach($assignedTaxonomies as $taxonomy)
                         @php $slugLower = strtolower($taxonomy->slug); @endphp
-                        @if(!in_array($slugLower, ['categories', 'tags', 'category', 'post_tag']) || in_array($slugLower, ['categories', 'tags']))
+                        @if((!in_array($slugLower, ['categories', 'tags', 'category', 'post_tag']) || in_array($slugLower, ['categories', 'tags', 'category'])) && ($type ?? 'post') !== 'product')
                             <td class="wp-table-cell text-left">
                                 @php 
                                     $terms = $post->taxonomyTerms->where('taxonomy_slug', $taxonomy->slug);
@@ -212,7 +221,7 @@
                 <th class="wp-table-header text-left border-t">Title</th>
                 <th class="wp-table-header text-left border-t">Author</th>
                 <th class="wp-table-header text-left border-t">Slug</th>
-                @if(!in_array('categories', $overriddenTaxonomies))
+                @if(!in_array('categories', $overriddenTaxonomies) && ($type ?? 'post') !== 'product')
                     <th class="wp-table-header text-left border-t">Categories</th>
                 @endif
 
@@ -220,7 +229,9 @@
                     @php $slugLower = strtolower($taxonomy->slug); @endphp
                     @if(!in_array($slugLower, ['categories', 'tags', 'category', 'post_tag']))
                         <th class="wp-table-header text-left border-t">{{ $taxonomy->name }}</th>
-                    @elseif(in_array($slugLower, ['categories', 'tags']))
+                    @elseif(in_array($slugLower, ['categories', 'tags', 'category']) && ($type ?? 'post') !== 'product')
+                         <th class="wp-table-header text-left border-t">{{ $taxonomy->name }}</th>
+                    @elseif($slugLower === 'tags' && ($type ?? 'post') === 'product')
                          <th class="wp-table-header text-left border-t">{{ $taxonomy->name }}</th>
                     @endif
                 @endforeach
@@ -248,7 +259,7 @@
                     <option value="trash">Move to Trash</option>
                 @endif
             </select>
-            <button type="submit" class="wp-btn-secondary h-[30px] leading-[1] text-[13px]">Apply</button>
+            <button type="button" onclick="handleBulkAction('posts-filter', 'action2')" class="wp-btn-secondary h-[30px] leading-[1] text-[13px]">Apply</button>
         </div>
         
         <x-cms-dashboard::admin.pagination :paginator="$posts" />
@@ -267,6 +278,51 @@
                 document.getElementById('cb-select-all-2').checked = isChecked;
             });
         });
+
+        window.handleBulkAction = async function(formId, selectName = 'action') {
+            const form = document.getElementById(formId);
+            const action = form.querySelector(`select[name="${selectName}"]`).value;
+            const selected = form.querySelectorAll('.cb-select-item:checked');
+
+            if (action === '-1') return;
+            if (selected.length === 0) {
+                window.showToast('Please select at least one item.', 'warning');
+                return;
+            }
+
+            if (action === 'delete') {
+                const confirmed = await window.lazyConfirm({
+                    title: 'Delete Permanently',
+                    message: `Are you sure you want to permanently delete ${selected.length} items? This cannot be undone.`,
+                    confirmText: 'Delete',
+                    isDanger: true
+                });
+
+                if (!confirmed) return;
+            }
+
+            // If it was action2, we need to sync it to the main action field before submitting
+            if (selectName === 'action2') {
+                form.querySelector('select[name="action"]').value = action;
+            }
+            form.submit();
+        };
+
+        window.moveToTrash = function(id) {
+            document.getElementById(`delete-form-${id}`).submit();
+        };
+
+        window.confirmForceDelete = async function(id) {
+            const confirmed = await window.lazyConfirm({
+                title: 'Delete Permanently',
+                message: 'Are you sure you want to permanently delete this item? This action cannot be undone.',
+                confirmText: 'Delete',
+                isDanger: true
+            });
+            if (confirmed) {
+                document.getElementById(`force-delete-form-${id}`).submit();
+            }
+        };
     </script>
     
     @foreach($posts as $post)

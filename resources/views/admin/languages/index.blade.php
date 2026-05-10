@@ -1,5 +1,6 @@
 <x-cms-dashboard::layouts.admin>
     <x-slot name="title">Languages - Lazy CMS</x-slot>
+    <x-cms-dashboard::admin.delete-modal />
 
     <div class="px-2">
         <h1 class="text-[23px] font-normal text-[#1d2327] mb-6">Languages</h1>
@@ -85,9 +86,9 @@
                             </td>
                             <td class="p-2 text-right">
                                 @if(!$lang->is_default)
-                                <form action="{{ route('admin.languages.destroy', $lang->id) }}" method="POST" onsubmit="return confirm('Are you sure?')">
+                                <form id="delete-lang-{{ $lang->id }}" action="{{ route('admin.languages.destroy', $lang->id) }}" method="POST">
                                     @csrf @method('DELETE')
-                                    <button type="submit" class="text-red-600 hover:underline text-[12px]">Delete</button>
+                                    <button type="button" onclick="confirmLangDelete({{ $lang->id }})" class="text-red-600 hover:underline text-[12px]">Delete</button>
                                 </form>
                                 @endif
                             </td>
@@ -98,4 +99,18 @@
             </div>
         </div>
     </div>
+    <script>
+        window.confirmLangDelete = async function(id) {
+            const confirmed = await window.lazyConfirm({
+                title: 'Delete Language',
+                message: 'Are you sure you want to disable and delete this language? This will remove all translations for this language.',
+                confirmText: 'Delete Language',
+                isDanger: true
+            });
+
+            if (confirmed) {
+                document.getElementById(`delete-lang-${id}`).submit();
+            }
+        };
+    </script>
 </x-cms-dashboard::layouts.admin>

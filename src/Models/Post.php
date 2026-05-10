@@ -21,6 +21,7 @@ class Post extends Model
     protected $casts = [
         'published_at' => 'datetime',
         'seo_meta' => 'array',
+        'gallery' => 'array',
     ];
 
     /**
@@ -116,10 +117,23 @@ class Post extends Model
     {
         if ($this->lang_code === $locale) return $this;
         
-        $originId = $this->origin_id ?: $this->id;
+        $origin_id = $this->origin_id ?: $this->id;
         return Post::where('lang_code', $locale)
-                    ->where(function($q) use ($originId) {
-                        $q->where('id', $originId)->orWhere('origin_id', $originId);
+                    ->where(function($q) use ($origin_id) {
+                        $q->where('id', $origin_id)->orWhere('origin_id', $origin_id);
                     })->first();
+    }
+
+    /**
+     * eCommerce Relationship
+     */
+    public function shopData()
+    {
+        return $this->hasOne(ProductData::class, 'post_id');
+    }
+
+    public function reviews(): \Illuminate\Database\Eloquent\Relations\HasMany
+    {
+        return $this->hasMany(Review::class, 'post_id')->where('is_approved', true);
     }
 }

@@ -27,9 +27,9 @@ class MenuManagementController extends Controller
         $posts = Post::where('type', 'post')->where('status', 'published')->latest()->take(20)->get();
         $categories = Category::all();
 
-        // Dynamic CPTs for Menu Builder (Only Active)
+        // Dynamic CPTs for Menu Builder (Only Active, excluding static 'post' and 'page')
         $customPostTypes = \Acme\CmsDashboard\Models\PostType::where('is_active', true)
-            ->where('is_builtin', false)
+            ->whereNotIn('slug', ['post', 'page'])
             ->get();
         
         $cptData = [];
@@ -55,7 +55,7 @@ class MenuManagementController extends Controller
                 if (is_array($tax->post_types) && in_array($pt->slug, $tax->post_types)) {
                     $taxonomyData[] = [
                         'key' => 'tax_' . $pt->slug . '_' . $tax->slug,
-                        'label' => $pt->singular_name . ' ' . $tax->singular_name,
+                        'label' => $tax->name,
                         'items' => \Acme\CmsDashboard\Models\TaxonomyTerm::where('taxonomy_slug', $tax->slug)->orderBy('name')->get(),
                         'slug' => $tax->slug
                     ];

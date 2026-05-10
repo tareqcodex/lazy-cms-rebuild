@@ -45,18 +45,21 @@ class UserController extends Controller
         $users = $query->latest()->paginate(10)->withQueryString();
         
         $allCount = User::count();
-        $adminCount = User::whereHas('role', function($q){ $q->where('slug', 'administrator'); })->count();
-        $editorCount = User::whereHas('role', function($q){ $q->where('slug', 'editor'); })->count();
-        $authorCount = User::whereHas('role', function($q){ $q->where('slug', 'author'); })->count();
-        $subscriberCount = User::whereHas('role', function($q){ $q->where('slug', 'subscriber'); })->count();
+        $roles = Role::all()->map(function($role) {
+            $role->count = User::where('role_id', $role->id)->count();
+            return $role;
+        });
+
         $blockedCount = User::where('is_blocked', true)
             ->orWhere(function($q) {
                 $q->whereNotNull('blocked_until')
                   ->where('blocked_until', '>', now());
             })->count();
         
+        $allUsers = User::all(); // For reassignment dropdown
+        
         return view('cms-dashboard::admin.users.index', compact(
-            'users', 'allCount', 'adminCount', 'editorCount', 'authorCount', 'subscriberCount', 'blockedCount'
+            'users', 'allCount', 'roles', 'blockedCount', 'allUsers'
         ));
     }
 
@@ -109,15 +112,11 @@ class UserController extends Controller
             'username' => 'required|string|max:255|unique:users,username,' . $user->id,
             'name' => 'required|string|max:255',
             'email' => 'required|string|email|max:255|unique:users,email,' . $user->id,
-            'password' => 'nullable|string|min:8|confirmed',
+            'password' => 'required|string|min:8|confirmed',
             'role_id' => 'required|exists:roles,id'
         ]);
 
-        if (!empty($validated['password'])) {
-            $validated['password'] = Hash::make($validated['password']);
-        } else {
-            unset($validated['password']);
-        }
+        $validated['password'] = Hash::make($validated['password']);
 
         // Protection: Only super-admin can edit other super-admins
         if ($user->hasRole('super-admin') && !auth()->user()->hasRole('super-admin')) {
@@ -136,7 +135,7 @@ class UserController extends Controller
         return redirect()->route('admin.users.index')->with('success', 'User updated successfully.');
     }
 
-    public function destroy(User $user)
+    public function destroy(Request $request, User $user)
     {
         if (!auth()->user()->hasPermission('manage_users')) {
             abort(403);
@@ -149,10 +148,31 @@ class UserController extends Controller
             return redirect()->route('admin.users.index')->with('error', 'You cannot delete a Super Admin account.');
         }
 
-        $name = $user->name;
-        $user->delete();
-        lazy_log_activity('deleted', "Deleted user: {$name}", $user);
-        return redirect()->route('admin.users.index')->with('success', 'User deleted successfully.');
+        $deleteOption = $request->input('delete_option', 'delete'); // 'delete' or 'reassign'
+        $reassignTo = $request->input('reassign_to');
+
+        DB::beginTransaction();
+        try {
+            if ($deleteOption === 'reassign' && $reassignTo) {
+                // Migrate all posts, pages, and CPTs to the new user
+                DB::table('posts')->where('user_id', $user->id)->update(['user_id' => $reassignTo]);
+                lazy_log_activity('updated', "Migrated content from deleted user {$user->name} to user ID: {$reassignTo}", $user);
+            } else {
+                // Delete all content
+                DB::table('posts')->where('user_id', $user->id)->delete();
+                lazy_log_activity('deleted', "Deleted all content associated with user: {$user->name}", $user);
+            }
+
+            $name = $user->name;
+            $user->delete();
+            DB::commit();
+
+            lazy_log_activity('deleted', "Deleted user: {$name}", $user);
+            return redirect()->route('admin.users.index')->with('success', 'User deleted successfully.');
+        } catch (\Exception $e) {
+            DB::rollBack();
+            return redirect()->route('admin.users.index')->with('error', 'An error occurred while deleting the user: ' . $e->getMessage());
+        }
     }
 
     public function toggleBlock(User $user)

@@ -111,6 +111,34 @@ class LoginController extends Controller
             BlockedIp::where('ip_address', $request->ip())->delete();
             
             $request->session()->regenerate();
+
+            // Multi-device Login Restriction
+            if (get_cms_option('allow_multi_device', '0') === '1') {
+                $maxDevices = (int) get_cms_option('max_devices', 3);
+                $userSessions = \Illuminate\Support\Facades\DB::table('sessions')
+                    ->where('user_id', $user->id)
+                    ->where('id', '!=', $request->session()->getId())
+                    ->orderBy('last_activity', 'desc')
+                    ->get();
+
+                if ($userSessions->count() >= $maxDevices) {
+                    if ($user->hasRole('super-admin')) {
+                        // Kick the "last" one (most recent among existing sessions)
+                        $sessionToKill = $userSessions->first();
+                        \Illuminate\Support\Facades\DB::table('sessions')
+                            ->where('id', $sessionToKill->id)
+                            ->delete();
+                    } else {
+                        Auth::logout();
+                        $request->session()->invalidate();
+                        $request->session()->regenerateToken();
+                        return back()->withErrors([
+                            'email' => "Login denied: Maximum device limit ($maxDevices) reached for this account."
+                        ])->onlyInput('email');
+                    }
+                }
+            }
+
             return redirect()->intended(route('admin.dashboard.index'));
         }
 
