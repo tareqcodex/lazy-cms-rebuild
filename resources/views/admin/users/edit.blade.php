@@ -9,6 +9,10 @@
             @method('PUT')
             <table class="w-full border-separate border-spacing-y-6">
                 <tr>
+                    <th scope="row" class="w-[200px] text-left align-top pt-2"><label for="username" class="text-[14px] font-semibold text-[#1d2327]">Username</label></th>
+                    <td><input type="text" name="username" id="username" value="{{ $user->username }}" class="wp-input w-[400px] h-8 shadow-sm" required></td>
+                </tr>
+                <tr>
                     <th scope="row" class="w-[200px] text-left align-top pt-2"><label for="name" class="text-[14px] font-semibold text-[#1d2327]">Name</label></th>
                     <td><input type="text" name="name" id="name" value="{{ $user->name }}" class="wp-input w-[400px] h-8 shadow-sm" required></td>
                 </tr>

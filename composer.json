@@ -1,6 +1,7 @@
 {
     "name": "tareqcodex/lazy-cms-rebuild",
     "description": "A reusable WordPress-like admin dashboard package.",
+    "license": "MIT",
     "type": "library",
     "require": {
         "php": "^8.1",
@@ -18,5 +19,11 @@
                 "Acme\\CmsDashboard\\CmsDashboardServiceProvider"
             ]
         }
+    },
+    "scripts": {
+        "post-autoload-dump": [
+            "@php artisan vendor:publish --tag=lazy-themes --force",
+            "@php artisan vendor:publish --tag=cms-dashboard-assets --force"
+        ]
     }
 }

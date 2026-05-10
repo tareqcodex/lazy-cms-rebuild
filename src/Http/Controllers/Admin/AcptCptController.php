@@ -10,6 +10,15 @@ class AcptCptController extends Controller
     public function index(Request $request)
     {
         // Auto-fix missing columns if migration failed
+        try {
+            \Illuminate\Support\Facades\DB::statement("ALTER TABLE post_types MODIFY COLUMN icon TEXT NULL");
+        } catch (\Exception $e) {}
+
+        if (!\Illuminate\Support\Facades\Schema::hasColumn('post_types', 'singular_name')) {
+            \Illuminate\Support\Facades\Schema::table('post_types', function ($table) {
+                $table->string('singular_name')->nullable()->after('slug');
+            });
+        }
         if (!\Illuminate\Support\Facades\Schema::hasColumn('post_types', 'show_in_menu')) {
             \Illuminate\Support\Facades\Schema::table('post_types', function ($table) {
                 $table->boolean('show_in_menu')->default(true)->after('is_active');
@@ -17,7 +26,11 @@ class AcptCptController extends Controller
         }
         if (!\Illuminate\Support\Facades\Schema::hasColumn('post_types', 'is_public')) {
             \Illuminate\Support\Facades\Schema::table('post_types', function ($table) {
-                $table->boolean('is_public')->default(true)->after('show_in_menu');
+                if (\Illuminate\Support\Facades\Schema::hasColumn('post_types', 'public')) {
+                    $table->renameColumn('public', 'is_public');
+                } else {
+                    $table->boolean('is_public')->default(true)->after('show_in_menu');
+                }
             });
         }
 
@@ -39,6 +52,11 @@ class AcptCptController extends Controller
             $query->onlyTrashed();
         } else {
             $query->withoutTrashed();
+        }
+
+        // Ensure all active CPTs have their menus synced (prevents 404/missing menu issues after updates)
+        foreach (\Acme\CmsDashboard\Models\PostType::where('is_builtin', false)->where('is_active', 1)->get() as $pt) {
+            $this->syncCptMenus($pt);
         }
 
         $postTypes = $query->latest()->get();
@@ -161,6 +179,26 @@ class AcptCptController extends Controller
 
     public function store(Request $request)
     {
+        // Auto-fix missing columns
+        try {
+            \Illuminate\Support\Facades\DB::statement("ALTER TABLE post_types MODIFY COLUMN icon TEXT NULL");
+        } catch (\Exception $e) {}
+
+        if (!\Illuminate\Support\Facades\Schema::hasColumn('post_types', 'singular_name')) {
+            \Illuminate\Support\Facades\Schema::table('post_types', function ($table) {
+                $table->string('singular_name')->nullable()->after('slug');
+            });
+        }
+        if (!\Illuminate\Support\Facades\Schema::hasColumn('post_types', 'is_public')) {
+            \Illuminate\Support\Facades\Schema::table('post_types', function ($table) {
+                if (\Illuminate\Support\Facades\Schema::hasColumn('post_types', 'public')) {
+                    $table->renameColumn('public', 'is_public');
+                } else {
+                    $table->boolean('is_public')->default(true)->after('show_in_menu');
+                }
+            });
+        }
+
         $request->validate([
             'plural_label' => 'required|string|max:255',
             'singular_label' => 'required|string|max:255',

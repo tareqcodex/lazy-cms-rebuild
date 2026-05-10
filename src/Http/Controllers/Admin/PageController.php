@@ -7,15 +7,34 @@ use Acme\CmsDashboard\Models\Page;
 use Illuminate\Http\Request;
 use Illuminate\Support\Str;
 use Illuminate\Support\Facades\DB;
+use Acme\CmsDashboard\Services\BuilderShortcodeConverter;
 
 class PageController extends Controller
 {
-    protected function generateUniqueSlug($title, $id = 0)
+    protected function generateUniqueSlug($title, $id = 0, $langCode = 'en')
     {
-        $slug = Str::slug($title);
+        // If string contains non-ascii characters OR lang is not english, use native slug logic
+        if ($langCode !== 'en' || preg_match('/[^\x00-\x7F]/', $title)) {
+            $slug = mb_strtolower($title, 'UTF-8');
+            $slug = str_replace(' ', '-', trim($slug));
+            // Keep letters (\p{L}), marks/vowels (\p{M}), numbers (\p{N}), and dashes.
+            $slug = preg_replace('/[^\p{L}\p{M}\p{N}\-]+/u', '', $slug);
+            $slug = preg_replace('/-+/', '-', $slug);
+            $slug = trim($slug, '-');
+        } else {
+            $slug = Str::slug($title);
+        }
+        
+        if (empty($slug)) {
+            $slug = 'page-' . time();
+        }
+
         $originalSlug = $slug;
         $count = 1;
-        while (Page::withTrashed()->where('slug', $slug)->where('id', '!=', $id)->exists()) {
+        while (Page::withTrashed()
+            ->where('slug', $slug)
+            ->where('id', '!=', $id)
+            ->exists()) {
             $slug = "{$originalSlug}-{$count}";
             $count++;
         }
@@ -25,7 +44,12 @@ class PageController extends Controller
     public function index(Request $request)
     {
         $status = $request->query('status');
+        $lang = $request->query('lang');
         $query = Page::query();
+
+        if ($lang && $lang !== 'all') {
+            $query->where('lang_code', $lang);
+        }
 
         if ($status === 'trash') {
             $query->onlyTrashed();
@@ -56,12 +80,18 @@ class PageController extends Controller
         $dates = Page::selectRaw('YEAR(created_at) as year, MONTH(created_at) as month')
             ->groupBy('year', 'month')->orderBy('year', 'desc')->orderBy('month', 'desc')->get();
 
-        $allCount = Page::count();
-        $publishedCount = Page::where('status', 'published')->count();
-        $draftCount = Page::where('status', 'draft')->count();
-        $trashCount = Page::onlyTrashed()->count();
+        $countQuery = Page::query();
+        if ($lang && $lang !== 'all') {
+            $countQuery->where('lang_code', $lang);
+        }
 
-        return view('cms-dashboard::admin.pages.index', compact('pages', 'dates', 'allCount', 'publishedCount', 'draftCount', 'trashCount'));
+        $allCount = (clone $countQuery)->count();
+        $publishedCount = (clone $countQuery)->where('status', 'published')->count();
+        $draftCount = (clone $countQuery)->where('status', 'draft')->count();
+        $scheduledCount = (clone $countQuery)->where('status', 'scheduled')->count();
+        $trashCount = (clone $countQuery)->onlyTrashed()->count();
+
+        return view('cms-dashboard::admin.pages.index', compact('pages', 'dates', 'allCount', 'publishedCount', 'draftCount', 'scheduledCount', 'trashCount'));
     }
 
     public function create()
@@ -92,9 +122,19 @@ class PageController extends Controller
             'published_at' => 'nullable|date',
             'featured_image' => 'nullable',
             'editor_type' => 'nullable|string|in:rich,builder',
+            'lang_code' => 'nullable|string|max:10',
+            'seo' => 'nullable|array',
         ]);
 
-        $validated['slug'] = $this->generateUniqueSlug($validated['title']);
+        $validated['seo_meta'] = $request->input('seo');
+        unset($validated['seo']);
+
+        $lang = $request->input('lang_code');
+        if (!$lang || $lang === 'all') {
+            $lang = app()->getLocale();
+        }
+        $validated['lang_code'] = $lang;
+        $validated['slug'] = $this->generateUniqueSlug($validated['title'], 0, $validated['lang_code']);
         $validated['user_id'] = auth()->id();
 
         if ($request->hasFile('featured_image')) {
@@ -118,6 +158,30 @@ class PageController extends Controller
                     'value' => is_array($value) ? json_encode($value) : $value,
                     'created_at' => now(), 'updated_at' => now()
                 ]);
+            }
+        }
+
+        lazy_log_activity('created', "Created a new page: {$page->title}", $page);
+        
+        // Multilingual Copy Logic
+        if ($request->has('make_multilingual_copy') && $request->has('copy_to_languages')) {
+            foreach ($request->copy_to_languages as $langCode) {
+                $clone = $page->replicate();
+                $clone->lang_code = $langCode;
+                $clone->origin_id = $page->id;
+                
+                $clone->title = lazy_translate($page->title, $langCode);
+                $clone->slug = $this->generateUniqueSlug($clone->title, 0, $langCode);
+                
+                if ($page->editor_type === 'rich') {
+                    $clone->content = lazy_translate($page->content, $langCode);
+                }
+                
+                if ($page->excerpt) {
+                    $clone->excerpt = lazy_translate($page->excerpt, $langCode);
+                }
+                
+                $clone->save();
             }
         }
 
@@ -147,6 +211,10 @@ class PageController extends Controller
             ->pluck('value', 'field_id')
             ->toArray();
 
+        if (!empty($page->content) && BuilderShortcodeConverter::isBuilderJson($page->content)) {
+            $page->content = BuilderShortcodeConverter::jsonToShortcodes($page->content);
+        }
+
         return view('cms-dashboard::admin.pages.edit', compact('page', 'allPages', 'fieldGroups', 'fieldValues'));
     }
 
@@ -162,13 +230,18 @@ class PageController extends Controller
             'slug' => 'nullable|string|max:255',
             'published_at' => 'nullable|date',
             'featured_image' => 'nullable',
-            'editor_type' => 'nullable|string|in:rich,builder'
+            'editor_type' => 'nullable|string|in:rich,builder',
+            'lang_code' => 'nullable|string|max:10',
+            'seo' => 'nullable|array'
         ]);
 
+        $validated['seo_meta'] = $request->input('seo');
+        unset($validated['seo']);
+
         if (empty($validated['slug'])) {
-            $validated['slug'] = $this->generateUniqueSlug($validated['title'], $page->id);
+            $validated['slug'] = $this->generateUniqueSlug($validated['title'], $page->id, $page->lang_code);
         } else {
-            $validated['slug'] = $this->generateUniqueSlug($validated['slug'], $page->id);
+            $validated['slug'] = $this->generateUniqueSlug($validated['slug'], $page->id, $page->lang_code);
         }
 
         if ($request->hasFile('featured_image')) {
@@ -189,7 +262,21 @@ class PageController extends Controller
             $validated['template'] = 'site-width';
         }
 
+        $oldSlug = $page->getOriginal('slug');
         $page->update($validated);
+
+        // Automatic Redirection Logic
+        if ($oldSlug !== $page->slug) {
+            $oldUrl = '/' . ltrim($oldSlug, '/');
+            $newUrl = '/' . ltrim($page->slug, '/');
+
+            if ($oldUrl !== $newUrl) {
+                \Acme\CmsDashboard\Models\Redirect::updateOrCreate(
+                    ['old_url' => $oldUrl],
+                    ['new_url' => $newUrl, 'status_code' => 301]
+                );
+            }
+        }
 
         // Update Custom Fields
         if ($request->has('custom_fields')) {
@@ -204,12 +291,41 @@ class PageController extends Controller
             }
         }
 
+        lazy_log_activity('updated', "Updated page: {$page->title}", $page);
+
+        // Multilingual Copy Logic for Edit
+        if ($request->has('make_multilingual_copy') && $request->has('copy_to_languages')) {
+            foreach ($request->copy_to_languages as $langCode) {
+                $exists = Page::where('origin_id', $page->id)->where('lang_code', $langCode)->exists();
+                if ($exists) continue;
+
+                $clone = $page->replicate();
+                $clone->lang_code = $langCode;
+                $clone->origin_id = $page->id;
+                
+                $clone->title = lazy_translate($page->title, $langCode);
+                $clone->slug = $this->generateUniqueSlug($clone->title, 0, $langCode);
+                
+                if ($page->editor_type === 'rich') {
+                    $clone->content = lazy_translate($page->content, $langCode);
+                }
+                
+                if ($page->excerpt) {
+                    $clone->excerpt = lazy_translate($page->excerpt, $langCode);
+                }
+                
+                $clone->save();
+            }
+        }
+
         return back()->with('success', 'Page updated successfully.');
     }
 
     public function destroy(Page $page)
     {
+        $title = $page->title;
         $page->delete();
+        lazy_log_activity('deleted', "Moved page to trash: {$title}", $page);
         return redirect()->route('admin.pages.index')->with('success', 'Page moved to trash.');
     }
 
@@ -237,16 +353,33 @@ class PageController extends Controller
         $ids = $request->input('post_ids');
 
         if ($action === 'trash') {
-            Page::whereIn('id', $ids)->delete();
+            $pages = Page::whereIn('id', $ids)->get();
+            foreach ($pages as $page) {
+                $page->delete();
+                lazy_log_activity('deleted', "Moved page to trash: {$page->title}", $page);
+            }
             return back()->with('success', count($ids) . ' pages moved to trash.');
         } elseif ($action === 'restore') {
-            Page::onlyTrashed()->whereIn('id', $ids)->restore();
+            $pages = Page::onlyTrashed()->whereIn('id', $ids)->get();
+            foreach ($pages as $page) {
+                $page->restore();
+                lazy_log_activity('restored', "Restored page from trash: {$page->title}", $page);
+            }
             return back()->with('success', count($ids) . ' pages restored.');
         } elseif ($action === 'delete') {
-            Page::onlyTrashed()->whereIn('id', $ids)->forceDelete();
+            $pages = Page::onlyTrashed()->whereIn('id', $ids)->get();
+            foreach ($pages as $page) {
+                $title = $page->title;
+                $page->forceDelete();
+                lazy_log_activity('deleted', "Deleted page permanently: {$title}", $page);
+            }
             return back()->with('success', count($ids) . ' pages deleted permanently.');
         } elseif (in_array($action, ['draft', 'published'])) {
-            Page::whereIn('id', $ids)->update(['status' => $action]);
+            $pages = Page::whereIn('id', $ids)->get();
+            foreach ($pages as $page) {
+                $page->update(['status' => $action]);
+                lazy_log_activity('updated', "Updated page status to {$action}: {$page->title}", $page);
+            }
             return back()->with('success', count($ids) . ' pages marked as ' . ucfirst($action) . '.');
         }
 

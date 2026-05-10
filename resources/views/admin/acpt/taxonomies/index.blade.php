@@ -1,4 +1,5 @@
 <x-cms-dashboard::layouts.admin title="Taxonomies">
+    <x-cms-dashboard::admin.delete-modal />
     <div class="max-w-[1200px] mx-auto pb-12 mt-2">
         <div class="flex items-center mb-4">
             <h1 class="text-[22px] font-normal text-[#1d2327] mr-3">Taxonomies</h1>
@@ -42,7 +43,7 @@
                             <option value="trash">Move to Trash</option>
                         @endif
                     </select>
-                    <button type="submit" class="wp-btn-secondary h-[28px] leading-none border-[#8c8f94] text-[#2c3338]">Apply</button>
+                    <button type="button" onclick="handleBulkAction('bulk-action-form')" class="wp-btn-secondary h-[28px] leading-none border-[#8c8f94] text-[#2c3338]">Apply</button>
                 </div>
                 <div class="text-[13px] text-[#646970]">
                     <x-cms-dashboard::admin.pagination :paginator="$taxonomies" />
@@ -80,11 +81,11 @@
                                                  <button type="submit" class="text-[#2271b1] hover:underline bg-transparent border-0 cursor-pointer p-0 leading-none">Restore</button>
                                              </form>
                                              <span class="text-[#c3c4c7]">|</span>
-                                             <form action="{{ route('admin.acpt.taxonomies.bulk') }}" method="POST" class="inline m-0 p-0 leading-none">
+                                             <form id="delete-form-{{ $taxonomy->id }}" action="{{ route('admin.acpt.taxonomies.bulk') }}" method="POST" class="inline m-0 p-0 leading-none">
                                                  @csrf
                                                  <input type="hidden" name="action" value="delete">
                                                  <input type="hidden" name="taxonomies[]" value="{{ $taxonomy->id }}">
-                                                 <button type="submit" class="text-[#d63638] hover:underline bg-transparent border-0 cursor-pointer p-0 leading-none" onclick="return confirm('Permanently delete this taxonomy?')">Delete Permanently</button>
+                                                 <button type="button" onclick="confirmForceDelete({{ $taxonomy->id }})" class="text-[#d63638] hover:underline bg-transparent border-0 cursor-pointer p-0 leading-none">Delete Permanently</button>
                                              </form>
                                          @else
                                              @if($taxonomy->is_active)
@@ -105,11 +106,11 @@
                                                 </form>
                                              @endif
                                              <span class="text-[#c3c4c7]">|</span>
-                                             <form action="{{ route('admin.acpt.taxonomies.bulk') }}" method="POST" class="inline m-0 p-0 leading-none">
+                                             <form id="trash-form-{{ $taxonomy->id }}" action="{{ route('admin.acpt.taxonomies.bulk') }}" method="POST" class="inline m-0 p-0 leading-none">
                                                  @csrf
                                                  <input type="hidden" name="action" value="trash">
                                                  <input type="hidden" name="taxonomies[]" value="{{ $taxonomy->id }}">
-                                                 <button type="submit" class="text-[#d63638] hover:underline bg-transparent border-0 cursor-pointer p-0 leading-none">Trash</button>
+                                                 <button type="button" onclick="confirmTrash({{ $taxonomy->id }})" class="text-[#d63638] hover:underline bg-transparent border-0 cursor-pointer p-0 leading-none">Trash</button>
                                              </form>
                                          @endif
                                     </div>
@@ -158,7 +159,7 @@
                         <option value="deactivate">Deactivate</option>
                         <option value="trash">Move to Trash</option>
                     </select>
-                    <button type="submit" class="wp-btn-secondary h-[28px] leading-none border-[#8c8f94] text-[#2c3338]">Apply</button>
+                    <button type="button" onclick="handleBulkAction('bulk-action-form', 'action2')" class="wp-btn-secondary h-[28px] leading-none border-[#8c8f94] text-[#2c3338]">Apply</button>
                 </div>
                 <div class="text-[13px] text-[#646970]">
                     {{ $taxonomies->count() }} items
@@ -167,4 +168,79 @@
         </form>
 
     </div>
+    <script>
+        window.handleBulkAction = async function(formId, selectName = 'action') {
+            const form = document.getElementById(formId);
+            const action = form.querySelector(`select[name="${selectName}"]`).value;
+            const selected = form.querySelectorAll('.cb-select:checked');
+
+            if (action === 'none') return;
+            if (selected.length === 0) {
+                window.showToast('Please select at least one item.', 'warning');
+                return;
+            }
+
+            let title = 'Confirm Action';
+            let message = `Are you sure you want to perform this action on ${selected.length} items?`;
+            let confirmText = 'Confirm';
+            let isDanger = false;
+
+            if (action === 'trash') {
+                title = 'Move to Trash';
+                message = `Are you sure you want to move ${selected.length} taxonomies to trash? This will disable these taxonomies on the site.`;
+                confirmText = 'Move to Trash';
+                isDanger = true;
+            } else if (action === 'delete') {
+                title = 'Delete Permanently';
+                message = `Are you sure you want to permanently delete ${selected.length} taxonomies? This action cannot be undone and will delete all associated data!`;
+                confirmText = 'Delete Permanently';
+                isDanger = true;
+            }
+
+            if (isDanger) {
+                const confirmed = await window.lazyConfirm({
+                    title: title,
+                    message: message,
+                    confirmText: confirmText,
+                    isDanger: isDanger
+                });
+
+                if (confirmed) {
+                    if (selectName === 'action2') {
+                        form.querySelector('select[name="action"]').value = action;
+                    }
+                    form.submit();
+                }
+            } else {
+                if (selectName === 'action2') {
+                    form.querySelector('select[name="action"]').value = action;
+                }
+                form.submit();
+            }
+        };
+
+        window.confirmTrash = async function(id) {
+            const confirmed = await window.lazyConfirm({
+                title: 'Move to Trash',
+                message: 'Are you sure you want to move this taxonomy to trash? It will no longer be active on the site.',
+                confirmText: 'Move to Trash',
+                isDanger: true
+            });
+            if (confirmed) {
+                document.getElementById(`trash-form-${id}`).submit();
+            }
+        };
+
+        window.confirmForceDelete = async function(id) {
+            const confirmed = await window.lazyConfirm({
+                title: 'Delete Permanently',
+                message: 'Are you sure you want to permanently delete this taxonomy? This action cannot be undone and all associated terms will be affected!',
+                confirmText: 'Delete Permanently',
+                isDanger: true
+            });
+            if (confirmed) {
+                document.getElementById(`delete-form-${id}`).submit();
+            }
+        };
+    </script>
 </x-cms-dashboard::layouts.admin>

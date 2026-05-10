@@ -17,7 +17,7 @@ class CustomOptionsController extends Controller
             abort(404, 'Options page not found.');
         }
 
-        if (!auth()->user()->hasPermission('manage_settings')) {
+        if (!auth()->user()->hasPermission('manage_settings') && !auth()->user()->hasPermission('manage_options_' . $slug)) {
             abort(403);
         }
 
@@ -38,7 +38,7 @@ class CustomOptionsController extends Controller
             abort(404);
         }
 
-        if (!auth()->user()->hasPermission('manage_settings')) {
+        if (!auth()->user()->hasPermission('manage_settings') && !auth()->user()->hasPermission('manage_options_' . $slug)) {
             abort(403);
         }
 

@@ -12,8 +12,13 @@ class AcptTermController extends Controller
 {
     public function index(Request $request, $taxonomySlug)
     {
+        $lang = $request->query('lang');
         $taxonomy = CustomTaxonomy::where('slug', $taxonomySlug)->firstOrFail();
         $query = TaxonomyTerm::where('taxonomy_slug', $taxonomySlug);
+
+        if ($lang && $lang !== 'all') {
+            $query->where('lang_code', $lang);
+        }
         
         if ($request->filled('cpt')) {
             $query->where('cpt_slug', $request->cpt);
@@ -22,8 +27,9 @@ class AcptTermController extends Controller
         if ($request->filled('s')) {
             $query->where('name', 'like', '%' . $request->s . '%');
             $terms = $query->withCount('posts')->latest()->paginate(10)->withQueryString();
+            $fullTree = collect();
         } else {
-            $allTerms = $query->withCount('posts')->orderBy('name')->get();
+            $allTerms = $query->withCount('posts')->latest()->get();
             $tree = collect();
             $visitedIds = [];
 
@@ -85,7 +91,8 @@ class AcptTermController extends Controller
             return redirect()->back()->with('error', 'Post type (CPT) is required to manage taxonomy terms.');
         }
 
-        $slug = $request->slug ? TaxonomyTerm::generateUniqueSlug($request->slug, 0, $cptSlug) : TaxonomyTerm::generateUniqueSlug($request->name, 0, $cptSlug);
+        $lang = $request->input('lang_code', app()->getLocale());
+        $slug = $request->slug ? TaxonomyTerm::generateUniqueSlug($request->slug, 0, $cptSlug, $lang) : TaxonomyTerm::generateUniqueSlug($request->name, 0, $cptSlug, $lang);
 
         TaxonomyTerm::create([
             'name' => $request->name,
@@ -94,6 +101,8 @@ class AcptTermController extends Controller
             'cpt_slug' => $cptSlug,
             'description' => $request->description,
             'parent_id' => $request->parent_id ?: null,
+            'lang_code' => $lang,
+            'origin_id' => $request->origin_id ?: null,
         ]);
 
         return redirect()->back()->with('success', 'Term added successfully!');
@@ -133,6 +142,7 @@ class AcptTermController extends Controller
         $taxonomy = CustomTaxonomy::where('slug', $taxonomySlug)->firstOrFail();
         $term = TaxonomyTerm::findOrFail($id);
         $allTerms = TaxonomyTerm::where('taxonomy_slug', $taxonomySlug)
+            ->where('lang_code', $term->lang_code)
             ->where('id', '!=', $id)
             ->orderBy('name')
             ->get();
@@ -180,16 +190,37 @@ class AcptTermController extends Controller
                     }
                 },
             ],
+            'lang_code' => 'required|string|max:10',
         ]);
 
-        $slug = $request->slug ? TaxonomyTerm::generateUniqueSlug($request->slug, $id, $term->cpt_slug) : TaxonomyTerm::generateUniqueSlug($request->name, $id, $term->cpt_slug);
+        $slug = $request->slug ? TaxonomyTerm::generateUniqueSlug($request->slug, $term->id, $term->cpt_slug, $request->lang_code) : $term->slug;
 
         $term->update([
             'name' => $request->name,
             'slug' => $slug,
             'description' => $request->description,
             'parent_id' => $request->parent_id ?: null,
+            'lang_code' => $request->lang_code,
         ]);
+
+        // Multilingual Copy Logic
+        if ($request->has('make_multilingual_copy') && $request->has('copy_to_languages')) {
+            foreach ($request->copy_to_languages as $targetLang) {
+                $exists = TaxonomyTerm::where('origin_id', $term->id)->where('lang_code', $targetLang)->exists();
+                if ($exists) continue;
+
+                $clone = $term->replicate();
+                $clone->lang_code = $targetLang;
+                $clone->origin_id = $term->id;
+                
+                $clone->name = lazy_translate($term->name, $targetLang);
+                $clone->slug = TaxonomyTerm::generateUniqueSlug($clone->name, 0, $term->cpt_slug, $targetLang);
+                if ($term->description) {
+                    $clone->description = lazy_translate($term->description, $targetLang);
+                }
+                $clone->save();
+            }
+        }
 
         return redirect()->route('admin.acpt.terms.index', $taxonomySlug)->with('success', 'Term updated successfully!');
     }
@@ -199,9 +230,11 @@ class AcptTermController extends Controller
         $request->validate([
             'name' => 'required|string|max:255',
             'taxonomy_slug' => 'required|string',
+            'lang_code' => 'nullable|string'
         ]);
 
-        $slug = TaxonomyTerm::generateUniqueSlug($request->name, 0, $request->cpt_slug);
+        $lang = $request->input('lang_code', app()->getLocale());
+        $slug = TaxonomyTerm::generateUniqueSlug($request->name, 0, $request->cpt_slug, $lang);
 
         $term = TaxonomyTerm::create([
             'name' => $request->name,
@@ -209,6 +242,7 @@ class AcptTermController extends Controller
             'taxonomy_slug' => $request->taxonomy_slug,
             'cpt_slug' => $request->cpt_slug,
             'parent_id' => $request->parent_id,
+            'lang_code' => $lang,
         ]);
 
         return response()->json($term);

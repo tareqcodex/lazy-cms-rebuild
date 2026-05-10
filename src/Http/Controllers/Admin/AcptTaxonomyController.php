@@ -229,7 +229,7 @@ class AcptTaxonomyController extends Controller
             ->where(function($q) use ($taxonomy) {
                 $q->where('route', 'like', '%/acpt/taxonomies/' . $taxonomy->slug . '%')
                   ->orWhere('route', 'like', '%/acpt/tax-terms/' . $taxonomy->slug . '%')
-                  ->orWhere('route', 'like', '%/actp/taxonomies/' . $taxonomy->slug . '%');
+                  ->orWhere('route', 'like', '%/acpt/taxonomies/' . $taxonomy->slug . '%');
             })
             ->delete();
     }

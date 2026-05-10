@@ -1,4 +1,5 @@
-<x-cms-dashboard::layouts.admin>
+<x-cms-dashboard::layouts.admin title="Pages">
+    <x-cms-dashboard::admin.delete-modal />
     <div class="flex items-center mb-4">
         <h1 class="text-[23px] font-normal text-[#1d2327] mr-3">Pages</h1>
         <a href="{{ route('admin.pages.create') }}" class="wp-btn-secondary px-2 py-0.5 text-[12px] bg-white hover:bg-[#f6f7f7] border-[#2271b1] text-[#2271b1] leading-normal">Add New</a>
@@ -23,6 +24,8 @@
             <a href="{{ route('admin.pages.index') }}" class="{{ !request('status') ? 'text-black font-semibold' : 'text-[#2271b1]' }}">All <span class="text-[#646970]">({{ $allCount }})</span></a>
             <span class="mx-1 text-[#c3c4c7]">|</span>
             <a href="{{ route('admin.pages.index', ['status' => 'published']) }}" class="{{ request('status') == 'published' ? 'text-black font-semibold' : 'text-[#2271b1]' }}">Published <span class="text-[#646970]">({{ $publishedCount }})</span></a>
+            <span class="mx-1 text-[#c3c4c7]">|</span>
+            <a href="{{ route('admin.pages.index', ['status' => 'scheduled']) }}" class="{{ request('status') == 'scheduled' ? 'text-black font-semibold' : 'text-[#2271b1]' }}">Scheduled <span class="text-[#646970]">({{ $scheduledCount }})</span></a>
             <span class="mx-1 text-[#c3c4c7]">|</span>
             <a href="{{ route('admin.pages.index', ['status' => 'draft']) }}" class="{{ request('status') == 'draft' ? 'text-black font-semibold' : 'text-[#2271b1]' }}">Draft <span class="text-[#646970]">({{ $draftCount }})</span></a>
             @if($trashCount > 0)
@@ -60,7 +63,7 @@
                         <option value="trash">Move to Trash</option>
                     @endif
                 </select>
-                <button type="submit" class="wp-btn-secondary h-[30px] leading-[1] text-[13px]">Apply</button>
+                <button type="button" onclick="handleBulkAction('pages-filter')" class="wp-btn-secondary h-[30px] leading-[1] text-[13px]">Apply</button>
             </div>
 
             @if(request('status') !== 'trash')
@@ -90,6 +93,7 @@
                 <th class="wp-table-header text-left">Title</th>
                 <th class="wp-table-header text-left">Author</th>
                 <th class="wp-table-header text-center w-8"><svg class="w-4 h-4 mx-auto text-[#8c8f94]" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M18 10c0 3.866-3.582 7-8 7a8.841 8.841 0 01-4.083-.98L2 17l1.338-3.123C2.493 12.767 2 11.434 2 10c0-3.866 3.582-7 8-7s8 3.134 8 7zM7 9H5v2h2V9zm8 0h-2v2h2V9zM9 9h2v2H9V9z" clip-rule="evenodd"></path></svg></th>
+                <th class="wp-table-header text-left">SEO</th>
                 <th class="wp-table-header text-left">Date</th>
             </tr>
         </thead>
@@ -100,22 +104,33 @@
                     <td class="wp-table-cell align-top text-[14px] text-left">
                         <strong>
                             @if($item->parent_id) <span class="text-[#c3c4c7]">—</span> @endif
-                            <a href="{{ $item->trashed() ? '#' : route('admin.pages.edit', $item) }}" class="text-[#2271b1] hover:text-[#135e96]">{{ $item->title }}</a>@if($item->status === 'draft' && !$item->trashed()) <span class="font-normal text-[#646970]"> — Draft</span> @endif @if($item->trashed()) <span class="font-normal text-[#646970]"> — Trash</span> @endif
+                            <a href="{{ $item->trashed() ? '#' : route('admin.pages.edit', $item) }}" class="text-[#2271b1] hover:text-[#135e96]">{{ $item->title }}</a>
+                            @if($item->status === 'draft' && !$item->trashed()) <span class="font-normal text-[#646970]"> — Draft</span> @endif 
+                            @if($item->status === 'scheduled' && !$item->trashed()) <span class="font-normal text-[#646970]"> — Scheduled</span> @endif
+                            @if(is_lazy_homepage($item)) <span class="font-normal text-[#646970]"> — Front Page</span> @endif
+                            @if($item->trashed()) <span class="font-normal text-[#646970]"> — Trash</span> @endif
                         </strong>
                         <div class="invisible group-hover:visible mt-1 text-[13px] space-x-1">
                             @if($item->trashed())
                                 <button form="restore-form-{{ $item->id }}" type="submit" class="text-[#2271b1] hover:underline cursor-pointer">Restore</button>
                                 <span class="text-[#c3c4c7]">|</span>
-                                <button form="force-delete-form-{{ $item->id }}" type="submit" class="text-[#b32d2e] hover:text-[#8a2424] hover:underline cursor-pointer" onclick="return confirm('Delete this page permanently?');">Delete Permanently</button>
+                                <button type="button" onclick="confirmForceDelete({{ $item->id }})" class="text-[#b32d2e] hover:text-[#8a2424] hover:underline cursor-pointer">Delete Permanently</button>
                             @else
                                 <a href="{{ route('admin.pages.edit', $item) }}" class="text-[#2271b1] hover:underline">Edit</a> <span class="text-[#c3c4c7]">|</span>
-                                <button form="delete-form-{{ $item->id }}" type="submit" class="text-[#b32d2e] hover:text-[#8a2424] hover:underline cursor-pointer">Trash</button> <span class="text-[#c3c4c7]">|</span>
-                                <a href="#" class="text-[#2271b1] hover:underline">View</a>
+                                <button type="button" onclick="moveToTrash({{ $item->id }})" class="text-[#b32d2e] hover:text-[#8a2424] hover:underline cursor-pointer">Trash</button> <span class="text-[#c3c4c7]">|</span>
+                                <a href="{{ get_lazy_permalink($item) }}" target="_blank" class="text-[#2271b1] hover:underline">View</a>
                             @endif
                         </div>
                     </td>
-                    <td class="wp-table-cell text-[#2271b1] text-left">{{ $item->user?->name ?? 'admin' }}</td>
+                    <td class="wp-table-cell text-[#2271b1] text-left">{{ $item->user?->username ?? $item->user?->name ?? 'admin' }}</td>
                     <td class="wp-table-cell text-center text-[#646970]">-</td>
+                    <td class="wp-table-cell text-left">
+                        @php $score = $item->getSeoScore(); @endphp
+                        <div class="flex items-center gap-1.5" title="SEO Score: {{ $score }}%">
+                            <div class="w-2.5 h-2.5 rounded-full {{ $score >= 70 ? 'bg-[#00a32a]' : ($score >= 40 ? 'bg-[#dba617]' : 'bg-[#d63638]') }}"></div>
+                            <span class="text-[12px] font-medium">{{ $score }}%</span>
+                        </div>
+                    </td>
                     <td class="wp-table-cell text-[#2c3338] text-left">
                         @if($item->trashed())
                             Last Modified<br>
@@ -138,6 +153,7 @@
                 <th class="wp-table-header text-left border-t">Title</th>
                 <th class="wp-table-header text-left border-t">Author</th>
                 <th class="wp-table-header text-center w-8 border-t"><svg class="w-4 h-4 mx-auto text-[#8c8f94]" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M18 10c0 3.866-3.582 7-8 7a8.841 8.841 0 01-4.083-.98L2 17l1.338-3.123C2.493 12.767 2 11.434 2 10c0-3.866 3.582-7 8-7s8 3.134 8 7zM7 9H5v2h2V9zm8 0h-2v2h2V9zM9 9h2v2H9V9z" clip-rule="evenodd"></path></svg></th>
+                <th class="wp-table-header text-left border-t">SEO</th>
                 <th class="wp-table-header text-left border-t">Date</th>
             </tr>
         </tfoot>
@@ -156,7 +172,7 @@
                     <option value="trash">Move to Trash</option>
                 @endif
             </select>
-            <button type="submit" class="wp-btn-secondary h-[30px] leading-[1] text-[13px]">Apply</button>
+            <button type="button" onclick="handleBulkAction('pages-filter', 'action2')" class="wp-btn-secondary h-[30px] leading-[1] text-[13px]">Apply</button>
         </div>
         
         <x-cms-dashboard::admin.pagination :paginator="$pages" />
@@ -186,5 +202,50 @@
                 document.getElementById('cb-select-all-2').checked = isChecked;
             });
         });
+
+        window.handleBulkAction = async function(formId, selectName = 'action') {
+            const form = document.getElementById(formId);
+            const action = form.querySelector(`select[name="${selectName}"]`).value;
+            const selected = form.querySelectorAll('.cb-select-item:checked');
+
+            if (action === '-1' || action === 'none') return;
+            if (selected.length === 0) {
+                window.showToast('Please select at least one item.', 'warning');
+                return;
+            }
+
+            if (action === 'delete') {
+                const confirmed = await window.lazyConfirm({
+                    title: 'Delete Permanently',
+                    message: `Are you sure you want to permanently delete ${selected.length} items? This cannot be undone.`,
+                    confirmText: 'Delete',
+                    isDanger: true
+                });
+
+                if (!confirmed) return;
+            }
+
+            // If it was action2, we need to sync it to the main action field before submitting
+            if (selectName === 'action2') {
+                form.querySelector('select[name="action"]').value = action;
+            }
+            form.submit();
+        };
+
+        window.moveToTrash = function(id) {
+            document.getElementById(`delete-form-${id}`).submit();
+        };
+
+        window.confirmForceDelete = async function(id) {
+            const confirmed = await window.lazyConfirm({
+                title: 'Delete Permanently',
+                message: 'Are you sure you want to permanently delete this page? This action cannot be undone.',
+                confirmText: 'Delete',
+                isDanger: true
+            });
+            if (confirmed) {
+                document.getElementById(`force-delete-form-${id}`).submit();
+            }
+        };
     </script>
 </x-cms-dashboard::layouts.admin>

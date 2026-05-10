@@ -5,6 +5,7 @@ namespace Acme\CmsDashboard\Http\Controllers\Admin;
 use Illuminate\Routing\Controller;
 use Acme\CmsDashboard\Models\Role;
 use Acme\CmsDashboard\Models\Permission;
+use Acme\CmsDashboard\Models\Menu;
 use Illuminate\Http\Request;
 use Illuminate\Support\Str;
 
@@ -21,7 +22,7 @@ class RoleController extends Controller
 
     public function create()
     {
-        $data = $this->getPermissionsWithCpts();
+        $data = $this->getDynamicPermissions();
         return view('cms-dashboard::admin.roles.create', $data);
     }
 
@@ -38,7 +39,7 @@ class RoleController extends Controller
         $role = Role::create($validated);
 
         if ($request->has('permissions')) {
-            $role->permissions()->sync($request->permissions);
+            $this->syncPermissions($role, $request->permissions);
         }
 
         return redirect()->route('admin.roles.index')->with('success', 'Role created successfully.');
@@ -46,45 +47,15 @@ class RoleController extends Controller
 
     public function edit(Role $role)
     {
-        // Hierarchical protection: Only Super Admin can edit Super Admin
         if ($role->slug === 'super-admin' && !auth()->user()->hasRole('super-admin')) {
             return redirect()->route('admin.roles.index')->with('error', 'Only Super Admin can manage Super Admin role.');
         }
 
-        $data = $this->getPermissionsWithCpts();
+        $data = $this->getDynamicPermissions();
         $data['role'] = $role;
-        
-        if ($role->slug === 'super-admin') {
-            $data['rolePermissions'] = Permission::pluck('id')->toArray();
-        } else {
-            $data['rolePermissions'] = $role->permissions->pluck('id')->toArray();
-        }
+        $data['rolePermissions'] = $role->permissions->pluck('slug')->toArray();
         
         return view('cms-dashboard::admin.roles.edit', $data);
-    }
-
-    protected function getPermissionsWithCpts()
-    {
-        // 1. Ensure CPT permissions exist
-        try {
-            $cpts = \Acme\CmsDashboard\Models\PostType::where('is_builtin', false)->get();
-            foreach ($cpts as $cpt) {
-                Permission::firstOrCreate(
-                    ['slug' => 'manage_' . $cpt->slug],
-                    [
-                        'name' => 'Manage ' . $cpt->name,
-                        'description' => 'Manage content for ' . $cpt->name
-                    ]
-                );
-            }
-        } catch (\Exception $e) {}
-
-        $allPermissions = Permission::all();
-        
-        return [
-            'corePermissions' => $allPermissions->filter(fn($p) => !str_starts_with($p->slug, 'manage_')),
-            'cptPermissions'  => $allPermissions->filter(fn($p) => str_starts_with($p->slug, 'manage_')),
-        ];
     }
 
     public function update(Request $request, Role $role)
@@ -100,22 +71,109 @@ class RoleController extends Controller
         $role->update($validated);
 
         if ($request->has('permissions')) {
-            $role->permissions()->sync($request->permissions);
+            $this->syncPermissions($role, $request->permissions);
+        } else {
+            $role->permissions()->detach();
         }
 
         return redirect()->route('admin.roles.index')->with('success', 'Role updated successfully.');
     }
 
-    public function destroy(Role $role)
+    protected function syncPermissions(Role $role, array $permissionSlugs)
     {
-        // Protect system roles
-        if (in_array($role->slug, ['administrator', 'super-admin', 'subscriber'])) {
-            return redirect()->route('admin.roles.index')->with('error', 'Cannot delete system roles.');
+        $ids = [];
+        foreach ($permissionSlugs as $slug) {
+            $permission = Permission::firstOrCreate(
+                ['slug' => $slug],
+                ['name' => ucwords(str_replace(['_', '-'], ' ', $slug))]
+            );
+            $ids[] = $permission->id;
+        }
+        $role->permissions()->sync($ids);
+    }
+
+    protected function getDynamicPermissions()
+    {
+        // 1. Get all Menus grouped by their group
+        $menuGroups = Menu::with('children')
+            ->whereNull('parent_id')
+            ->orderBy('order')
+            ->get()
+            ->groupBy('group');
+
+        // 2. Format into a structured array for the view
+        $dynamicPermissions = [];
+
+        foreach ($menuGroups as $groupName => $menus) {
+            $groupKey = Str::slug($groupName ?: 'Main');
+            $dynamicPermissions[$groupName] = [];
+
+            foreach ($menus as $menu) {
+                $slug = $menu->permission ?: $this->generatePermissionSlug($menu);
+                
+                $item = [
+                    'title' => $menu->title,
+                    'slug' => $slug,
+                    'children' => []
+                ];
+
+                foreach ($menu->children as $child) {
+                    $childSlug = $child->permission ?: $this->generatePermissionSlug($child, $menu);
+                    $item['children'][] = [
+                        'title' => $child->title,
+                        'slug' => $childSlug
+                    ];
+                }
+
+                $dynamicPermissions[$groupName][] = $item;
+            }
         }
 
-        // Only super-admin can delete roles if needed (though system roles are still blocked)
-        if (!auth()->user()->hasRole('super-admin') && in_array($role->slug, ['administrator', 'super-admin'])) {
-             return redirect()->route('admin.roles.index')->with('error', 'Unauthorized.');
+        // 3. Add Custom Options Pages from config
+        $customPages = config('lazy-options.pages') ?? [];
+        if (!empty($customPages)) {
+            $dynamicPermissions['Custom Options'] = [];
+            foreach ($customPages as $slug => $page) {
+                $dynamicPermissions['Custom Options'][] = [
+                    'title' => $page['title'] ?? $slug,
+                    'slug' => 'manage_options_' . $slug,
+                    'children' => []
+                ];
+            }
+        }
+
+        return [
+            'dynamicPermissions' => $dynamicPermissions
+        ];
+    }
+
+    protected function generatePermissionSlug($menu, $parent = null)
+    {
+        if ($menu->permission) return $menu->permission;
+        
+        // Custom generation logic
+        $title = strtolower($menu->title);
+        if ($title === 'dashboard') return 'access_dashboard';
+        if ($title === 'posts') return 'manage_posts';
+        if ($title === 'pages') return 'manage_pages';
+        if ($title === 'media') return 'manage_media';
+        if ($title === 'users') return 'manage_users';
+        if ($title === 'settings') return 'manage_settings';
+        
+        $slug = Str::slug($menu->title, '_');
+        
+        // Make child slugs unique by appending parent slug if it's a common title
+        if ($parent && in_array($title, ['add new', 'categories', 'tags', 'all posts', 'all pages'])) {
+            $slug .= '_' . Str::slug($parent->title, '_');
+        }
+        
+        return 'access_' . $slug;
+    }
+
+    public function destroy(Role $role)
+    {
+        if (in_array($role->slug, ['administrator', 'super-admin', 'subscriber'])) {
+            return redirect()->route('admin.roles.index')->with('error', 'Cannot delete system roles.');
         }
 
         $role->delete();

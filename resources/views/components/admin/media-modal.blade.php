@@ -1,12 +1,12 @@
 <div id="wp-media-modal" class="hidden fixed inset-0 z-[99999] overflow-hidden">
     <!-- Backdrop -->
-    <div class="absolute inset-0 bg-black/60 backdrop-blur-sm"></div>
+    <div class="absolute inset-0 bg-black/60"></div>
     
     <!-- Modal Container -->
     <div class="absolute inset-4 sm:inset-10 bg-white shadow-2xl flex flex-col overflow-hidden border border-[#c3c4c7]">
         
         <!-- Header -->
-        <div class="h-[50px] border-bottom border-[#c3c4c7] flex justify-between items-center px-4 shrink-0 bg-white">
+        <div class="h-[50px] border-b border-[#c3c4c7] flex justify-between items-center px-4 shrink-0 bg-white">
             <h1 class="text-[22px] font-normal text-[#1d2327]">Add media</h1>
             <button type="button" id="close-media-modal" class="text-[#646970] hover:text-black p-2">
                 <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg>
@@ -31,12 +31,28 @@
                 <div class="flex-grow overflow-y-auto p-4 flex flex-col">
                     
                     <!-- Upload Files View -->
-                    <div id="media-upload-view" class="media-tab-content flex-grow flex flex-col items-center justify-center border-2 border-dashed border-[#c3c4c7] rounded-sm bg-[#f6f7f7]">
-                        <div class="text-center">
-                            <h2 class="text-[20px] mb-2 font-normal text-[#1d2327]">Drop files to upload</h2>
-                            <p class="text-[14px] text-[#646970] mb-4">or</p>
-                            <input type="file" id="media-upload-input" class="hidden" multiple accept="image/*">
-                            <button type="button" onclick="document.getElementById('media-upload-input').click()" class="wp-btn-secondary px-6">Select Files</button>
+                    <div id="media-upload-view" class="media-tab-content flex-grow flex flex-col items-center justify-center">
+                        <div class="border-2 border-dashed border-[#c3c4c7] w-full max-w-[95%] h-full flex flex-col items-center justify-center bg-white"
+                             onclick="document.getElementById('media-upload-input').click()">
+                            @php
+                                $allowedRaw = get_cms_option('performance_allowed_formats', '[]');
+                                $allowedFormats = is_array($allowedRaw) ? $allowedRaw : json_decode($allowedRaw, true);
+                                $accept = !empty($allowedFormats) ? '.' . implode(',.', $allowedFormats) : '';
+                            @endphp
+                            <input type="file" id="media-upload-input" class="hidden" {!! $accept ? 'accept="'.$accept.'"' : '' !!}>
+                            
+                            <h3 class="text-[20px] font-normal text-[#1d2327] mb-2">Drop files to upload</h3>
+                            <p class="text-[#646970] mb-4">or</p>
+                            <button type="button" class="border border-[#2271b1] text-[#2271b1] bg-white hover:bg-[#f6f7f7] px-5 py-2 rounded-md text-[14px] font-medium transition-colors mb-4">Select Files</button>
+                            
+                            <p class="text-[12px] text-[#646970] font-medium uppercase tracking-wide">
+                                @if(!empty($allowedFormats))
+                                    Allowed: {{ strtoupper(implode(', ', $allowedFormats)) }}
+                                @else
+                                    All formats allowed
+                                @endif
+                            </p>
+
                             <p class="mt-8 text-[12px] text-[#646970]">Maximum upload file size: 10 MB.</p>
                         </div>
                     </div>
@@ -79,17 +95,12 @@
                 <h3 class="uppercase text-[12px] font-bold text-[#646970] mb-4">Attachment Details</h3>
                 <div id="details-empty" class="text-[13px] text-[#646970] italic">Select an item to see details.</div>
                 <div id="details-view" class="hidden space-y-4">
-                    <div class="flex gap-3">
-                        <img id="detail-thumb" src="" class="w-16 h-16 object-cover bg-white border border-[#c3c4c7]">
+                    <div class="flex flex-col gap-3">
+                        <img id="detail-thumb" src="" class="w-full h-auto max-h-[150px] object-contain bg-white border border-[#c3c4c7]">
                         <div class="text-[12px] break-all">
                             <div id="detail-filename" class="font-bold text-black mt-1">image.jpg</div>
-                            <div id="detail-date" class="text-[#646970] mb-2">April 17, 2026</div>
-                            <div class="pt-2 border-t border-[#c3c4c7] mt-2 space-y-1">
-                                <div><strong>Main File size:</strong> <span id="detail-orig-size" class="text-[#646970]"></span></div>
-                                <div><strong>Compression Size:</strong> <span id="detail-comp-size" class="text-[#646970]"></span></div>
-                                <div><strong>Total Compression:</strong> <span id="detail-pct" class="text-green-600 font-bold"></span></div>
-                                <div><strong>Status:</strong> <span id="detail-status" class="px-1.5 py-0.5 rounded text-[10px] font-bold uppercase"></span></div>
-                            </div>
+                            <div id="detail-date" class="text-[#646970] mb-1">April 17, 2026</div>
+                            <div id="detail-dimensions" class="text-[#646970] mb-2 text-[11px]"></div>
                             <button type="button" id="delete-media-permanently" class="text-[#b32d2e] hover:underline mt-2 text-[12px]">Delete permanently</button>
                         </div>
                     </div>
@@ -101,11 +112,21 @@
                         <div><label class="block text-[12px] text-[#646970] mb-1">Description</label><textarea id="meta-desc" class="wp-input w-full text-[13px] h-16 py-1"></textarea></div>
                         <div><label class="block text-[12px] text-[#646970] mb-1">File URL:</label><input type="text" id="meta-url" readonly class="wp-input w-full text-[12px] h-7 bg-white/50"></div>
                     </div>
-                    <div class="text-right pt-2 border-t border-[#c3c4c7]">
-                        <button type="button" id="save-media-meta-btn" class="wp-btn-secondary text-[12px] h-7">Save Details</button>
+                    
+                    <div class="pt-2 border-t border-[#c3c4c7] mt-2 space-y-1 text-[11px]">
+                        <div><strong>Main File size:</strong> <span id="detail-orig-size" class="text-[#646970]"></span></div>
+                        <div><strong>Compression Size:</strong> <span id="detail-comp-size" class="text-[#646970]"></span></div>
+                        <div><strong>Total Compression:</strong> <span id="detail-pct" class="text-green-600 font-bold"></span></div>
+                        <div><strong>Status:</strong> <span id="detail-status" class="px-1.5 py-0.5 rounded text-[10px] font-bold uppercase"></span></div>
+                    </div>
+
+                    <div class="flex items-center justify-between pt-2 border-t border-[#c3c4c7]">
+                        <button type="button" id="save-media-meta-btn" class="wp-btn-primary text-[12px] h-7 px-4">Update</button>
+                        <span id="save-status-msg" class="text-[12px] text-green-600 font-medium opacity-0 transition-opacity duration-300">Saved!</span>
                     </div>
                 </div>
             </div>
+
 
         </div>
     </div>
@@ -118,19 +139,36 @@
         const detailsView = document.getElementById('details-view');
         const detailsEmpty = document.getElementById('details-empty');
         const insertBtn = document.getElementById('insert-media-btn');
-        let selectedMedia = null;
+        const selectedCount = document.getElementById('selected-count');
+
+        let selectedMediaItems = [];
+        let isMultiple = false;
         let currentCallback = null;
 
         // Global opener
-        window.openMediaModal = function(callback) {
+        window.openMediaModal = function(callback, options = {}) {
             modal.classList.remove('hidden');
             currentCallback = callback;
+            isMultiple = options.multiple || false;
+            selectedMediaItems = [];
+            resetUI();
             loadLibrary();
+        };
+
+        const resetUI = () => {
+            selectedCount.innerText = '0';
+            insertBtn.disabled = true;
+            insertBtn.classList.add('opacity-50', 'cursor-not-allowed');
+            detailsEmpty.classList.remove('hidden');
+            detailsView.classList.add('hidden');
+            grid.querySelectorAll('.check-overlay').forEach(el => el.classList.add('hidden'));
+            grid.querySelectorAll('.check-icon').forEach(el => el.classList.add('hidden'));
+            grid.querySelectorAll('.border-[#2271b1]').forEach(el => el.classList.remove('border-[#2271b1]'));
         };
 
         const closeModal = () => {
             modal.classList.add('hidden');
-            selectedMedia = null;
+            selectedMediaItems = [];
         };
         document.getElementById('close-media-modal').addEventListener('click', closeModal);
 
@@ -154,14 +192,31 @@
 
         // Upload Logic
         const fileInput = document.getElementById('media-upload-input');
+        let isUploading = false;
+
         fileInput.addEventListener('change', function() {
-            if (!this.files.length) return;
+            if (!this.files.length || isUploading) return;
+            
+            isUploading = true;
+            const file = this.files[0];
             const formData = new FormData();
-            formData.append('file', this.files[0]);
+            formData.append('file', file);
             formData.append('_token', '{{ csrf_token() }}');
 
-            // Show library and spinner
-            document.querySelector('[data-target="media-library-view"]').click();
+            // Switch to library view without re-triggering loadLibrary if we're already uploading
+            const libraryTab = document.querySelector('[data-target="media-library-view"]');
+            
+            // UI state updates
+            document.querySelectorAll('.media-modal-tab-btn').forEach(b => {
+                b.classList.remove('active', 'bg-white', 'text-black', 'font-semibold', 'border-l-[#2271b1]');
+                b.classList.add('border-l-transparent', 'text-[#2271b1]');
+            });
+            libraryTab.classList.add('active', 'bg-white', 'text-black', 'font-semibold', 'border-l-[#2271b1]');
+            libraryTab.classList.remove('border-l-transparent', 'text-[#2271b1]');
+            
+            document.querySelectorAll('.media-tab-content').forEach(c => c.classList.add('hidden'));
+            document.getElementById('media-library-view').classList.remove('hidden');
+            
             document.getElementById('media-loading-spinner').classList.remove('hidden');
 
             fetch("{{ route('admin.media.store') }}", {
@@ -172,16 +227,25 @@
                     'X-Requested-With': 'XMLHttpRequest'
                 }
             })
-            .then(res => res.json())
-            .then(data => {
-                if (data.success) {
+            .then(async res => {
+                const isJson = res.headers.get('content-type')?.includes('application/json');
+                const data = isJson ? await res.json() : null;
+                
+                if (res.ok && data && data.success) {
                     loadLibrary();
                 } else {
-                    alert('Upload failed.');
+                    console.error('Upload Error:', data || await res.text());
+                    alert('Upload failed: ' + (data?.message || 'Check console for details.'));
                 }
+            })
+            .catch(err => {
+                console.error('Fetch Error:', err);
+                alert('Network error or server unavailable.');
             })
             .finally(() => {
                 document.getElementById('media-loading-spinner').classList.add('hidden');
+                isUploading = false;
+                fileInput.value = ''; // Always clear to allow re-selecting same file
             });
         });
 
@@ -201,8 +265,8 @@
                     const div = document.createElement('div');
                     div.className = `relative aspect-square border-2 border-transparent bg-gray-100 cursor-pointer overflow-hidden group item-media-${item.id}`;
                     div.innerHTML = `<img src="/storage/${item.path}" class="w-full h-full object-cover">
-                                     <div class="absolute inset-0 border-4 border-[#2271b1] hidden check-overlay"></div>
-                                     <div class="absolute top-1 right-1 bg-[#2271b1] text-white rounded-full p-0.5 hidden check-icon"><svg class="w-4 h-4" fill="currentColor" viewBox="0 0 20 20"><path d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z"/></svg></div>`;
+                                     <div class="absolute inset-0 border-4 border-[#2271b1] hidden check-overlay" id="overlay-${item.id}"></div>
+                                     <div class="absolute top-1 right-1 bg-[#2271b1] text-white rounded-full p-0.5 hidden check-icon" id="icon-${item.id}"><svg class="w-4 h-4" fill="currentColor" viewBox="0 0 20 20"><path d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z"/></svg></div>`;
                     div.addEventListener('click', () => selectItem(item, div));
                     grid.appendChild(div);
                 });
@@ -221,27 +285,65 @@
             return parseFloat((bytes / Math.pow(k, i)).toFixed(dm)) + ' ' + sizes[i];
         }
 
+
         function selectItem(item, el) {
-            document.querySelectorAll('#media-library-grid > div').forEach(d => {
-                d.classList.remove('border-[#2271b1]');
-                d.querySelector('.check-overlay').classList.add('hidden');
-                d.querySelector('.check-icon').classList.add('hidden');
-            });
-            el.classList.add('border-[#2271b1]');
-            el.querySelector('.check-overlay').classList.remove('hidden');
-            el.querySelector('.check-icon').classList.remove('hidden');
+            const index = selectedMediaItems.findIndex(m => m.id === item.id);
             
-            selectedMedia = item;
+            if (!isMultiple) {
+                // Clear previous selections
+                document.querySelectorAll('#media-library-grid > div').forEach(d => {
+                    d.classList.remove('border-[#2271b1]');
+                    d.querySelector('.check-overlay').classList.add('hidden');
+                    d.querySelector('.check-icon').classList.add('hidden');
+                });
+                selectedMediaItems = [item];
+                el.classList.add('border-[#2271b1]');
+                el.querySelector('.check-overlay').classList.remove('hidden');
+                el.querySelector('.check-icon').classList.remove('hidden');
+            } else {
+                // Toggle selection
+                if (index > -1) {
+                    selectedMediaItems.splice(index, 1);
+                    el.classList.remove('border-[#2271b1]');
+                    el.querySelector('.check-overlay').classList.add('hidden');
+                    el.querySelector('.check-icon').classList.add('hidden');
+                } else {
+                    selectedMediaItems.push(item);
+                    el.classList.add('border-[#2271b1]');
+                    el.querySelector('.check-overlay').classList.remove('hidden');
+                    el.querySelector('.check-icon').classList.remove('hidden');
+                }
+            }
+
+            if (selectedMediaItems.length > 0) {
+                const latest = selectedMediaItems[selectedMediaItems.length - 1];
+                showDetails(latest);
+                insertBtn.classList.remove('opacity-50', 'cursor-not-allowed');
+                insertBtn.disabled = false;
+            } else {
+                detailsEmpty.classList.remove('hidden');
+                detailsView.classList.add('hidden');
+                insertBtn.classList.add('opacity-50', 'cursor-not-allowed');
+                insertBtn.disabled = true;
+            }
+            
+            selectedCount.innerText = selectedMediaItems.length;
+        }
+
+        function showDetails(item) {
+            if (!item) {
+                detailsEmpty.classList.remove('hidden');
+                detailsView.classList.add('hidden');
+                return;
+            }
             detailsEmpty.classList.add('hidden');
             detailsView.classList.remove('hidden');
-            insertBtn.classList.remove('opacity-50', 'cursor-not-allowed');
-            insertBtn.disabled = false;
-            document.getElementById('selected-count').innerText = '1';
 
             // Fill details
             document.getElementById('detail-thumb').src = `/storage/${item.path}`;
             document.getElementById('detail-filename').innerText = item.filename;
             document.getElementById('detail-date').innerText = new Date(item.created_at).toLocaleDateString('en-US', {month:'long', day:'numeric', year:'numeric'});
+            document.getElementById('detail-dimensions').innerText = (item.width && item.height) ? `Width: ${item.width}px by Height: ${item.height}px` : 'N/A';
             
             const orig = item.original_size || 0;
             const comp = item.compressed_size || orig;
@@ -272,7 +374,14 @@
         }
 
         document.getElementById('save-media-meta-btn').addEventListener('click', function() {
-            if (!selectedMedia) return;
+            if (selectedMediaItems.length === 0) return;
+            const currentItem = selectedMediaItems[selectedMediaItems.length - 1];
+            const btn = this;
+            const originalText = btn.innerText;
+            
+            btn.disabled = true;
+            btn.innerText = 'Saving...';
+
             const data = {
                 alt_text: document.getElementById('meta-alt').value,
                 title: document.getElementById('meta-title').value,
@@ -281,7 +390,8 @@
                 _token: '{{ csrf_token() }}',
                 _method: 'PUT'
             };
-            fetch(`/admin/media/${selectedMedia.id}`, {
+
+            fetch(`/admin/media/${currentItem.id}`, {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
@@ -289,12 +399,46 @@
                     'X-Requested-With': 'XMLHttpRequest'
                 },
                 body: JSON.stringify(data)
-            }).then(() => alert('Details saved.'));
+            })
+            .then(res => res.json())
+            .then(response => {
+                if (response.success) {
+                    const updatedItem = response.data;
+                    const index = selectedMediaItems.findIndex(m => m.id === updatedItem.id);
+                    if (index > -1) selectedMediaItems[index] = updatedItem;
+                    
+                    const gridItem = document.querySelector(`.item-media-${updatedItem.id}`);
+                    if (gridItem) {
+                        const img = gridItem.querySelector('img');
+                        if (img) img.src = `/storage/${updatedItem.path}?v=${new Date().getTime()}`;
+                    }
+
+                    showDetails(updatedItem);
+                    
+                    const statusMsg = document.getElementById('save-status-msg');
+                    statusMsg.classList.remove('opacity-0');
+                    btn.innerText = originalText;
+                    btn.disabled = false;
+                    
+                    setTimeout(() => {
+                        statusMsg.classList.add('opacity-0');
+                    }, 3000);
+                }
+            })
+            .catch(err => {
+                console.error(err);
+                btn.innerText = 'Error!';
+                setTimeout(() => {
+                    btn.innerText = originalText;
+                    btn.disabled = false;
+                }, 2000);
+            });
         });
 
         document.getElementById('delete-media-permanently').addEventListener('click', function() {
-           if (!selectedMedia || !confirm('Are you sure you want to delete this file permanently?')) return;
-            fetch(`/admin/media/${selectedMedia.id}`, {
+           if (selectedMediaItems.length === 0 || !confirm('Are you sure you want to delete this file permanently?')) return;
+           const currentItem = selectedMediaItems[selectedMediaItems.length - 1];
+            fetch(`/admin/media/${currentItem.id}`, {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
@@ -304,17 +448,22 @@
                 body: JSON.stringify({_token: '{{ csrf_token() }}', _method: 'DELETE'})
             }).then(() => {
                loadLibrary();
+               showDetails(null); // or clear UI
                detailsView.classList.add('hidden');
                detailsEmpty.classList.remove('hidden');
-               selectedMedia = null;
+               selectedMediaItems = [];
                insertBtn.disabled = true;
                insertBtn.classList.add('opacity-50', 'cursor-not-allowed');
            });
         });
 
         insertBtn.addEventListener('click', function() {
-            if (selectedMedia && currentCallback) {
-                currentCallback(selectedMedia);
+            if (selectedMediaItems.length > 0 && currentCallback) {
+                if (isMultiple) {
+                    currentCallback(selectedMediaItems);
+                } else {
+                    currentCallback(selectedMediaItems[0]);
+                }
                 closeModal();
             }
         });

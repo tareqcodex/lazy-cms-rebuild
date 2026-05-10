@@ -1,5 +1,5 @@
 <x-cms-dashboard::layouts.admin title="Manage {{ $taxonomy->name }} Terms" active-menu="acpt">
-    
+    <x-cms-dashboard::admin.delete-modal />
     <div class="mb-4 flex justify-between items-center">
         <h1 class="text-[23px] font-normal text-[#1d2327] inline-block mr-3">{{ $taxonomy->name }} Terms</h1>
         
@@ -29,6 +29,9 @@
         </div>
     @endif
 
+    <div class="flex flex-col md:flex-row justify-between items-start md:items-center mb-4 gap-4">
+    </div>
+
     <div class="flex flex-col md:flex-row gap-6">
         <!-- Add New Term Column -->
         <div class="w-full md:w-1/3">
@@ -36,6 +39,21 @@
             
             <form action="{{ route('admin.acpt.terms.store', $taxonomy->slug) }}" method="POST">
                 @csrf
+                @php $activeLanguages = \Acme\CmsDashboard\Models\Language::where('status', true)->get(); @endphp
+                @if($activeLanguages->count() > 1)
+                    <div class="mb-4">
+                        <label class="block text-[14px] text-[#2c3338] mb-1 font-semibold">Language</label>
+                        <select name="lang_code" class="wp-input w-full h-8 py-0">
+                            @foreach($activeLanguages as $lang)
+                                <option value="{{ $lang->code }}" {{ $lang->code == app()->getLocale() ? 'selected' : '' }}>
+                                    {{ $lang->flag }} {{ $lang->name }}
+                                </option>
+                            @endforeach
+                        </select>
+                    </div>
+                @else
+                    <input type="hidden" name="lang_code" value="{{ app()->getLocale() }}">
+                @endif
                 <input type="hidden" name="cpt_slug" value="{{ request('cpt') ?: ($taxonomy->post_types[0] ?? '') }}">
                 <div class="mb-4">
                     <label class="block text-[14px] text-[#2c3338] mb-1 font-semibold">Name</label>
@@ -76,10 +94,10 @@
                 <div class="flex justify-between items-center mb-2">
                     <div class="flex gap-2 items-center">
                         <select name="action" class="wp-input h-8 py-0 text-[13px]">
-                            <option value="-1">Bulk Actions</option>
+                            <option value="-1">Bulk actions</option>
                             <option value="delete">Delete</option>
                         </select>
-                        <button type="submit" class="wp-btn-secondary h-8 px-3">Apply</button>
+                        <button type="button" onclick="handleBulkTermAction()" class="wp-btn-secondary h-8 leading-[1] text-[13px]">Apply</button>
                     </div>
                     <x-cms-dashboard::admin.pagination :paginator="$terms" />
                 </div>
@@ -103,13 +121,13 @@
                                     <a href="{{ route('admin.acpt.terms.edit', [$taxonomy->slug, $term->id, 'cpt' => request('cpt') ?: ($taxonomy->post_types[0] ?? '')]) }}" class="text-[#2271b1] font-bold block">{{ str_repeat('— ', $term->level ?? 0) }}{{ $term->name }}</a>
                                     <div class="mt-1 invisible group-hover:visible space-x-2 text-[12px]">
                                         <a href="{{ route('admin.acpt.terms.edit', [$taxonomy->slug, $term->id, 'cpt' => request('cpt') ?: ($taxonomy->post_types[0] ?? '')]) }}" class="text-[#2271b1]">Edit</a> | 
-                                        <button type="button" class="text-[#b32d2e] hover:underline delete-term-btn" data-id="{{ $term->id }}">Delete</button>
+                                        <button type="button" class="text-[#b32d2e] hover:underline" onclick="confirmDeleteTerm({{ $term->id }}, '{{ addslashes($term->name) }}')">Delete</button>
                                     </div>
                                 </td>
                                 <td class="p-3 text-[#646970]">{{ $term->description ?: '—' }}</td>
                                 <td class="p-3 text-[#646970]">{{ $term->slug }}</td>
                                 <td class="p-3 text-center">
-                                    <a href="#" class="text-[#2271b1]">{{ $term->posts_count ?? 0 }}</a>
+                                    <a href="{{ route('admin.posts.index', ['type' => request('cpt') ?: ($taxonomy->post_types[0] ?? 'post'), 'term_id' => $term->id]) }}" class="text-[#2271b1] font-semibold">{{ $term->posts_count ?? 0 }}</a>
                                 </td>
                             </tr>
                             @empty
@@ -137,16 +155,46 @@
             document.querySelectorAll('.item-checkbox').forEach(cb => cb.checked = this.checked);
         });
 
-        document.querySelectorAll('.delete-term-btn').forEach(btn => {
-            btn.addEventListener('click', function() {
-                if (confirm('Are you sure you want to delete this term?')) {
-                    const id = this.getAttribute('data-id');
-                    const form = document.getElementById('single-delete-form');
-                    form.action = `{{ url('/admin/acpt/tax-terms/' . $taxonomy->slug) }}/${id}`;
-                    form.submit();
-                }
+        window.confirmDeleteTerm = async function(id, name) {
+            const confirmed = await window.lazyConfirm({
+                title: 'Delete Term',
+                message: `Are you sure you want to delete the term "${name}"? This action cannot be undone.`,
+                confirmText: 'Delete Term',
+                isDanger: true
             });
-        });
+
+            if (confirmed) {
+                const form = document.getElementById('single-delete-form');
+                form.action = `{{ url('/admin/acpt/tax-terms/' . $taxonomy->slug) }}/${id}`;
+                form.submit();
+            }
+        };
+
+        window.handleBulkTermAction = async function() {
+            const action = document.querySelector('select[name="action"]').value;
+            const selected = document.querySelectorAll('.item-checkbox:checked');
+
+            if (action === '-1') return;
+            if (selected.length === 0) {
+                window.showToast('Please select at least one term.', 'warning');
+                return;
+            }
+
+            if (action === 'delete') {
+                const confirmed = await window.lazyConfirm({
+                    title: 'Bulk Delete Terms',
+                    message: `Are you sure you want to permanently delete ${selected.length} terms? This action cannot be undone.`,
+                    confirmText: 'Delete Selected',
+                    isDanger: true
+                });
+
+                if (confirmed) {
+                    document.querySelector('form[action="{{ route('admin.acpt.terms.bulk', $taxonomy->slug) }}"]').submit();
+                }
+            } else {
+                document.querySelector('form[action="{{ route('admin.acpt.terms.bulk', $taxonomy->slug) }}"]').submit();
+            }
+        };
     </script>
 
 </x-cms-dashboard::layouts.admin>

@@ -42,21 +42,24 @@ class UserController extends Controller
             });
         }
 
-        $users = $query->latest()->paginate(20)->withQueryString();
+        $users = $query->latest()->paginate(10)->withQueryString();
         
         $allCount = User::count();
-        $adminCount = User::whereHas('role', function($q){ $q->where('slug', 'administrator'); })->count();
-        $editorCount = User::whereHas('role', function($q){ $q->where('slug', 'editor'); })->count();
-        $authorCount = User::whereHas('role', function($q){ $q->where('slug', 'author'); })->count();
-        $subscriberCount = User::whereHas('role', function($q){ $q->where('slug', 'subscriber'); })->count();
+        $roles = Role::all()->map(function($role) {
+            $role->count = User::where('role_id', $role->id)->count();
+            return $role;
+        });
+
         $blockedCount = User::where('is_blocked', true)
             ->orWhere(function($q) {
                 $q->whereNotNull('blocked_until')
                   ->where('blocked_until', '>', now());
             })->count();
         
+        $allUsers = User::all(); // For reassignment dropdown
+        
         return view('cms-dashboard::admin.users.index', compact(
-            'users', 'allCount', 'adminCount', 'editorCount', 'authorCount', 'subscriberCount', 'blockedCount'
+            'users', 'allCount', 'roles', 'blockedCount', 'allUsers'
         ));
     }
 
@@ -83,41 +86,56 @@ class UserController extends Controller
         ]);
 
         $validated['password'] = Hash::make($validated['password']);
-        User::create($validated);
+        $user = User::create($validated);
+        lazy_log_activity('created', "Created a new user: {$user->name} ({$user->username})", $user);
 
         return redirect()->route('admin.users.index')->with('success', 'User created successfully.');
     }
 
     public function edit(User $user)
     {
+        // Only super-admin can edit other super-admins
+        if ($user->hasRole('super-admin') && !auth()->user()->hasRole('super-admin')) {
+            return redirect()->route('admin.users.index')->with('error', 'You do not have permission to edit a Super Admin.');
+        }
+
         $roles = Role::all();
         return view('cms-dashboard::admin.users.edit', compact('user', 'roles'));
     }
-
     public function update(Request $request, User $user)
     {
-        if (!auth()->user()->hasPermission('manage_users')) {
+        if (!auth()->user()->hasPermission('manage_users') && auth()->id() !== $user->id) {
             abort(403);
         }
+
         $validated = $request->validate([
+            'username' => 'required|string|max:255|unique:users,username,' . $user->id,
             'name' => 'required|string|max:255',
             'email' => 'required|string|email|max:255|unique:users,email,' . $user->id,
             'password' => 'required|string|min:8|confirmed',
             'role_id' => 'required|exists:roles,id'
         ]);
 
-        if (!empty($validated['password'])) {
-            $validated['password'] = Hash::make($validated['password']);
-        } else {
-            unset($validated['password']);
+        $validated['password'] = Hash::make($validated['password']);
+
+        // Protection: Only super-admin can edit other super-admins
+        if ($user->hasRole('super-admin') && !auth()->user()->hasRole('super-admin')) {
+            return redirect()->route('admin.users.index')->with('error', 'You do not have permission to edit a Super Admin.');
+        }
+
+        // Protection: Only super-admin can assign super-admin role
+        $targetRole = Role::find($validated['role_id']);
+        if ($targetRole && $targetRole->slug === 'super-admin' && !auth()->user()->hasRole('super-admin')) {
+            return redirect()->back()->with('error', 'Only a Super Admin can assign the Super Admin role.')->withInput();
         }
 
         $user->update($validated);
+        lazy_log_activity('updated', "Updated user profile: {$user->name}", $user);
 
         return redirect()->route('admin.users.index')->with('success', 'User updated successfully.');
     }
 
-    public function destroy(User $user)
+    public function destroy(Request $request, User $user)
     {
         if (!auth()->user()->hasPermission('manage_users')) {
             abort(403);
@@ -126,8 +144,35 @@ class UserController extends Controller
             return redirect()->route('admin.users.index')->with('error', 'You cannot delete your own account.');
         }
 
-        $user->delete();
-        return redirect()->route('admin.users.index')->with('success', 'User deleted successfully.');
+        if ($user->hasRole('super-admin') && !auth()->user()->hasRole('super-admin')) {
+            return redirect()->route('admin.users.index')->with('error', 'You cannot delete a Super Admin account.');
+        }
+
+        $deleteOption = $request->input('delete_option', 'delete'); // 'delete' or 'reassign'
+        $reassignTo = $request->input('reassign_to');
+
+        DB::beginTransaction();
+        try {
+            if ($deleteOption === 'reassign' && $reassignTo) {
+                // Migrate all posts, pages, and CPTs to the new user
+                DB::table('posts')->where('user_id', $user->id)->update(['user_id' => $reassignTo]);
+                lazy_log_activity('updated', "Migrated content from deleted user {$user->name} to user ID: {$reassignTo}", $user);
+            } else {
+                // Delete all content
+                DB::table('posts')->where('user_id', $user->id)->delete();
+                lazy_log_activity('deleted', "Deleted all content associated with user: {$user->name}", $user);
+            }
+
+            $name = $user->name;
+            $user->delete();
+            DB::commit();
+
+            lazy_log_activity('deleted', "Deleted user: {$name}", $user);
+            return redirect()->route('admin.users.index')->with('success', 'User deleted successfully.');
+        } catch (\Exception $e) {
+            DB::rollBack();
+            return redirect()->route('admin.users.index')->with('error', 'An error occurred while deleting the user: ' . $e->getMessage());
+        }
     }
 
     public function toggleBlock(User $user)
@@ -137,6 +182,10 @@ class UserController extends Controller
         }
         if (auth()->id() === $user->id) {
             return redirect()->route('admin.users.index')->with('error', 'You cannot block your own account.');
+        }
+
+        if ($user->hasRole('super-admin') && !auth()->user()->hasRole('super-admin')) {
+            return redirect()->route('admin.users.index')->with('error', 'You cannot block a Super Admin account.');
         }
 
         // If user is temporarily blocked, or permanently blocked, we toggle it
@@ -149,12 +198,65 @@ class UserController extends Controller
             $user->blocked_until = null;
             $user->last_failed_login_ip = null;
             $user->save();
+            lazy_log_activity('updated', "Unblocked user: {$user->name}", $user);
             return redirect()->route('admin.users.index')->with('success', "User has been unblocked successfully.");
         } else {
             // Block
             $user->is_blocked = true;
             $user->save();
+            lazy_log_activity('updated', "Blocked user: {$user->name}", $user);
             return redirect()->route('admin.users.index')->with('success', "User has been blocked successfully.");
         }
+    }
+
+    public function bulk(Request $request)
+    {
+        if (!auth()->user()->hasPermission('manage_users')) {
+            abort(403);
+        }
+
+        $ids = $request->ids;
+        $action = $request->action;
+
+        if (empty($ids) || $action === 'Bulk Actions') {
+            return redirect()->back()->with('error', 'Please select users and an action.');
+        }
+
+        // Prevent self-deletion/blocking
+        $ids = array_diff($ids, [auth()->id()]);
+
+        if ($action === 'delete') {
+            $users = User::whereIn('id', $ids)->get();
+            foreach ($users as $user) {
+                $name = $user->name;
+                $user->delete();
+                lazy_log_activity('deleted', "Deleted user: {$name}", $user);
+            }
+            return redirect()->back()->with('success', 'Selected users deleted successfully.');
+        }
+
+        if ($action === 'block') {
+            $users = User::whereIn('id', $ids)->get();
+            foreach ($users as $user) {
+                $user->update(['is_blocked' => true]);
+                lazy_log_activity('updated', "Blocked user: {$user->name}", $user);
+            }
+            return redirect()->back()->with('success', 'Selected users blocked successfully.');
+        }
+
+        if ($action === 'unblock') {
+            $users = User::whereIn('id', $ids)->get();
+            foreach ($users as $user) {
+                $user->update([
+                    'is_blocked' => false,
+                    'login_attempts' => 0,
+                    'blocked_until' => null
+                ]);
+                lazy_log_activity('updated', "Unblocked user: {$user->name}", $user);
+            }
+            return redirect()->back()->with('success', 'Selected users unblocked successfully.');
+        }
+
+        return redirect()->back();
     }
 }

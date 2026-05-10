@@ -1,4 +1,5 @@
 <x-cms-dashboard::layouts.admin title="Categories">
+    <x-cms-dashboard::admin.delete-modal />
     <div class="flex justify-between items-center mb-4">
         <h1 class="text-[23px] font-normal text-[#1d2327]">Categories</h1>
         <div class="flex space-x-1">
@@ -12,6 +13,21 @@
             <p>{{ session('success') }}</p>
         </div>
     @endif
+    
+    @if($errors->any())
+        <div class="bg-[#fff] border-l-4 border-[#d63638] shadow-[0_1px_1px_rgba(0,0,0,.04)] p-3 mb-4 rounded-sm text-[13px]">
+            <p class="font-bold mb-2">Error: Please check the following fields:</p>
+            <ul class="list-disc list-inside text-[#d63638] space-y-1">
+                @foreach ($errors->all() as $error)
+                    <li>{{ $error }}</li>
+                @endforeach
+            </ul>
+        </div>
+    @endif
+
+    <div class="flex flex-col md:flex-row justify-between items-start md:items-center mb-4 gap-4">
+        <!-- Moved tabs or other filters here if needed -->
+    </div>
 
     <div class="flex flex-col md:flex-row gap-6">
         <!-- Add Category Form -->
@@ -19,9 +35,27 @@
             <h2 class="text-[14px] font-semibold text-[#1d2327] mb-3">Add New Category</h2>
             <form action="{{ route('admin.categories.store') }}" method="POST">
                 @csrf
+                @php $activeLanguages = \Acme\CmsDashboard\Models\Language::where('status', true)->get(); @endphp
+                @if($activeLanguages->count() > 1)
+                    <div class="mb-4">
+                        <label class="block text-[13px] text-[#1d2327] mb-1">Language</label>
+                        <select name="lang_code" class="wp-input w-full h-8 py-0">
+                            @foreach($activeLanguages as $lang)
+                                <option value="{{ $lang->code }}" {{ $lang->code == app()->getLocale() ? 'selected' : '' }}>
+                                    {{ $lang->flag }} {{ $lang->name }}
+                                </option>
+                            @endforeach
+                        </select>
+                    </div>
+                @else
+                    <input type="hidden" name="lang_code" value="{{ app()->getLocale() }}">
+                @endif
                 <div class="mb-4">
                     <label class="block text-[13px] text-[#1d2327] mb-1">Name</label>
-                    <input type="text" name="name" class="wp-input w-full" required>
+                    <input type="text" name="name" class="wp-input w-full @error('name') border-[#d63638] @enderror" value="{{ old('name') }}" required>
+                    @error('name')
+                        <p class="text-[#d63638] text-[12px] mt-1">{{ $message }}</p>
+                    @enderror
                     <p class="text-[12px] text-[#646970] mt-1">The name is how it appears on your site.</p>
                 </div>
 
@@ -61,7 +95,7 @@
                 </form>
             </div>
 
-            <form action="{{ route('admin.categories.bulk') }}" method="POST">
+            <form action="{{ route('admin.categories.bulk') }}" method="POST" id="category-bulk-form">
                 @csrf
             <div class="flex justify-between items-center mb-2">
                 <div class="flex items-center space-x-2">
@@ -94,14 +128,14 @@
                                 </strong>
                                 <div class="invisible group-hover:visible mt-1 text-[13px] space-x-1">
                                     <a href="{{ route('admin.categories.edit', [$cat, 'type' => 'post']) }}" class="text-[#2271b1]">Edit</a> <span class="text-[#c3c4c7]">|</span>
-                                    <button form="delete-form-{{ $cat->id }}" type="submit" class="text-[#b32d2e] hover:text-[#8a2424]" onclick="return confirm('Delete this category?');">Delete</button>
+                                    <button type="button" onclick="confirmDeleteCategory({{ $cat->id }})" class="text-[#b32d2e] hover:text-[#8a2424] cursor-pointer">Delete</button>
                                      <span class="text-[#c3c4c7]">|</span>
                                     <a href="{{ url('category/' . $cat->path) }}" target="_blank" class="text-[#2271b1]">View</a>
                                 </div>
                             </td>
                             <td class="wp-table-cell text-[#646970]">{{ $cat->description ?: '—' }}</td>
                             <td class="wp-table-cell text-[#646970]">{{ $cat->slug }}</td>
-                            <td class="wp-table-cell text-right"><a href="#" class="text-[#2271b1]">{{ $cat->posts_count }}</a></td>
+                            <td class="wp-table-cell text-right"><a href="{{ route('admin.posts.index', ['cat' => $cat->id]) }}" class="text-[#2271b1] font-semibold">{{ $cat->posts_count }}</a></td>
                         </tr>
                     @empty
                         <tr>
@@ -153,5 +187,47 @@
                 document.getElementById('cb-select-all-2').checked = isChecked;
             });
         });
+
+        window.handleBulkAction = async function(formId, selectName = 'action') {
+            const form = document.getElementById(formId);
+            const action = form.querySelector(`select[name="${selectName}"]`).value;
+            const selected = form.querySelectorAll('.cb-select-item:checked');
+
+            if (action === '-1' || action === 'none') return;
+            if (selected.length === 0) {
+                window.showToast('Please select at least one item.', 'warning');
+                return;
+            }
+
+            if (action === 'delete') {
+                const confirmed = await window.lazyConfirm({
+                    title: 'Bulk Delete Categories',
+                    message: `Are you sure you want to delete ${selected.length} selected categories? This action cannot be undone.`,
+                    confirmText: 'Delete',
+                    isDanger: true
+                });
+
+                if (confirmed) {
+                    if (selectName === 'action2') {
+                        form.querySelector('select[name="action"]').value = action;
+                    }
+                    form.submit();
+                }
+            } else {
+                form.submit();
+            }
+        };
+
+        window.confirmDeleteCategory = async function(id) {
+            const confirmed = await window.lazyConfirm({
+                title: 'Delete Category',
+                message: 'Are you sure you want to delete this category? This action cannot be undone.',
+                confirmText: 'Delete',
+                isDanger: true
+            });
+            if (confirmed) {
+                document.getElementById(`delete-form-${id}`).submit();
+            }
+        };
     </script>
 </x-cms-dashboard::layouts.admin>

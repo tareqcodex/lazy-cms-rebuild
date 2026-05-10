@@ -12,11 +12,6 @@
         </div>
     @endif
 
-    @if($errors->any())
-        <div class="bg-[#fff] border-l-4 border-[#d63638] shadow-[0_1px_1px_rgba(0,0,0,.04)] p-3 mb-4 rounded-sm text-[13px]">
-            <p><strong>Error:</strong> Please check the fields.</p>
-        </div>
-    @endif
 
     <form action="{{ route('admin.posts.update', $post) }}" method="POST" id="post-form" enctype="multipart/form-data">
         @csrf
@@ -30,18 +25,43 @@
                 @if(in_array('title', $supports))
                 <div class="mb-4">
                     <input type="text" name="title" id="title-input" value="{{ old('title', $post->title) }}" 
-                           class="w-full text-[1.7em] leading-normal border border-[#8c8f94] rounded-sm py-[3px] px-[8px] focus:ring-[#2271b1] focus:border-[#2271b1] shadow-none m-0 bg-white" 
-                           placeholder="Add title" required>
+                           class="w-full text-[1.7em] leading-normal border @error('title') border-[#d63638] @else border-[#8c8f94] @enderror rounded-sm py-[3px] px-[8px] focus:ring-[#2271b1] focus:border-[#2271b1] shadow-none m-0 bg-white" 
+                           placeholder="Add title">
+                    @error('title')
+                        <p class="text-[#d63638] text-[12px] mt-1">{{ $message }}</p>
+                    @enderror
                     
                     @if(!isset($postType) || $postType->is_public)
-                    <div id="permalink-container" class="mt-2 text-[13px] flex items-center font-medium">
+                    <div id="permalink-container" data-is-home="{{ is_lazy_homepage($post) ? '1' : '0' }}" class="mt-2 text-[13px] flex items-center font-medium">
                         <span class="text-[#646970] mr-1">Permalink:</span>
                         <span id="permalink-view">
-                            <a id="permalink-full-link" href="{{ url($post->slug) }}" target="_blank" class="text-[#2271b1] underline font-medium">{{ url('/') }}/<span id="permalink-slug-display" class="text-[#2271b1]">{{ $post->slug }}</span>/</a>
-                            <button type="button" id="edit-slug-btn" class="wp-btn-secondary bg-[#f6f7f7] text-[12px] h-[24px] ml-1 font-medium">Edit</button>
+                            @php 
+                                $isHome = is_lazy_homepage($post);
+                                $fullUrl = get_lazy_permalink($post);
+                                
+                                $defaultLang = \Illuminate\Support\Facades\DB::table('cms_languages')->where('is_default', true)->value('code') ?: 'en';
+                                $postLang = $post->lang_code ?? $defaultLang;
+                                $isDefault = ($postLang === $defaultLang);
+                                
+                                if ($isHome) {
+                                    $displayBase = rtrim(url('/'), '/') . ($isDefault ? '/' : '/' . $postLang);
+                                    $displaySlug = '';
+                                } else {
+                                    $prefix = ($isDefault ? '' : $postLang . '/');
+                                    if ($post->type !== 'post' && $post->type !== 'page') {
+                                        $prefix .= $post->type . '/';
+                                    }
+                                    $displayBase = rtrim(url('/'), '/') . '/' . $prefix;
+                                    $displaySlug = $post->slug . '/';
+                                }
+                            @endphp
+                            <a id="permalink-full-link" href="{{ $fullUrl }}" target="_blank" class="text-[#2271b1] underline font-medium">{{ $displayBase }}<span id="permalink-slug-display" class="font-medium text-[#2271b1]">{{ $displaySlug }}</span></a>
+                            @if(!$isHome)
+                                <button type="button" id="edit-slug-btn" class="wp-btn-secondary bg-[#f6f7f7] text-[12px] h-[24px] ml-1 font-medium text-[#2271b1] border-[#c3c4c7]">Edit</button>
+                            @endif
                         </span>
                         <span id="permalink-edit" class="hidden items-center">
-                            <span class="text-[#646970] font-medium">{{ url('/') }}/</span>
+                            <span class="text-[#646970] font-medium">{{ $displayBase }}</span>
                             <input type="text" name="slug" id="slug-input" value="{{ $post->slug }}" class="wp-input text-[13px] h-[24px] px-1 mx-1 font-medium" style="width: 150px;">/
                             <button type="button" id="ok-slug-btn" class="wp-btn-secondary bg-[#f6f7f7] text-[12px] h-[24px] mx-1 font-medium">OK</button>
                             <a href="#" id="cancel-slug-btn" class="text-[#2271b1] underline ml-1 font-medium">Cancel</a>
@@ -80,7 +100,7 @@
                         <h2 class="text-[#2c3338] text-[22px] font-bold mb-3">Welcome to the Page Builder</h2>
                         <p class="text-[#646970] text-[14px] mb-8">This post is now using the amazing page builder.</p>
                         
-                        <button type="button" @if(isset($post->id)) onclick="window.open('{{ route('admin.builder', $post->id) }}', '_blank')" @else onclick="alert('Please save the post first to enable the Page Builder.')" @endif class="wp-btn-primary px-6 py-2 h-auto text-[15px] rounded-md shadow-sm">
+                        <button type="button" @if(isset($post->id)) onclick="window.location.href='{{ route('admin.lazy-builder', $post->id) }}'" @else onclick="window.showToast('Please save the post first to enable the Page Builder.', 'warning')" @endif class="wp-btn-primary px-6 py-2 h-auto text-[15px] rounded-md shadow-sm">
                             Edit with Page Builder
                         </button>
                     </div>
@@ -92,7 +112,10 @@
                 <div class="wp-metabox mt-6 mb-6">
                     <div class="wp-metabox-header"><span>Excerpt</span></div>
                     <div class="wp-metabox-content">
-                        <textarea name="excerpt" id="excerpt" rows="3" class="w-full text-[14px] leading-normal border border-[#8c8f94] rounded-sm py-[3px] px-[8px] focus:ring-[#2271b1] focus:border-[#2271b1] shadow-[inset_0_1px_2px_rgba(0,0,0,0.07)] m-0 bg-white">{{ old('excerpt', $post->excerpt) }}</textarea>
+                        <textarea name="excerpt" id="excerpt" rows="3" class="w-full text-[14px] leading-normal border @error('excerpt') border-[#d63638] @else border-[#8c8f94] @enderror rounded-sm py-[3px] px-[8px] focus:ring-[#2271b1] focus:border-[#2271b1] shadow-[inset_0_1px_2px_rgba(0,0,0,0.07)] m-0 bg-white">{{ old('excerpt', $post->excerpt) }}</textarea>
+                        @error('excerpt')
+                            <p class="text-[#d63638] text-[12px] mt-1">{{ $message }}</p>
+                        @enderror
                         <p class="text-[12px] text-[#646970] mt-2">Excerpts are optional hand-crafted summaries of your content that can be used in your theme.</p>
                     </div>
                 </div>
@@ -121,13 +144,13 @@
                                     @if($field->type === 'text')
                                         <input type="text" name="custom_fields[{{ $field->id }}]" value="{{ $val }}" class="wp-input w-full" {{ $field->required ? 'required' : '' }}>
                                     @elseif($field->type === 'textarea')
-                                        <textarea name="custom_fields[{{ $field->id }}]" rows="4" class="wp-input w-full" {{ $field->required ? 'required' : '' }}>{{ $val }}</textarea>
+                                        <textarea name="custom_fields[{{ $field->id }}]" rows="4" class="wp-input w-full" {{ $field->required ? 'required' : '' }}>{{ old('custom_fields.'.$field->id, $val) }}</textarea>
                                     @elseif($field->type === 'select')
                                         <select name="custom_fields[{{ $field->id }}]" class="wp-input w-full h-8 py-0" {{ $field->required ? 'required' : '' }}>
                                             <option value="">Select an option</option>
                                         </select>
                                     @elseif($field->type === 'wysiwyg')
-                                        <textarea name="custom_fields[{{ $field->id }}]" class="wp-input w-full h-32" {{ $field->required ? 'required' : '' }}>{{ $val }}</textarea>
+                                        <textarea name="custom_fields[{{ $field->id }}]" class="wp-input w-full h-32" {{ $field->required ? 'required' : '' }}>{{ old('custom_fields.'.$field->id, $val) }}</textarea>
                                     @elseif($field->type === 'image')
                                         <div class="flex items-center gap-4">
                                             <div class="w-20 h-20 bg-[#f0f0f1] border border-[#c3c4c7] rounded-sm flex items-center justify-center overflow-hidden">
@@ -138,7 +161,7 @@
                                                 @endif
                                             </div>
                                             <button type="button" class="wp-btn-secondary h-8 px-4 text-[12px]">Change Image</button>
-                                            <input type="hidden" name="custom_fields[{{ $field->id }}]" value="{{ $val }}" {{ $field->required ? 'required' : '' }}>
+                                            <input type="hidden" name="custom_fields[{{ $field->id }}]" value="{{ old('custom_fields.'.$field->id, $val) }}" {{ $field->required ? 'required' : '' }}>
                                         </div>
                                     @else
                                         <input type="text" name="custom_fields[{{ $field->id }}]" value="{{ $val }}" class="wp-input w-full" {{ $field->required ? 'required' : '' }}>
@@ -150,11 +173,80 @@
                     </div>
                     @endforeach
                 @endif
+
+                @include('cms-dashboard::admin.posts.partials.product-data', ['post' => $post, 'type' => $type])
+                @include('cms-dashboard::admin.posts.partials.seo', ['post' => $post])
             </div>
 
             <!-- Right Column: Metaboxes -->
             <div class="w-full lg:w-[280px] shrink-0 space-y-5">
                 
+                <!-- Language & Multilingual Metabox -->
+                @php 
+                    $isMultiLang = get_cms_option('multi_language_enabled', 0);
+                    $activeLanguages = \Acme\CmsDashboard\Models\Language::where('status', true)->get(); 
+                @endphp
+
+                @if($activeLanguages->count() > 1)
+                <div class="wp-metabox mb-6" style="margin-bottom: 24px !important; margin-top: 10px !important;">
+                    <div class="wp-metabox-header"><span>Language</span></div>
+                    <div class="wp-metabox-content p-3">
+                        <div class="mb-3">
+                            <label class="block text-[12px] font-bold text-[#1d2327] mb-1">Post Language</label>
+                            <select name="lang_code" class="wp-input w-full text-[13px] h-8 py-0">
+                                @foreach($activeLanguages as $lang)
+                                    <option value="{{ $lang->code }}" {{ $post->lang_code == $lang->code ? 'selected' : '' }}>
+                                        {{ $lang->flag }} {{ $lang->name }}
+                                    </option>
+                                @endforeach
+                            </select>
+                        </div>
+
+                        @if(!$post->origin_id)
+                            <hr class="my-3 border-gray-100">
+                            <label class="flex items-center text-[13px] font-bold text-[#1d2327] mb-3 cursor-pointer">
+                                <input type="checkbox" name="make_multilingual_copy" value="1" class="mr-2 rounded-sm border-[#8c8f94] text-[#2271b1]" onchange="document.getElementById('multi-lang-list').classList.toggle('hidden', !this.checked)">
+                                Make more copies?
+                            </label>
+
+                            <div id="multi-lang-list" class="hidden space-y-2 pl-6 border-l-2 border-gray-100">
+                                <p class="text-[11px] text-gray-500 mb-2">Clone to:</p>
+                                @php
+                                    $existingClones = \Acme\CmsDashboard\Models\Post::where('origin_id', $post->id)->pluck('lang_code')->toArray();
+                                @endphp
+                                @foreach($activeLanguages as $lang)
+                                    @if($lang->code !== $post->lang_code && !in_array($lang->code, $existingClones))
+                                    <label class="flex items-center text-[12px] text-[#2c3338] lang-option-{{ $lang->code }}">
+                                        <input type="checkbox" name="copy_to_languages[]" value="{{ $lang->code }}" class="mr-2 rounded-sm border-[#8c8f94] text-[#2271b1]">
+                                        <span class="mr-1">{{ $lang->flag }}</span> {{ $lang->name }}
+                                    </label>
+                                    @endif
+                                @endforeach
+                            </div>
+                        @elseif($post->origin_id)
+                            @php $original = \Acme\CmsDashboard\Models\Post::find($post->origin_id); @endphp
+                            <div class="bg-blue-50 p-2 border border-blue-100 rounded-sm">
+                                <p class="text-[11px] text-blue-700">
+                                    This is the <strong>{{ $activeLanguages->where('code', $post->lang_code)->first()->name ?? $post->lang_code }}</strong> version.
+                                </p>
+                                @if($original)
+                                <p class="text-[10px] mt-1">
+                                    <a href="{{ route('admin.posts.edit', $original) }}" class="text-blue-600 underline font-bold">View Original ({{ strtoupper($original->lang_code) }})</a>
+                                </p>
+                                @endif
+                            </div>
+                        @endif
+                    </div>
+                </div>
+                @else
+                    <input type="hidden" name="lang_code" value="{{ $post->lang_code }}">
+                    @if($post->origin_id)
+                         <div class="wp-metabox mb-6 p-3 bg-blue-50 border border-blue-100 rounded-sm">
+                            <p class="text-[11px] text-blue-700">This is a translated version ({{ strtoupper($post->lang_code) }}). Language switching is currently disabled.</p>
+                         </div>
+                    @endif
+                @endif
+
                 <!-- Publish Metabox -->
                 <div class="wp-metabox mb-6" style="margin-bottom: 24px !important; margin-top: 10px !important;">
                     <div class="wp-metabox-header flex justify-between items-center cursor-pointer">
@@ -162,8 +254,7 @@
                     </div>
                     <div class="wp-metabox-content" style="padding: 10px;">
                         <div class="flex justify-between items-center mb-3">
-                            <button type="button" id="save-draft-btn" class="wp-btn-secondary text-[13px] bg-[#f6f7f7]">Save Draft</button>
-                            <a href="{{ url($post->slug) }}" target="_blank" class="wp-btn-secondary text-[13px] bg-[#f6f7f7]">Preview</a>
+                            <button type="button" id="save-draft-btn" formnovalidate class="wp-btn-secondary text-[13px] bg-[#f6f7f7]">Save Draft</button>
                         </div>
                         <div class="text-[13px] text-[#646970] space-y-3 mb-4">
                             <!-- Status -->
@@ -242,7 +333,7 @@
                             @endphp
                             @forelse($allCategories as $category)
                                 <label class="flex items-center text-[13px] text-[#2c3338] mb-1">
-                                    <input type="checkbox" name="categories[]" value="{{ $category->id }}" {{ in_array($category->id, $selectedCatIds) ? 'checked' : '' }} class="mr-2 rounded-sm border-[#8c8f94] text-[#2271b1]">
+                                    <input type="checkbox" name="categories[]" value="{{ $category->id }}" {{ in_array($category->id, old('categories', $selectedCatIds)) ? 'checked' : '' }} class="mr-2 rounded-sm border-[#8c8f94] text-[#2271b1]">
                                     {{ $category->name }}
                                 </label>
                             @empty
@@ -291,7 +382,7 @@
                                             @if(in_array($term->id, $taxonomy->selected_ids ?? []))
                                                 <span class="inline-flex items-center bg-[#f0f0f1] text-[#2c3338] text-[12px] px-2 py-0.5 rounded-sm border border-[#dfdfdf]">
                                                     {{ $term->name }} 
-                                                    <button type="button" class="ml-1 text-[#b32d2e] font-bold remove-cpt-tag">×</button>
+                                                    <button type="button" class="ml-1 text-[#b32d2e] font-bold remove-cpt-tag" data-id="{{ $term->id }}">×</button>
                                                 </span>
                                             @endif
                                         @endforeach
@@ -312,9 +403,9 @@
                                         <label class="flex items-center text-[13px] text-[#2c3338] mb-1">
                                             @php $isChecked = in_array($term->id, $taxonomy->selected_ids ?? []); @endphp
                                             @if(isset($taxonomy->is_builtin) && $taxonomy->is_builtin)
-                                                <input type="checkbox" name="categories[]" value="{{ $term->id }}" {{ $isChecked ? 'checked' : '' }} class="mr-2 rounded-sm border-[#8c8f94] text-[#2271b1]">
+                                                <input type="checkbox" name="categories[]" value="{{ $term->id }}" {{ in_array($term->id, old('categories', $taxonomy->selected_ids ?? [])) ? 'checked' : '' }} class="mr-2 rounded-sm border-[#8c8f94] text-[#2271b1]">
                                             @else
-                                                <input type="checkbox" name="tax_terms[]" value="{{ $term->id }}" {{ $isChecked ? 'checked' : '' }} class="mr-2 rounded-sm border-[#8c8f94] text-[#2271b1]">
+                                                <input type="checkbox" name="tax_terms[]" value="{{ $term->id }}" {{ in_array($term->id, old('tax_terms', $taxonomy->selected_ids ?? [])) ? 'checked' : '' }} class="mr-2 rounded-sm border-[#8c8f94] text-[#2271b1]">
                                             @endif
                                             {{ $term->name }}
                                         </label>
@@ -360,57 +451,45 @@
                         <p class="text-[11px] text-[#646970] mt-1 italic">Separate tags with commas</p>
                         
                         <div id="tags-container" class="mt-3 flex flex-wrap gap-2"></div>
-                        <input type="hidden" name="tags" id="tags-hidden-input" value="{{ implode(',', $post->tags->pluck('name')->toArray()) }}">
+                        <input type="hidden" name="tags" id="tags-hidden-input" value="{{ old('tags', implode(',', $post->tags->pluck('name')->toArray())) }}">
                         
-                        <a href="#" class="text-[#2271b1] text-[12px] underline block mt-4">Choose from the most used tags</a>
+                        {{-- Removed: Choose from most used tags --}}
                     </div>
                 </div>
                 @endif
 
-                @if($type === 'page')
-                <!-- Page Attributes Metabox -->
-                <div class="wp-metabox mb-6" style="margin-bottom: 24px !important; margin-top: 10px !important;">
-                    <div class="wp-metabox-header flex justify-between items-center cursor-pointer">
-                        <span>Page Attributes</span> <svg class="w-4 h-4 text-[#646970]" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 15l7-7 7 7"/></svg>
-                    </div>
-                    <div class="wp-metabox-content p-3 space-y-3">
-                        <div>
-                            <label class="block text-[13px] font-bold mb-1">Parent</label>
-                            <select name="parent_id" class="wp-input w-full text-[13px] h-8 py-0">
-                                <option value="">(no parent)</option>
-                                @foreach($pages as $p)
-                                    <option value="{{ $p->id }}" {{ $post->parent_id == $p->id ? 'selected' : '' }}>{{ $p->title }}</option>
-                                @endforeach
-                            </select>
-                        </div>
-                        <div>
-                            <label class="block text-[13px] font-bold mb-1">Template</label>
-                            <select name="template" class="wp-input w-full text-[13px] h-8 py-0">
-                                <option value="default" {{ $post->template == 'default' || empty($post->template) ? 'selected' : '' }}>Default template</option>
-                                <option value="site-width" {{ $post->template == 'site-width' ? 'selected' : '' }}>Site width</option>
-                                <option value="full-width" {{ $post->template == 'full-width' ? 'selected' : '' }}>100% width</option>
-                            </select>
-                        </div>
-                        <div>
-                            <label class="block text-[13px] font-bold mb-1">Order</label>
-                            <input type="number" name="menu_order" value="{{ $post->menu_order ?? 0 }}" class="wp-input w-16 text-[13px] h-8 px-2">
-                        </div>
-                    </div>
-                </div>
-                @endif
-
-                @if(in_array('featured_image', $supports))
+                @if(in_array('featured_image', $supports) || in_array('thumbnail', $supports))
                 <!-- Featured Image -->
                 <div class="wp-metabox mb-6" style="margin-bottom: 24px !important; margin-top: 10px !important;">
                     <div class="wp-metabox-header flex justify-between items-center cursor-pointer"><span>Featured image</span> <svg class="w-4 h-4 text-[#646970]" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 15l7-7 7 7"/></svg></div>
                     <div class="wp-metabox-content">
-                        <div id="fi-preview-container" class="{{ $post->featured_image ? '' : 'hidden' }} mb-3">
-                            <img id="fi-preview" src="{{ $post->featured_image ? asset('storage/'.$post->featured_image) : '' }}" class="max-w-full h-auto border border-gray-200 p-1 bg-white cursor-pointer">
+                        @php $fi = old('featured_image', $post->featured_image); @endphp
+                        <div id="fi-preview-container" class="{{ $fi ? '' : 'hidden' }} mb-3">
+                            <img id="fi-preview" src="{{ $fi ? asset('storage/'.$fi) : '' }}" class="max-w-full h-auto border border-gray-200 p-1 bg-white cursor-pointer">
                         </div>
-                        <a href="#" id="set-fi-btn" class="text-[#2271b1] text-[13px] underline {{ $post->featured_image ? 'hidden' : '' }}">Set featured image</a>
-                        <a href="#" id="remove-fi-btn" class="text-[#b32d2e] text-[13px] underline {{ $post->featured_image ? '' : 'hidden' }} mt-2">Remove featured image</a>
-                        <input type="hidden" name="featured_image" id="fi-path-hidden" value="{{ $post->featured_image }}">
-                        <input type="hidden" name="remove_featured_image" id="remove-fi-hidden" value="0">
+                        <a href="#" id="set-fi-btn" class="text-[#2271b1] text-[13px] underline {{ $fi ? 'hidden' : '' }}">Set featured image</a>
+                        <a href="#" id="remove-fi-btn" class="text-[#b32d2e] text-[13px] underline {{ $fi ? '' : 'hidden' }} mt-2">Remove featured image</a>
+                        <input type="hidden" name="featured_image" id="fi-path-hidden" value="{{ $fi }}">
+                        <input type="hidden" name="remove_featured_image" id="remove-fi-hidden" value="{{ old('remove_featured_image', '0') }}">
+                    </div>
+                </div>
+
+                <!-- Gallery -->
+                <div class="wp-metabox mb-6" style="margin-bottom: 24px !important; margin-top: 10px !important;">
+                    <div class="wp-metabox-header flex justify-between items-center cursor-pointer"><span>Gallery</span> <svg class="w-4 h-4 text-[#646970]" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 15l7-7 7 7"/></svg></div>
+                    <div class="wp-metabox-content">
+                        <div id="gallery-container" class="grid grid-cols-3 gap-2 mb-3">
+                            @if($post->gallery && is_array($post->gallery))
+                                @foreach($post->gallery as $image)
+                                    <div class="gallery-item relative group aspect-square border border-gray-200 p-1 bg-white cursor-pointer" data-path="{{ $image }}">
+                                        <img src="{{ asset('storage/'.$image) }}" class="w-full h-full object-cover">
+                                        <button type="button" class="absolute top-0 right-0 bg-red-600 text-white w-5 h-5 flex items-center justify-center text-[10px] opacity-0 group-hover:opacity-100 transition-opacity remove-gallery-img">×</button>
+                                        <input type="hidden" name="gallery[]" value="{{ $image }}">
+                                    </div>
+                                @endforeach
+                            @endif
+                        </div>
+                        <a href="#" id="add-gallery-btn" class="text-[#2271b1] text-[13px] underline">+ Add images to gallery</a>
                     </div>
                 </div>
                 @endif
@@ -429,9 +508,10 @@
             selector: '#wp-editor',
             menubar: false,
             height: 450,
+            width: '100%',
             plugins: ['lists', 'link', 'image', 'preview', 'code', 'fullscreen', 'media', 'table', 'wordcount'],
             toolbar: 'formatselect | bold italic underline strikethrough | blockquote | alignleft aligncenter alignright alignjustify | bullist numlist outdent indent | link image media | code fullscreen',
-            content_style: 'body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Oxygen-Sans, Ubuntu, Cantarell, "Helvetica Neue", sans-serif; font-size:14px }',
+            content_style: 'body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Oxygen-Sans, Ubuntu, Cantarell, "Helvetica Neue", sans-serif; font-size:14px; padding: 20px; }',
             branding: false,
             image_title: true,
             automatic_uploads: true,
@@ -449,7 +529,7 @@
         const viewSpan = document.getElementById('permalink-view');
         const editSpan = document.getElementById('permalink-edit');
         const statusHidden = document.getElementById('status-hidden');
-        let originalSlug = slugInput.value;
+        let originalSlug = slugInput ? slugInput.value : '';
 
         const permalinkContainer = document.getElementById('permalink-container');
         
@@ -457,43 +537,49 @@
             return text.toString().toLowerCase().replace(/\s+/g, '-').replace(/[^\w\-]+/g, '').replace(/\-\-+/g, '-').replace(/^-+/, '').replace(/-+$/, '');
         }
 
-        if (permalinkContainer && titleInput && slugInput) {
-            titleInput.addEventListener('input', function() {
-                // Only auto-update slug if it was empty or matched the previous generated slug
-                if (slugInput.value === generateSlug(this.value.substring(0, this.value.length - 1))) {
+        const isHome = permalinkContainer?.getAttribute('data-is-home') === '1';
+
+        if (permalinkContainer && titleInput && slugInput && !isHome) {
+            titleInput.addEventListener('blur', function() {
+                if (this.value && !slugInput.value) {
                     let newSlug = generateSlug(this.value);
                     slugInput.value = newSlug;
-                    slugDisplay.innerText = newSlug;
+                    if (slugDisplay) slugDisplay.innerText = newSlug;
                     originalSlug = newSlug;
+                }
+                
+                if (this.value) {
+                    permalinkContainer?.classList.remove('hidden');
+                    permalinkContainer?.classList.add('flex');
                 }
             });
             document.getElementById('edit-slug-btn')?.addEventListener('click', function() {
-                viewSpan.classList.add('hidden');
-                editSpan.classList.remove('hidden');
-                slugInput.focus();
+                viewSpan?.classList.add('hidden');
+                editSpan?.classList.remove('hidden');
+                slugInput?.focus();
             });
 
             document.getElementById('ok-slug-btn')?.addEventListener('click', function() {
                 let newSlug = slugInput.value.toLowerCase().replace(/\s+/g, '-').replace(/[^\w\-]+/g, '');
                 slugInput.value = newSlug;
-                slugDisplay.innerText = newSlug;
+                if (slugDisplay) slugDisplay.innerText = newSlug;
                 originalSlug = newSlug;
-                viewSpan.classList.remove('hidden');
-                editSpan.classList.add('hidden');
+                viewSpan?.classList.remove('hidden');
+                editSpan?.classList.add('hidden');
             });
 
             document.getElementById('cancel-slug-btn')?.addEventListener('click', (e) => { 
                 e.preventDefault(); 
                 slugInput.value = originalSlug; 
-                viewSpan.classList.remove('hidden'); 
-                editSpan.classList.add('hidden'); 
+                viewSpan?.classList.remove('hidden'); 
+                editSpan?.classList.add('hidden'); 
             });
         }
 
         // Save Draft Logic Override
-        document.getElementById('save-draft-btn').addEventListener('click', function() {
-            statusHidden.value = 'draft';
-            document.getElementById('post-form').submit();
+        document.getElementById('save-draft-btn')?.addEventListener('click', function() {
+            if (statusHidden) statusHidden.value = 'draft';
+            document.getElementById('post-form')?.submit();
         });
 
         // Featured Image UI with Modal
@@ -504,31 +590,67 @@
         const fiPathHidden = document.getElementById('fi-path-hidden');
         const removeHidden = document.getElementById('remove-fi-hidden');
 
-        setFiBtn.addEventListener('click', (e) => { 
+        setFiBtn?.addEventListener('click', (e) => { 
             e.preventDefault(); 
             window.openMediaModal(function(media) {
-                fiPathHidden.value = media.path;
-                fiPreview.src = `/storage/${media.path}`;
-                fiPreviewContainer.classList.remove('hidden');
-                setFiBtn.classList.add('hidden');
-                removeFiBtn.classList.remove('hidden');
-                removeHidden.value = "0";
+                if (fiPathHidden) fiPathHidden.value = media.path;
+                if (fiPreview) fiPreview.src = `/storage/${media.path}`;
+                fiPreviewContainer?.classList.remove('hidden');
+                setFiBtn?.classList.add('hidden');
+                removeFiBtn?.classList.remove('hidden');
+                if (removeHidden) removeHidden.value = "0";
             });
         });
 
-        fiPreview.addEventListener('click', (e) => { 
+        fiPreview?.addEventListener('click', (e) => { 
             e.preventDefault(); 
-            setFiBtn.click();
+            setFiBtn?.click();
         });
 
-        removeFiBtn.addEventListener('click', (e) => {
+        removeFiBtn?.addEventListener('click', (e) => {
             e.preventDefault();
-            fiPathHidden.value = '';
-            removeHidden.value = "1";
-            fiPreviewContainer.classList.add('hidden');
-            setFiBtn.classList.remove('hidden');
-            removeFiBtn.classList.add('hidden');
+            if (fiPathHidden) fiPathHidden.value = '';
+            if (removeHidden) removeHidden.value = "1";
+            fiPreviewContainer?.classList.add('hidden');
+            setFiBtn?.classList.remove('hidden');
+            removeFiBtn?.classList.add('hidden');
         });
+
+        // Gallery Logic
+        const addGalleryBtn = document.getElementById('add-gallery-btn');
+        const galleryContainer = document.getElementById('gallery-container');
+
+        addGalleryBtn?.addEventListener('click', (e) => {
+            e.preventDefault();
+            window.openMediaModal(function(mediaItems) {
+                const items = Array.isArray(mediaItems) ? mediaItems : [mediaItems];
+                
+                items.forEach(media => {
+                    // Check if already in gallery
+                    const existing = galleryContainer.querySelector(`.gallery-item[data-path="${media.path}"]`);
+                    if (existing) return;
+
+                    const item = document.createElement('div');
+                    item.className = "gallery-item relative group aspect-square border border-gray-200 p-1 bg-white cursor-pointer";
+                    item.setAttribute('data-path', media.path);
+                    item.innerHTML = `
+                        <img src="/storage/${media.path}" class="w-full h-full object-cover">
+                        <button type="button" class="absolute top-0 right-0 bg-red-600 text-white w-5 h-5 flex items-center justify-center text-[10px] opacity-0 group-hover:opacity-100 transition-opacity remove-gallery-img">×</button>
+                        <input type="hidden" name="gallery[]" value="${media.path}">
+                    `;
+                    galleryContainer.appendChild(item);
+                });
+            }, { multiple: true });
+        });
+
+        // Gallery Container click
+        galleryContainer?.addEventListener('click', (e) => {
+            if (e.target.classList.contains('remove-gallery-img')) {
+                e.target.closest('.gallery-item').remove();
+            }
+        });
+
+
 
 
         // Publish Metabox Logic
@@ -571,108 +693,131 @@
                 document.getElementById('main-publish-btn').innerText = 'Schedule';
                 statusHidden.value = 'scheduled';
                 document.getElementById('status-display-text').innerText = 'Scheduled';
+                // Update select UI too
+                const statusSelectUI = document.getElementById('status-select-ui');
+                if (statusSelectUI) statusSelectUI.value = 'scheduled';
             } else {
                 document.getElementById('main-publish-btn').innerText = 'Update';
                 if (statusHidden.value === 'scheduled') {
                     statusHidden.value = 'published';
                     document.getElementById('status-display-text').innerText = 'Published';
+                    const statusSelectUI = document.getElementById('status-select-ui');
+                    if (statusSelectUI) statusSelectUI.value = 'published';
                 }
             }
             
             document.getElementById('published-at-hidden').value = `${yy}-${mm}-${dd} ${hr}:${min}:00`;
             document.getElementById('publish-edit').classList.add('hidden');
         });
-        // Taxonomy & Categories Quick Add Logic
+        // Combined Click Events Delegation
         document.addEventListener('click', function(e) {
+            // 1. Toggle Quick Add Category Box
             const toggleBtn = e.target.closest('.toggle-quick-add');
             if (toggleBtn) {
                 e.preventDefault();
                 const metabox = toggleBtn.closest('.wp-metabox-content');
                 if (metabox) {
-                    metabox.querySelector('.quick-add-term-box').classList.toggle('hidden');
+                    const box = metabox.querySelector('.quick-add-term-box');
+                    if (box) box.classList.toggle('hidden');
                 }
+                return;
+            }
+
+            // 2. Add Category/Term AJAX
+            const addTermBtn = e.target.closest('.add-term-ajax-btn');
+            if (addTermBtn) {
+                e.preventDefault();
+                addTermAjax(addTermBtn);
+                return;
+            }
+
+            // 3. Add CPT Tag
+            const addTagBtn = e.target.closest('.add-cpt-tag-btn');
+            if (addTagBtn) {
+                e.preventDefault();
+                const metabox = addTagBtn.closest('.wp-metabox-content');
+                const input = metabox.querySelector('.cpt-tag-input');
+                addCPTTag(input);
+                return;
+            }
+
+            // 4. Remove CPT Tag
+            const removeTagBtn = e.target.closest('.remove-cpt-tag');
+            if (removeTagBtn) {
+                e.preventDefault();
+                const bubble = removeTagBtn.closest('span');
+                const id = removeTagBtn.getAttribute('data-id');
+                const metabox = removeTagBtn.closest('.wp-metabox-content');
+                if (id) {
+                    const hiddenInput = metabox.querySelector(`.cpt-tags-hidden-inputs input[value="${id}"]`);
+                    if (hiddenInput) hiddenInput.remove();
+                }
+                bubble.remove();
+                return;
             }
         });
 
-        document.addEventListener('click', async function(e) {
-            const btn = e.target.closest('.add-term-ajax-btn');
-            if (btn) {
-                const metabox = btn.closest('.wp-metabox-content');
-                const nameInput = metabox.querySelector('.new-term-name');
-                const parentSelect = metabox.querySelector('.new-term-parent');
-                const name = nameInput.value;
-                const parentId = (parentSelect && parentSelect.value !== '') ? parentSelect.value : null;
-                const taxonomy = btn.getAttribute('data-taxonomy');
-                const cpt = btn.getAttribute('data-cpt');
+        async function addTermAjax(btn) {
+            const metabox = btn.closest('.wp-metabox-content');
+            const nameInput = metabox.querySelector('.new-term-name');
+            const parentSelect = metabox.querySelector('.new-term-parent');
+            const name = nameInput.value;
+            const parentId = (parentSelect && parentSelect.value !== '') ? parentSelect.value : null;
+            const taxonomy = btn.getAttribute('data-taxonomy');
+            const cpt = btn.getAttribute('data-cpt');
 
-                if (!name) return alert('Please enter a name');
+            if (!name) return window.showToast('Please enter a name', 'warning');
 
-                btn.disabled = true;
-                btn.innerText = 'Adding...';
+            btn.disabled = true;
+            btn.innerText = 'Adding...';
 
-                try {
-                    const isBuiltin = btn.getAttribute('data-is-builtin') === 'true';
+            try {
+                const isBuiltin = btn.getAttribute('data-is-builtin') === 'true';
+                let url = isBuiltin ? "{{ route('admin.categories.ajax') }}" : "{{ route('admin.acpt.terms.ajax') }}";
 
-                    let url = isBuiltin
-                               ? "{{ route('admin.categories.ajax') }}" 
-                               : "{{ route('admin.acpt.terms.ajax') }}";
+                const response = await fetch(url, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json', 'X-CSRF-TOKEN': '{{ csrf_token() }}', 'Accept': 'application/json' },
+                    body: JSON.stringify({ name: name, parent_id: parentId, taxonomy_slug: taxonomy, cpt_slug: cpt })
+                });
 
-                    const payload = { 
-                        name: name, 
-                        parent_id: parentId,
-                        taxonomy_slug: taxonomy,
-                        cpt_slug: cpt
-                    };
+                const data = await response.json();
+                if (response.ok && data.id) {
+                    const checklist = metabox.querySelector('.h-36') || metabox.querySelector('.h-44');
+                    const noMsg = checklist.querySelector('.no-terms-msg');
+                    if (noMsg) noMsg.remove();
 
-                    const response = await fetch(url, {
-                        method: 'POST',
-                        headers: {
-                            'Content-Type': 'application/json',
-                            'X-CSRF-TOKEN': '{{ csrf_token() }}',
-                            'Accept': 'application/json'
-                        },
-                        body: JSON.stringify(payload)
-                    });
-
-                    const data = await response.json();
-                    if (response.ok && data.id) {
-                        // Add to checklist
-                        const checklist = metabox.querySelector('.h-36') || metabox.querySelector('.h-44');
-                        const noMsg = checklist.querySelector('.no-terms-msg');
-                        if (noMsg) noMsg.remove();
-
-                        const label = document.createElement('label');
-                        label.className = "flex items-center text-[13px] text-[#2c3338] mb-1";
-                        
-                        const inputName = isBuiltin ? 'categories[]' : 'tax_terms[]';
-                        let displayName = data.name;
-                        if (parentId) {
-                            displayName = '— ' + data.name;
-                        }
-                        
-                        label.innerHTML = `<input type="checkbox" name="${inputName}" value="${data.id}" checked class="mr-2 rounded-sm border-[#8c8f94] text-[#2271b1]"> ${displayName}`;
-                        checklist.prepend(label);
-                        
-                        // Add to parent select
+                    const label = document.createElement('label');
+                    label.className = "flex items-center text-[13px] text-[#2c3338] mb-1";
+                    const inputName = isBuiltin ? 'categories[]' : 'tax_terms[]';
+                    let displayName = data.name;
+                    if (parentId) displayName = '— ' + data.name;
+                    
+                    label.innerHTML = `<input type="checkbox" name="${inputName}" value="${data.id}" checked class="mr-2 rounded-sm border-[#8c8f94] text-[#2271b1]"> ${displayName}`;
+                    checklist.prepend(label);
+                    
+                    if (parentSelect) {
                         const option = document.createElement('option');
                         option.value = data.id;
                         option.text = data.name;
-                        if (parentSelect) parentSelect.appendChild(option);
-
-                        nameInput.value = '';
-                        metabox.querySelector('.quick-add-term-box').classList.add('hidden');
-                    } else {
-                        alert(data.message || 'Error adding term');
+                        parentSelect.appendChild(option);
                     }
-                } catch (error) {
-                    alert('Error adding term. Please check the console.');
-                    console.error(error);
-                } finally {
-                    btn.disabled = false;
-                    btn.innerText = 'Add New';
+                    nameInput.value = '';
+                    metabox.querySelector('.quick-add-term-box').classList.add('hidden');
+                    if (typeof window.showToast === 'function') window.showToast('Added successfully');
+                } else {
+                    alert("Error Response: " + JSON.stringify(data));
+                    if (typeof window.showToast === 'function') window.showToast(data?.message || 'Error adding item', 'error');
                 }
+            } catch (error) {
+                alert("JS Catch Error: " + error.message);
+                if (typeof window.showToast === 'function') window.showToast('Error adding item', 'error');
+                console.error(error);
+            } finally {
+                btn.disabled = false;
+                btn.innerText = 'Add New';
             }
-        });
+        }
 
         // CPT Tags Logic
         async function addCPTTag(inputEl) {
@@ -712,43 +857,36 @@
                         input.name = 'tax_terms[]';
                         input.value = data.id;
                         hiddenInputs.appendChild(input);
+                    } else {
+                        if (data.errors) {
+                            let errorMsgs = Object.values(data.errors).flat().join(' ');
+                            if (typeof window.showToast === 'function') window.showToast(errorMsgs, 'error'); else alert(errorMsgs);
+                        } else {
+                            if (typeof window.showToast === 'function') window.showToast(data.message || 'Error adding tag', 'error'); else alert(data.message || 'Error adding tag');
+                        }
                     }
-                } catch (e) { console.error(e); }
+                } catch (e) { 
+                    alert("Tag Add JS Error: " + e.message);
+                    if (typeof window.showToast === 'function') window.showToast('Error adding tag', 'error');
+                    console.error(e); 
+                }
             }
             inputEl.value = '';
         }
 
-        document.addEventListener('keydown', function(e) {
-            if (e.target.classList.contains('cpt-tag-input') && (e.key === ',' || e.key === 'Enter')) {
-                if (e.key === 'Enter') e.preventDefault();
-                addCPTTag(e.target);
-            }
-        });
+        // CPT Tags: Keydown listener removed as per request (only Add button allowed)
 
-        document.addEventListener('click', function(e) {
-            if (e.target.classList.contains('add-cpt-tag-btn')) {
-                const input = e.target.closest('.wp-metabox-content').querySelector('.cpt-tag-input');
-                addCPTTag(input);
-            }
-            if (e.target.classList.contains('remove-cpt-tag')) {
-                const bubble = e.target.closest('span');
-                const id = e.target.getAttribute('data-id');
-                const metabox = e.target.closest('.wp-metabox-content');
-                
-                // Remove hidden input
-                const hiddenInput = metabox.querySelector(`.cpt-tags-hidden-inputs input[value="${id}"]`);
-                if (hiddenInput) hiddenInput.remove();
-                
-                bubble.remove();
-            }
-        });
 
         // Standard Tags Logic
+        let tags = [];
         const tagInput = document.getElementById('tag-input');
         const tagsContainer = document.getElementById('tags-container');
         const tagsHidden = document.getElementById('tags-hidden-input');
         const addTagBtn = document.getElementById('add-tag-btn');
-        let tags = (tagsHidden && tagsHidden.value) ? tagsHidden.value.split(',') : [];
+        if (tagsHidden && tagsHidden.value && tags.length === 0) {
+            tags = tagsHidden.value.split(',').map(t => t.trim()).filter(t => t);
+            renderTags();
+        }
 
         function renderTags() {
             if (!tagsContainer || !tagsHidden) return;
@@ -768,6 +906,7 @@
         };
 
         function addTagsFromInput() {
+            if (!tagInput) return;
             const val = tagInput.value.trim();
             if (!val) return;
             const newTags = val.split(',').map(t => t.trim()).filter(t => t && !tags.includes(t));
@@ -777,12 +916,8 @@
         }
 
         addTagBtn?.addEventListener('click', addTagsFromInput);
-        tagInput?.addEventListener('keydown', function(e) {
-            if (e.key === 'Enter') {
-                e.preventDefault();
-                addTagsFromInput();
-            }
-        });
+        // Standard Tags: Keydown listener removed as per request (only Add button allowed)
+
 
         // Editor Toggle Logic
         const richEditorBtn = document.getElementById('editor-mode-rich');
@@ -819,5 +954,82 @@
 
         // Initialize Tags
         renderTags();
+
+        // Language selector logic to hide current lang from clone list
+        const langSelect = document.querySelector('select[name="lang_code"]');
+        if (langSelect) {
+            const updateCloneList = () => {
+                const selectedLang = langSelect.value;
+                document.querySelectorAll('#multi-lang-list label').forEach(label => {
+                    if (label.classList.contains(`lang-option-${selectedLang}`)) {
+                        label.classList.add('hidden');
+                        label.querySelector('input').checked = false;
+                    } else {
+                        label.classList.remove('hidden');
+                        label.querySelector('input').checked = false; // In edit, don't auto check to avoid accidental clones
+                    }
+                });
+            };
+            langSelect.addEventListener('change', updateCloneList);
+            updateCloneList(); // Initial run
+        }
+
+        // --- Client Side Validation ---
+        function validatePostForm(e) {
+            let isValid = true;
+            const titleInput = document.getElementById('title-input');
+            const postType = "{{ $post->type ?? 'post' }}";
+            
+            // Clear previous errors
+            titleInput.classList.remove('border-[#d63638]', 'ring-1', 'ring-[#d63638]');
+            
+            if (!titleInput.value.trim()) {
+                isValid = false;
+                titleInput.classList.add('border-[#d63638]', 'ring-1', 'ring-[#d63638]');
+                titleInput.focus();
+                window.showToast('Please enter a title before updating.', 'error');
+            }
+            
+            // Product Specific Validation
+            if (isValid && postType === 'product') {
+                const priceInput = document.getElementById('regular_price');
+                const salePriceInput = document.getElementById('sale_price');
+                
+                if (priceInput) priceInput.classList.remove('border-[#d63638]', 'ring-1', 'ring-[#d63638]');
+                if (salePriceInput) salePriceInput.classList.remove('border-[#d63638]', 'ring-1', 'ring-[#d63638]');
+
+                if (priceInput && !priceInput.value.trim()) {
+                    isValid = false;
+                    priceInput.classList.add('border-[#d63638]', 'ring-1', 'ring-[#d63638]');
+                    priceInput.focus();
+                    window.showToast('Please enter a regular price for the product.', 'error');
+                } else if (salePriceInput && salePriceInput.value.trim()) {
+                    const price = parseFloat(priceInput.value);
+                    const salePrice = parseFloat(salePriceInput.value);
+                    
+                    if (isNaN(salePrice)) {
+                        isValid = false;
+                        salePriceInput.classList.add('border-[#d63638]', 'ring-1', 'ring-[#d63638]');
+                        window.showToast('Sale price must be a number.', 'error');
+                    } else if (salePrice >= price) {
+                        isValid = false;
+                        salePriceInput.classList.add('border-[#d63638]', 'ring-1', 'ring-[#d63638]');
+                        salePriceInput.focus();
+                        window.showToast('Sale price must be less than the regular price.', 'error');
+                    }
+                }
+            }
+
+            if (!isValid && e) {
+                e.preventDefault();
+            }
+            return isValid;
+        }
+
+        document.getElementById('post-form')?.addEventListener('submit', function(e) {
+            if (!validatePostForm(e)) {
+                return false;
+            }
+        });
     </script>
 </x-cms-dashboard::layouts.admin>

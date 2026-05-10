@@ -1,5 +1,6 @@
 <x-cms-dashboard::layouts.admin>
     <x-slot name="title">Roles - Lazy CMS</x-slot>
+    <x-cms-dashboard::admin.delete-modal />
 
     <div class="px-2">
         <div class="flex justify-between items-center mb-4">
@@ -49,9 +50,9 @@
 
                                     @if(!$isSystemRole && $canManage)
                                         <span class="text-[#dcdcde]">|</span>
-                                        <form action="{{ route('admin.roles.destroy', $role->id) }}" method="POST" class="inline">
+                                        <form id="delete-role-{{ $role->id }}" action="{{ route('admin.roles.destroy', $role->id) }}" method="POST" class="inline">
                                             @csrf @method('DELETE')
-                                            <button type="submit" class="text-[#b32d2e] hover:text-[#8a2424]" onclick="return confirm('Are you sure?')">Delete</button>
+                                            <button type="button" class="text-[#b32d2e] hover:text-[#8a2424]" onclick="confirmRoleDelete({{ $role->id }})">Delete</button>
                                         </form>
                                     @endif
                                 </div>
@@ -65,4 +66,18 @@
             </table>
         </div>
     </div>
+    <script>
+        window.confirmRoleDelete = async function(id) {
+            const confirmed = await window.lazyConfirm({
+                title: 'Delete Role',
+                message: 'Are you sure you want to delete this role? This action cannot be undone and may affect users assigned to this role.',
+                confirmText: 'Delete Role',
+                isDanger: true
+            });
+
+            if (confirmed) {
+                document.getElementById(`delete-role-${id}`).submit();
+            }
+        };
+    </script>
 </x-cms-dashboard::layouts.admin>

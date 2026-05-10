@@ -17,6 +17,7 @@ return new class extends Migration
             $table->json('post_types')->nullable(); // JSON array of CPT slugs it applies to
             $table->boolean('hierarchical')->default(true);
             $table->boolean('is_active')->default(true);
+            $table->softDeletes();
             $table->timestamps();
         });
     }

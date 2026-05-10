@@ -107,7 +107,7 @@
                                 </td>
                                 <td class="wp-table-cell text-[#646970]">{{ $term->description ?: '—' }}</td>
                                 <td class="wp-table-cell text-[#646970]">{{ $term->slug }}</td>
-                                <td class="wp-table-cell text-right">—</td>
+                                <td class="wp-table-cell text-right"><a href="{{ route('admin.posts.index', ['type' => $cptSlug, 'term_id' => $term->id]) }}" class="text-[#2271b1] font-semibold">{{ $term->posts_count ?? 0 }}</a></td>
                             </tr>
                         @empty
                             <tr>

@@ -11,11 +11,6 @@
         </div>
     @endif
 
-    @if($errors->any())
-        <div class="bg-[#fff] border-l-4 border-[#d63638] shadow-[0_1px_1px_rgba(0,0,0,.04)] p-3 mb-4 rounded-sm text-[13px]">
-            <p><strong>Error:</strong> Please check the fields.</p>
-        </div>
-    @endif
 
     <form action="{{ route('admin.posts.store') }}" method="POST" id="post-form" enctype="multipart/form-data">
         @csrf
@@ -28,18 +23,33 @@
                 @if(in_array('title', $supports))
                 <div class="mb-4">
                     <input type="text" name="title" id="title-input" value="{{ old('title') }}" 
-                           class="w-full text-[1.7em] leading-normal border border-[#8c8f94] rounded-sm py-[3px] px-[8px] focus:ring-[#2271b1] focus:border-[#2271b1] shadow-none m-0 bg-white" 
-                           placeholder="Add title" required>
+                           class="w-full text-[1.7em] leading-normal border @error('title') border-[#d63638] @else border-[#8c8f94] @enderror rounded-sm py-[3px] px-[8px] focus:ring-[#2271b1] focus:border-[#2271b1] shadow-none m-0 bg-white" 
+                           placeholder="Add title">
+                    @error('title')
+                        <p class="text-[#d63638] text-[12px] mt-1">{{ $message }}</p>
+                    @enderror
                     
                     @if(!isset($postType) || $postType->is_public)
                     <div id="permalink-container" class="mt-2 text-[13px] {{ old('title') ? 'flex' : 'hidden' }} items-center font-medium">
                         <span class="text-[#646970] mr-1">Permalink:</span>
                         <span id="permalink-view">
-                            <a id="permalink-full-link" href="#" target="_blank" class="text-[#2271b1] underline font-medium">{{ url('/') }}/<span id="permalink-slug-display" class="text-[#2271b1]">{{ old('slug') }}</span>/</a>
-                            <button type="button" id="edit-slug-btn" class="wp-btn-secondary bg-[#f6f7f7] text-[12px] h-[24px] ml-1 font-medium">Edit</button>
+                            @php 
+                                $isMultiLang = get_cms_option('multi_language_enabled', 0);
+                                $selectedLang = request('lang', get_cms_option('default_language', 'en'));
+                                
+                                $baseUrl = url('/');
+                                if ($isMultiLang && $selectedLang !== 'en') {
+                                    $baseUrl = url($selectedLang);
+                                }
+                                $baseUrl = rtrim($baseUrl, '/') . '/';
+                                
+                                if($type !== 'page') $baseUrl .= $type . '/';
+                            @endphp
+                            <a id="permalink-full-link" href="#" target="_blank" class="text-[#2271b1] underline font-medium"><span id="permalink-base-display">{{ $baseUrl }}</span><span id="permalink-slug-display" class="text-[#2271b1]">{{ old('slug') }}</span>/</a>
+                            <button type="button" id="edit-slug-btn" class="wp-btn-secondary bg-[#f6f7f7] text-[12px] h-[24px] ml-1 font-medium text-[#2271b1] border-[#c3c4c7]">Edit</button>
                         </span>
                         <span id="permalink-edit" class="hidden items-center">
-                            <span class="text-[#646970] font-medium">{{ url('/') }}/</span>
+                            <span class="text-[#646970] font-medium" id="permalink-base-edit">{{ $baseUrl }}</span>
                             <input type="text" name="slug" id="slug-input" value="{{ old('slug') }}" class="wp-input text-[13px] h-[24px] px-1 mx-1 font-medium" style="width: 150px;">/
                             <button type="button" id="ok-slug-btn" class="wp-btn-secondary bg-[#f6f7f7] text-[12px] h-[24px] mx-1 font-medium">OK</button>
                             <a href="#" id="cancel-slug-btn" class="text-[#2271b1] underline ml-1 font-medium">Cancel</a>
@@ -86,7 +96,10 @@
                 <div class="wp-metabox mt-6 mb-6">
                     <div class="wp-metabox-header"><span>Excerpt</span></div>
                     <div class="wp-metabox-content">
-                        <textarea name="excerpt" id="excerpt" rows="3" class="w-full text-[14px] leading-normal border border-[#8c8f94] rounded-sm py-[3px] px-[8px] focus:ring-[#2271b1] focus:border-[#2271b1] shadow-[inset_0_1px_2px_rgba(0,0,0,0.07)] m-0 bg-white">{{ old('excerpt') }}</textarea>
+                        <textarea name="excerpt" id="excerpt" rows="3" class="w-full text-[14px] leading-normal border @error('excerpt') border-[#d63638] @else border-[#8c8f94] @enderror rounded-sm py-[3px] px-[8px] focus:ring-[#2271b1] focus:border-[#2271b1] shadow-[inset_0_1px_2px_rgba(0,0,0,0.07)] m-0 bg-white">{{ old('excerpt') }}</textarea>
+                        @error('excerpt')
+                            <p class="text-[#d63638] text-[12px] mt-1">{{ $message }}</p>
+                        @enderror
                         <p class="text-[12px] text-[#646970] mt-2">Excerpts are optional hand-crafted summaries of your content that can be used in your theme.</p>
                     </div>
                 </div>
@@ -112,15 +125,15 @@
                                     @endif
 
                                     @if($field->type === 'text')
-                                        <input type="text" name="custom_fields[{{ $field->id }}]" class="wp-input w-full" placeholder="" {{ $field->required ? 'required' : '' }}>
+                                        <input type="text" name="custom_fields[{{ $field->id }}]" value="{{ old('custom_fields.'.$field->id) }}" class="wp-input w-full" placeholder="" {{ $field->required ? 'required' : '' }}>
                                     @elseif($field->type === 'textarea')
-                                        <textarea name="custom_fields[{{ $field->id }}]" rows="4" class="wp-input w-full" {{ $field->required ? 'required' : '' }}></textarea>
+                                        <textarea name="custom_fields[{{ $field->id }}]" rows="4" class="wp-input w-full" {{ $field->required ? 'required' : '' }}>{{ old('custom_fields.'.$field->id) }}</textarea>
                                     @elseif($field->type === 'select')
                                         <select name="custom_fields[{{ $field->id }}]" class="wp-input w-full h-8 py-0" {{ $field->required ? 'required' : '' }}>
                                             <option value="">Select an option</option>
                                         </select>
                                     @elseif($field->type === 'wysiwyg')
-                                        <textarea name="custom_fields[{{ $field->id }}]" class="wp-input w-full h-32" {{ $field->required ? 'required' : '' }}></textarea>
+                                        <textarea name="custom_fields[{{ $field->id }}]" class="wp-input w-full h-32" {{ $field->required ? 'required' : '' }}>{{ old('custom_fields.'.$field->id) }}</textarea>
                                     @elseif($field->type === 'image')
                                         <div class="flex items-center gap-4">
                                             <div class="w-20 h-20 bg-[#f0f0f1] border border-[#c3c4c7] rounded-sm flex items-center justify-center overflow-hidden">
@@ -128,10 +141,10 @@
                                                 <svg class="w-8 h-8 text-[#c3c4c7]" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"></path></svg>
                                             </div>
                                             <button type="button" class="wp-btn-secondary h-8 px-4 text-[12px]">Choose Image</button>
-                                            <input type="hidden" name="custom_fields[{{ $field->id }}]" {{ $field->required ? 'required' : '' }}>
+                                            <input type="hidden" name="custom_fields[{{ $field->id }}]" value="{{ old('custom_fields.'.$field->id) }}" {{ $field->required ? 'required' : '' }}>
                                         </div>
                                     @else
-                                        <input type="text" name="custom_fields[{{ $field->id }}]" class="wp-input w-full" {{ $field->required ? 'required' : '' }}>
+                                        <input type="text" name="custom_fields[{{ $field->id }}]" value="{{ old('custom_fields.'.$field->id) }}" class="wp-input w-full" {{ $field->required ? 'required' : '' }}>
                                     @endif
                                 </div>
                                 @endforeach
@@ -140,11 +153,57 @@
                     </div>
                     @endforeach
                 @endif
+
+                @include('cms-dashboard::admin.posts.partials.product-data', ['post' => $post, 'type' => $type])
+                @include('cms-dashboard::admin.posts.partials.seo', ['post' => new \Acme\CmsDashboard\Models\Post()])
             </div>
 
             <!-- Right Column: Metaboxes -->
             <div class="w-full lg:w-[280px] shrink-0 space-y-5">
                 
+                <!-- Multilingual Metabox -->
+                @php 
+                    $isMultiLang = get_cms_option('multi_language_enabled', 0);
+                    $activeLanguages = \Acme\CmsDashboard\Models\Language::where('status', true)->get(); 
+                @endphp
+
+                @if($activeLanguages->count() > 1)
+                <div class="wp-metabox mb-6" style="margin-bottom: 24px !important; margin-top: 10px !important;">
+                    <div class="wp-metabox-header"><span>Language</span></div>
+                    <div class="wp-metabox-content p-3">
+                        <div class="mb-3">
+                            <label class="block text-[12px] font-bold text-[#1d2327] mb-1">Post Language</label>
+                            <select name="lang_code" class="wp-input w-full text-[13px] h-8 py-0">
+                                @foreach($activeLanguages as $lang)
+                                    <option value="{{ $lang->code }}" {{ $lang->is_default ? 'selected' : '' }}>
+                                        {{ $lang->flag }} {{ $lang->name }}
+                                    </option>
+                                @endforeach
+                            </select>
+                            <p class="text-[11px] text-gray-500 mt-1">This is the language of the content you are currently writing.</p>
+                        </div>
+
+                        <hr class="my-3 border-gray-100">
+                        <label class="flex items-center text-[13px] font-bold text-[#1d2327] mb-3 cursor-pointer">
+                            <input type="checkbox" name="make_multilingual_copy" value="1" class="mr-2 rounded-sm border-[#8c8f94] text-[#2271b1]" onchange="document.getElementById('multi-lang-list').classList.toggle('hidden', !this.checked)">
+                            Make a copy for other languages?
+                        </label>
+
+                        <div id="multi-lang-list" class="hidden space-y-2 pl-6 border-l-2 border-gray-100">
+                            <p class="text-[11px] text-gray-500 mb-2">Select languages to clone this post to:</p>
+                            @foreach($activeLanguages as $lang)
+                                <label class="flex items-center text-[12px] text-[#2c3338] lang-option-{{ $lang->code }}">
+                                    <input type="checkbox" name="copy_to_languages[]" value="{{ $lang->code }}" checked class="mr-2 rounded-sm border-[#8c8f94] text-[#2271b1]">
+                                    <span class="mr-1">{{ $lang->flag }}</span> {{ $lang->name }}
+                                </label>
+                            @endforeach
+                        </div>
+                    </div>
+                </div>
+                @else
+                    <input type="hidden" name="lang_code" value="{{ get_cms_option('default_language', 'en') }}">
+                @endif
+
                 <!-- Publish Metabox -->
                 <div class="wp-metabox mb-6" style="margin-bottom: 24px !important; margin-top: 10px !important;">
                     <div class="wp-metabox-header flex justify-between items-center cursor-pointer">
@@ -152,8 +211,7 @@
                     </div>
                     <div class="wp-metabox-content" style="padding: 10px;">
                         <div class="flex justify-between items-center mb-3">
-                            <button type="button" id="save-draft-btn" class="wp-btn-secondary text-[13px] bg-[#f6f7f7]">Save Draft</button>
-                            <button type="button" class="wp-btn-secondary text-[13px] bg-[#f6f7f7]">Preview</button>
+                            <button type="button" id="save-draft-btn" formnovalidate class="wp-btn-secondary text-[13px] bg-[#f6f7f7]">Save Draft</button>
                         </div>
                         <div class="text-[13px] text-[#646970] space-y-3 mb-4">
                             <!-- Status -->
@@ -166,6 +224,7 @@
                                             <select id="status-select-ui" class="wp-input text-[13px] py-0 h-[26px] flex-grow">
                                                 <option value="draft">Draft</option>
                                                 <option value="published" selected>Published</option>
+                                                <option value="scheduled">Scheduled</option>
                                             </select>
                                             <button type="button" id="ok-status-btn" class="wp-btn-secondary text-[12px] h-[26px]">OK</button> 
                                         </div>
@@ -224,7 +283,7 @@
                             @php $allCategories = \Acme\CmsDashboard\Models\Category::orderBy('name')->get(); @endphp
                             @forelse($allCategories as $category)
                                 <label class="flex items-center text-[13px] text-[#2c3338] mb-1">
-                                    <input type="checkbox" name="categories[]" value="{{ $category->id }}" class="mr-2 rounded-sm border-[#8c8f94] text-[#2271b1]">
+                                    <input type="checkbox" name="categories[]" value="{{ $category->id }}" {{ in_array($category->id, old('categories', [])) ? 'checked' : '' }} class="mr-2 rounded-sm border-[#8c8f94] text-[#2271b1]">
                                     {{ $category->name }}
                                 </label>
                             @empty
@@ -286,7 +345,7 @@
                                             @if(isset($taxonomy->is_builtin) && $taxonomy->is_builtin)
                                                 <input type="checkbox" name="categories[]" value="{{ $term->id }}" class="mr-2 rounded-sm border-[#8c8f94] text-[#2271b1]">
                                             @else
-                                                <input type="checkbox" name="tax_terms[]" value="{{ $term->id }}" class="mr-2 rounded-sm border-[#8c8f94] text-[#2271b1]">
+                                                <input type="checkbox" name="tax_terms[]" value="{{ $term->id }}" {{ in_array($term->id, old('tax_terms', [])) ? 'checked' : '' }} class="mr-2 rounded-sm border-[#8c8f94] text-[#2271b1]">
                                             @endif
                                             {{ $term->name }}
                                         </label>
@@ -332,56 +391,36 @@
                         <p class="text-[11px] text-[#646970] mt-1 italic">Separate tags with commas</p>
                         
                         <div id="tags-container" class="mt-3 flex flex-wrap gap-2"></div>
-                        <input type="hidden" name="tags" id="tags-hidden-input">
+                        <input type="hidden" name="tags" id="tags-hidden-input" value="{{ old('tags') }}">
                         
-                        <a href="#" class="text-[#2271b1] text-[12px] underline block mt-4">Choose from the most used tags</a>
+                        {{-- Removed: Choose from most used tags --}}
                     </div>
                 </div>
                 @endif
 
-                @if($type === 'page')
-                <!-- Page Attributes Metabox -->
-                <div class="wp-metabox mb-6" style="margin-bottom: 24px !important; margin-top: 10px !important;">
-                    <div class="wp-metabox-header flex justify-between items-center cursor-pointer">
-                        <span>Page Attributes</span> <svg class="w-4 h-4 text-[#646970]" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 15l7-7 7 7"/></svg>
-                    </div>
-                    <div class="wp-metabox-content p-3 space-y-3">
-                        <div>
-                            <label class="block text-[13px] font-bold mb-1">Parent</label>
-                            <select name="parent_id" class="wp-input w-full text-[13px] h-8 py-0">
-                                <option value="">(no parent)</option>
-                                @foreach($pages as $p)
-                                    <option value="{{ $p->id }}">{{ $p->title }}</option>
-                                @endforeach
-                            </select>
-                        </div>
-                        <div>
-                            <label class="block text-[13px] font-bold mb-1">Template</label>
-                            <select name="template" class="wp-input w-full text-[13px] h-8 py-0">
-                                <option value="default" selected>Default template</option>
-                                <option value="site-width">Site width</option>
-                                <option value="full-width">100% width</option>
-                            </select>
-                        </div>
-                        <div>
-                            <label class="block text-[13px] font-bold mb-1">Order</label>
-                            <input type="number" name="menu_order" value="0" class="wp-input w-16 text-[13px] h-8 px-2">
-                        </div>
-                    </div>
-                </div>
-                @endif
 
-                @if(in_array('featured_image', $supports))
+                @if(in_array('featured_image', $supports) || in_array('thumbnail', $supports))
                 <!-- Featured Image -->
                 <div class="wp-metabox mb-6" style="margin-bottom: 24px !important; margin-top: 10px !important;">
                     <div class="wp-metabox-header flex justify-between items-center cursor-pointer"><span>Featured image</span> <svg class="w-4 h-4 text-[#646970]" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 15l7-7 7 7"/></svg></div>
                     <div class="wp-metabox-content">
-                        <div id="fi-preview-container" class="hidden mb-3">
-                            <img id="fi-preview" src="" class="max-w-full h-auto border border-gray-200 p-1 bg-white cursor-pointer">
+                        <div id="fi-preview-container" class="{{ old('featured_image') ? '' : 'hidden' }} mb-3">
+                            <img id="fi-preview" src="{{ old('featured_image') ? asset('storage/'.old('featured_image')) : '' }}" class="max-w-full h-auto border border-gray-200 p-1 bg-white cursor-pointer">
                         </div>
-                        <a href="#" id="set-fi-btn" class="text-[#2271b1] text-[13px] underline">Set featured image</a>
-                        <a href="#" id="remove-fi-btn" class="text-[#b32d2e] text-[13px] underline hidden mt-2">Remove featured image</a>
-                        <input type="hidden" name="featured_image" id="fi-path-hidden">
+                        <a href="#" id="set-fi-btn" class="text-[#2271b1] text-[13px] underline {{ old('featured_image') ? 'hidden' : '' }}">Set featured image</a>
+                        <a href="#" id="remove-fi-btn" class="text-[#b32d2e] text-[13px] underline {{ old('featured_image') ? '' : 'hidden' }} mt-2">Remove featured image</a>
+                        <input type="hidden" name="featured_image" id="fi-path-hidden" value="{{ old('featured_image') }}">
+                    </div>
+                </div>
+
+                <!-- Gallery -->
+                <div class="wp-metabox mb-6" style="margin-bottom: 24px !important; margin-top: 10px !important;">
+                    <div class="wp-metabox-header flex justify-between items-center cursor-pointer"><span>Gallery</span> <svg class="w-4 h-4 text-[#646970]" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 15l7-7 7 7"/></svg></div>
+                    <div class="wp-metabox-content">
+                        <div id="gallery-container" class="grid grid-cols-3 gap-2 mb-3">
+                            {{-- Pre-populated if any --}}
+                        </div>
+                        <a href="#" id="add-gallery-btn" class="text-[#2271b1] text-[13px] underline">+ Add images to gallery</a>
                     </div>
                 </div>
                 @endif
@@ -396,9 +435,10 @@
             selector: '#wp-editor',
             menubar: false,
             height: 450,
+            width: '100%',
             plugins: ['lists', 'link', 'image', 'preview', 'code', 'fullscreen', 'media', 'table', 'wordcount'],
             toolbar: 'formatselect | bold italic underline strikethrough | blockquote | alignleft aligncenter alignright alignjustify | bullist numlist outdent indent | link image media | code fullscreen',
-            content_style: 'body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Oxygen-Sans, Ubuntu, Cantarell, "Helvetica Neue", sans-serif; font-size:14px }',
+            content_style: 'body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Oxygen-Sans, Ubuntu, Cantarell, "Helvetica Neue", sans-serif; font-size:14px; padding: 20px; }',
             branding: false,
             image_title: true,
             automatic_uploads: true,
@@ -424,46 +464,46 @@
         }
 
         if (permalinkContainer && titleInput && slugInput) {
-            titleInput.addEventListener('input', function() {
-                if (!slugInput.value || slugInput.value === generateSlug(this.value.substring(0, this.value.length - 1))) {
+            titleInput.addEventListener('blur', function() {
+                if (this.value) {
                     let newSlug = generateSlug(this.value);
-                    slugInput.value = newSlug;
-                    slugDisplay.innerText = newSlug;
-                    originalSlug = newSlug;
-                    if (this.value) {
-                        permalinkContainer.classList.remove('hidden');
-                        permalinkContainer.classList.add('flex');
+                    if (!slugInput.value) {
+                        slugInput.value = newSlug;
+                        if (slugDisplay) slugDisplay.innerText = newSlug;
+                        originalSlug = newSlug;
                     }
+                    permalinkContainer?.classList.remove('hidden');
+                    permalinkContainer?.classList.add('flex');
                 }
             });
 
             document.getElementById('edit-slug-btn')?.addEventListener('click', function() {
-                viewSpan.classList.add('hidden');
-                editSpan.classList.remove('hidden');
-                slugInput.focus();
+                viewSpan?.classList.add('hidden');
+                editSpan?.classList.remove('hidden');
+                slugInput?.focus();
             });
 
             document.getElementById('ok-slug-btn')?.addEventListener('click', function() {
                 let newSlug = generateSlug(slugInput.value);
                 slugInput.value = newSlug;
-                slugDisplay.innerText = newSlug;
+                if (slugDisplay) slugDisplay.innerText = newSlug;
                 originalSlug = newSlug;
-                viewSpan.classList.remove('hidden');
-                editSpan.classList.add('hidden');
+                viewSpan?.classList.remove('hidden');
+                editSpan?.classList.add('hidden');
             });
 
             document.getElementById('cancel-slug-btn')?.addEventListener('click', (e) => { 
                 e.preventDefault(); 
                 slugInput.value = originalSlug; 
-                viewSpan.classList.remove('hidden'); 
-                editSpan.classList.add('hidden'); 
+                viewSpan?.classList.remove('hidden'); 
+                editSpan?.classList.add('hidden'); 
             });
         }
 
         // Save Draft Logic Override
-        document.getElementById('save-draft-btn').addEventListener('click', function() {
-            statusHidden.value = 'draft';
-            document.getElementById('post-form').submit();
+        document.getElementById('save-draft-btn')?.addEventListener('click', function() {
+            if (statusHidden) statusHidden.value = 'draft';
+            document.getElementById('post-form')?.submit();
         });
 
         // Featured Image UI with Modal
@@ -473,28 +513,61 @@
         const fiPreviewContainer = document.getElementById('fi-preview-container');
         const fiPathHidden = document.getElementById('fi-path-hidden');
 
-        setFiBtn.addEventListener('click', (e) => { 
+        setFiBtn?.addEventListener('click', (e) => { 
             e.preventDefault(); 
             window.openMediaModal(function(media) {
-                fiPathHidden.value = media.path;
-                fiPreview.src = `/storage/${media.path}`;
-                fiPreviewContainer.classList.remove('hidden');
-                setFiBtn.classList.add('hidden');
-                removeFiBtn.classList.remove('hidden');
+                if (fiPathHidden) fiPathHidden.value = media.path;
+                if (fiPreview) fiPreview.src = `/storage/${media.path}`;
+                fiPreviewContainer?.classList.remove('hidden');
+                setFiBtn?.classList.add('hidden');
+                removeFiBtn?.classList.remove('hidden');
             });
         });
 
-        fiPreview.addEventListener('click', (e) => { 
+        fiPreview?.addEventListener('click', (e) => { 
             e.preventDefault(); 
-            setFiBtn.click();
+            setFiBtn?.click();
         });
 
-        removeFiBtn.addEventListener('click', (e) => {
+        removeFiBtn?.addEventListener('click', (e) => {
             e.preventDefault();
-            fiPathHidden.value = '';
-            fiPreviewContainer.classList.add('hidden');
-            setFiBtn.classList.remove('hidden');
-            removeFiBtn.classList.add('hidden');
+            if (fiPathHidden) fiPathHidden.value = '';
+            fiPreviewContainer?.classList.add('hidden');
+            setFiBtn?.classList.remove('hidden');
+            removeFiBtn?.classList.add('hidden');
+        });
+
+        // Gallery Logic
+        const addGalleryBtn = document.getElementById('add-gallery-btn');
+        const galleryContainer = document.getElementById('gallery-container');
+
+        addGalleryBtn?.addEventListener('click', (e) => {
+            e.preventDefault();
+            window.openMediaModal(function(mediaItems) {
+                const items = Array.isArray(mediaItems) ? mediaItems : [mediaItems];
+                
+                items.forEach(media => {
+                    // Check if already in gallery
+                    const existing = galleryContainer.querySelector(`.gallery-item[data-path="${media.path}"]`);
+                    if (existing) return;
+
+                    const item = document.createElement('div');
+                    item.className = "gallery-item relative group aspect-square border border-gray-200 p-1 bg-white cursor-pointer";
+                    item.setAttribute('data-path', media.path);
+                    item.innerHTML = `
+                        <img src="/storage/${media.path}" class="w-full h-full object-cover">
+                        <button type="button" class="absolute top-0 right-0 bg-red-600 text-white w-5 h-5 flex items-center justify-center text-[10px] opacity-0 group-hover:opacity-100 transition-opacity remove-gallery-img">×</button>
+                        <input type="hidden" name="gallery[]" value="${media.path}">
+                    `;
+                    galleryContainer.appendChild(item);
+                });
+            }, { multiple: true });
+        });
+
+        galleryContainer?.addEventListener('click', (e) => {
+            if (e.target.classList.contains('remove-gallery-img')) {
+                e.target.closest('.gallery-item').remove();
+            }
         });
 
 
@@ -536,106 +609,129 @@
                 document.getElementById('main-publish-btn').innerText = 'Schedule';
                 statusHidden.value = 'scheduled';
                 document.getElementById('status-display-text').innerText = 'Scheduled';
+                // Update select UI too
+                const statusSelectUI = document.getElementById('status-select-ui');
+                if (statusSelectUI) statusSelectUI.value = 'scheduled';
             } else {
                 document.getElementById('main-publish-btn').innerText = 'Publish';
-                statusHidden.value = 'published';
-                document.getElementById('status-display-text').innerText = 'Published';
+                if (statusHidden.value === 'scheduled') {
+                    statusHidden.value = 'published';
+                    document.getElementById('status-display-text').innerText = 'Published';
+                    const statusSelectUI = document.getElementById('status-select-ui');
+                    if (statusSelectUI) statusSelectUI.value = 'published';
+                }
             }
             
             document.getElementById('published-at-hidden').value = `${yy}-${mm}-${dd} ${hr}:${min}:00`;
             document.getElementById('publish-edit').classList.add('hidden');
         });
-        // Taxonomy & Categories Quick Add Logic
+        // Combined Click Events Delegation
         document.addEventListener('click', function(e) {
+            // 1. Toggle Quick Add Category Box
             const toggleBtn = e.target.closest('.toggle-quick-add');
             if (toggleBtn) {
                 e.preventDefault();
                 const metabox = toggleBtn.closest('.wp-metabox-content');
                 if (metabox) {
-                    metabox.querySelector('.quick-add-term-box').classList.toggle('hidden');
+                    const box = metabox.querySelector('.quick-add-term-box');
+                    if (box) box.classList.toggle('hidden');
                 }
+                return;
+            }
+
+            // 2. Add Category/Term AJAX
+            const addTermBtn = e.target.closest('.add-term-ajax-btn');
+            if (addTermBtn) {
+                e.preventDefault();
+                addTermAjax(addTermBtn);
+                return;
+            }
+
+            // 3. Add CPT Tag
+            const addTagBtn = e.target.closest('.add-cpt-tag-btn');
+            if (addTagBtn) {
+                e.preventDefault();
+                const metabox = addTagBtn.closest('.wp-metabox-content');
+                const input = metabox.querySelector('.cpt-tag-input');
+                addCPTTag(input);
+                return;
+            }
+
+            // 4. Remove CPT Tag
+            const removeTagBtn = e.target.closest('.remove-cpt-tag');
+            if (removeTagBtn) {
+                e.preventDefault();
+                const bubble = removeTagBtn.closest('span');
+                const id = removeTagBtn.getAttribute('data-id');
+                const metabox = removeTagBtn.closest('.wp-metabox-content');
+                if (id) {
+                    const hiddenInput = metabox.querySelector(`.cpt-tags-hidden-inputs input[value="${id}"]`);
+                    if (hiddenInput) hiddenInput.remove();
+                }
+                bubble.remove();
+                return;
             }
         });
 
-        document.addEventListener('click', async function(e) {
-            const btn = e.target.closest('.add-term-ajax-btn');
-            if (btn) {
-                const metabox = btn.closest('.wp-metabox-content');
-                const nameInput = metabox.querySelector('.new-term-name');
-                const parentSelect = metabox.querySelector('.new-term-parent');
-                const name = nameInput.value;
-                const parentId = (parentSelect && parentSelect.value !== '') ? parentSelect.value : null;
-                const taxonomy = btn.getAttribute('data-taxonomy');
-                const cpt = btn.getAttribute('data-cpt');
+        async function addTermAjax(btn) {
+            const metabox = btn.closest('.wp-metabox-content');
+            const nameInput = metabox.querySelector('.new-term-name');
+            const parentSelect = metabox.querySelector('.new-term-parent');
+            const name = nameInput.value;
+            const parentId = (parentSelect && parentSelect.value !== '') ? parentSelect.value : null;
+            const taxonomy = btn.getAttribute('data-taxonomy');
+            const cpt = btn.getAttribute('data-cpt');
 
-                if (!name) return alert('Please enter a name');
+            if (!name) return window.showToast('Please enter a name', 'warning');
 
-                btn.disabled = true;
-                btn.innerText = 'Adding...';
+            btn.disabled = true;
+            btn.innerText = 'Adding...';
 
-                try {
-                    const isBuiltin = btn.getAttribute('data-is-builtin') === 'true';
+            try {
+                const isBuiltin = btn.getAttribute('data-is-builtin') === 'true';
+                let url = isBuiltin ? "{{ route('admin.categories.ajax') }}" : "{{ route('admin.acpt.terms.ajax') }}";
 
-                    let url = isBuiltin
-                               ? "{{ route('admin.categories.ajax') }}" 
-                               : "{{ route('admin.acpt.terms.ajax') }}";
+                const response = await fetch(url, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json', 'X-CSRF-TOKEN': '{{ csrf_token() }}', 'Accept': 'application/json' },
+                    body: JSON.stringify({ name: name, parent_id: parentId, taxonomy_slug: taxonomy, cpt_slug: cpt })
+                });
 
-                    const payload = { 
-                        name: name, 
-                        parent_id: parentId,
-                        taxonomy_slug: taxonomy,
-                        cpt_slug: cpt
-                    };
+                const data = await response.json();
+                if (response.ok && data.id) {
+                    const checklist = metabox.querySelector('.h-36') || metabox.querySelector('.h-44');
+                    const noMsg = checklist.querySelector('.no-terms-msg');
+                    if (noMsg) noMsg.remove();
 
-                    const response = await fetch(url, {
-                        method: 'POST',
-                        headers: {
-                            'Content-Type': 'application/json',
-                            'X-CSRF-TOKEN': '{{ csrf_token() }}',
-                            'Accept': 'application/json'
-                        },
-                        body: JSON.stringify(payload)
-                    });
-
-                    const data = await response.json();
-                    if (response.ok && data.id) {
-                        // Add to checklist
-                        const checklist = metabox.querySelector('.h-36') || metabox.querySelector('.h-44');
-                        const noMsg = checklist.querySelector('.no-terms-msg');
-                        if (noMsg) noMsg.remove();
-
-                        const label = document.createElement('label');
-                        label.className = "flex items-center text-[13px] text-[#2c3338] mb-1";
-                        
-                        const inputName = isBuiltin ? 'categories[]' : 'tax_terms[]';
-                        let displayName = data.name;
-                        if (parentId) {
-                            displayName = '— ' + data.name;
-                        }
-                        
-                        label.innerHTML = `<input type="checkbox" name="${inputName}" value="${data.id}" checked class="mr-2 rounded-sm border-[#8c8f94] text-[#2271b1]"> ${displayName}`;
-                        checklist.prepend(label);
-                        
-                        // Add to parent select
+                    const label = document.createElement('label');
+                    label.className = "flex items-center text-[13px] text-[#2c3338] mb-1";
+                    const inputName = isBuiltin ? 'categories[]' : 'tax_terms[]';
+                    let displayName = data.name;
+                    if (parentId) displayName = '— ' + data.name;
+                    
+                    label.innerHTML = `<input type="checkbox" name="${inputName}" value="${data.id}" checked class="mr-2 rounded-sm border-[#8c8f94] text-[#2271b1]"> ${displayName}`;
+                    checklist.prepend(label);
+                    
+                    if (parentSelect) {
                         const option = document.createElement('option');
                         option.value = data.id;
                         option.text = data.name;
-                        if (parentSelect) parentSelect.appendChild(option);
-
-                        nameInput.value = '';
-                        metabox.querySelector('.quick-add-term-box').classList.add('hidden');
-                    } else {
-                        alert(data.message || 'Error adding term');
+                        parentSelect.appendChild(option);
                     }
-                } catch (error) {
-                    alert('Error adding term. Please check the console.');
-                    console.error(error);
-                } finally {
-                    btn.disabled = false;
-                    btn.innerText = 'Add New';
+                    nameInput.value = '';
+                    metabox.querySelector('.quick-add-term-box').classList.add('hidden');
+                    window.showToast('Added successfully');
+                } else {
+                    window.showToast(data.message || 'Error adding item', 'error');
                 }
+            } catch (error) {
+                window.showToast('Error adding item', 'error');
+                console.error(error);
+            } finally {
+                btn.disabled = false;
+                btn.innerText = 'Add New';
             }
-        });
+        }
 
         // CPT Tags Logic
         async function addCPTTag(inputEl) {
@@ -675,36 +771,24 @@
                         input.name = 'tax_terms[]';
                         input.value = data.id;
                         hiddenInputs.appendChild(input);
+                    } else {
+                        if (data.errors) {
+                            let errorMsgs = Object.values(data.errors).flat().join(' ');
+                            window.showToast(errorMsgs, 'error');
+                        } else {
+                            window.showToast(data.message || 'Error adding tag', 'error');
+                        }
                     }
-                } catch (e) { console.error(e); }
+                } catch (e) { 
+                    window.showToast('Error adding tag', 'error');
+                    console.error(e); 
+                }
             }
             inputEl.value = '';
         }
 
-        document.addEventListener('keydown', function(e) {
-            if (e.target.classList.contains('cpt-tag-input') && (e.key === ',' || e.key === 'Enter')) {
-                if (e.key === 'Enter') e.preventDefault();
-                addCPTTag(e.target);
-            }
-        });
+        // CPT Tags: Keydown listener removed as per request (only Add button allowed)
 
-        document.addEventListener('click', function(e) {
-            if (e.target.classList.contains('add-cpt-tag-btn')) {
-                const input = e.target.closest('.wp-metabox-content').querySelector('.cpt-tag-input');
-                addCPTTag(input);
-            }
-            if (e.target.classList.contains('remove-cpt-tag')) {
-                const bubble = e.target.closest('span');
-                const id = e.target.getAttribute('data-id');
-                const metabox = e.target.closest('.wp-metabox-content');
-                
-                // Remove hidden input
-                const hiddenInput = metabox.querySelector(`.cpt-tags-hidden-inputs input[value="${id}"]`);
-                if (hiddenInput) hiddenInput.remove();
-                
-                bubble.remove();
-            }
-        });
 
         // Standard Tags Logic
         const tagInput = document.getElementById('tag-input');
@@ -731,6 +815,7 @@
         };
 
         function addTagsFromInput() {
+            if (!tagInput) return;
             const val = tagInput.value.trim();
             if (!val) return;
             const newTags = val.split(',').map(t => t.trim()).filter(t => t && !tags.includes(t));
@@ -740,12 +825,11 @@
         }
 
         addTagBtn?.addEventListener('click', addTagsFromInput);
-        tagInput?.addEventListener('keydown', function(e) {
-            if (e.key === 'Enter') {
-                e.preventDefault();
-                addTagsFromInput();
-            }
-        });
+        // Standard Tags: Keydown listener removed as per request (only Add button allowed)
+        if (tagsHidden && tagsHidden.value) {
+            tags = tagsHidden.value.split(',').filter(t => t.trim() !== '');
+            renderTags();
+        }
 
         // Editor Toggle Logic
         const richEditorBtn = document.getElementById('editor-mode-rich');
@@ -782,6 +866,8 @@
 
         // Start Builder Button
         document.getElementById('start-builder-btn')?.addEventListener('click', function() {
+            if (!validatePostForm()) return;
+
             // Force status to draft if it's a new post so we don't accidentally publish an empty page
             if (document.getElementById('status-hidden').value !== 'published') {
                 document.getElementById('status-hidden').value = 'draft';
@@ -798,6 +884,9 @@
             input.value = '1';
             form.appendChild(input);
 
+            const editorTypeInput = document.getElementById('editor_type');
+            if (editorTypeInput) editorTypeInput.value = 'builder';
+
             // Give the button a loading state
             this.innerText = 'Saving & Starting Builder...';
             this.classList.add('opacity-70', 'cursor-not-allowed');
@@ -805,5 +894,93 @@
             form.submit();
         });
 
+        // Language selector logic to hide current lang from clone list
+        const langSelect = document.querySelector('select[name="lang_code"]');
+        if (langSelect) {
+            const updateCloneList = () => {
+                const selectedLang = langSelect.value;
+                
+                // Update Permalink Base Display
+                const siteUrl = "{{ url('/') }}";
+                const postType = "{{ $type }}";
+                let newBase = selectedLang === 'en' ? siteUrl + '/' : siteUrl + '/' + selectedLang + '/';
+                if(postType !== 'page') newBase += postType + '/';
+
+                const baseDisplay = document.getElementById('permalink-base-display');
+                const baseEdit = document.getElementById('permalink-base-edit');
+                if (baseDisplay) baseDisplay.innerText = newBase;
+                if (baseEdit) baseEdit.innerText = newBase;
+
+                document.querySelectorAll('#multi-lang-list label').forEach(label => {
+                    if (label.classList.contains(`lang-option-${selectedLang}`)) {
+                        label.classList.add('hidden');
+                        label.querySelector('input').checked = false;
+                    } else {
+                        label.classList.remove('hidden');
+                        label.querySelector('input').checked = true;
+                    }
+                });
+            };
+            langSelect.addEventListener('change', updateCloneList);
+            updateCloneList(); // Initial run
+        }
+
+        // --- Client Side Validation ---
+        function validatePostForm(e) {
+            let isValid = true;
+            const titleInput = document.getElementById('title-input');
+            const postType = "{{ $type ?? 'post' }}";
+            
+            // Clear previous errors
+            titleInput.classList.remove('border-[#d63638]', 'ring-1', 'ring-[#d63638]');
+            
+            if (!titleInput.value.trim()) {
+                isValid = false;
+                titleInput.classList.add('border-[#d63638]', 'ring-1', 'ring-[#d63638]');
+                titleInput.focus();
+                window.showToast('Please enter a title before saving.', 'error');
+            }
+            
+            // Product Specific Validation
+            if (isValid && postType === 'product') {
+                const priceInput = document.getElementById('regular_price');
+                const salePriceInput = document.getElementById('sale_price');
+                
+                if (priceInput) priceInput.classList.remove('border-[#d63638]', 'ring-1', 'ring-[#d63638]');
+                if (salePriceInput) salePriceInput.classList.remove('border-[#d63638]', 'ring-1', 'ring-[#d63638]');
+
+                if (priceInput && !priceInput.value.trim()) {
+                    isValid = false;
+                    priceInput.classList.add('border-[#d63638]', 'ring-1', 'ring-[#d63638]');
+                    priceInput.focus();
+                    window.showToast('Please enter a regular price for the product.', 'error');
+                } else if (salePriceInput && salePriceInput.value.trim()) {
+                    const price = parseFloat(priceInput.value);
+                    const salePrice = parseFloat(salePriceInput.value);
+                    
+                    if (isNaN(salePrice)) {
+                        isValid = false;
+                        salePriceInput.classList.add('border-[#d63638]', 'ring-1', 'ring-[#d63638]');
+                        window.showToast('Sale price must be a number.', 'error');
+                    } else if (salePrice >= price) {
+                        isValid = false;
+                        salePriceInput.classList.add('border-[#d63638]', 'ring-1', 'ring-[#d63638]');
+                        salePriceInput.focus();
+                        window.showToast('Sale price must be less than the regular price.', 'error');
+                    }
+                }
+            }
+
+            if (!isValid && e) {
+                e.preventDefault();
+            }
+            return isValid;
+        }
+
+        document.getElementById('post-form')?.addEventListener('submit', function(e) {
+            if (!validatePostForm(e)) {
+                return false;
+            }
+        });
     </script>
 </x-cms-dashboard::layouts.admin>

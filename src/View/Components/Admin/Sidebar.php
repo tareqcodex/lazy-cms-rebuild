@@ -15,18 +15,14 @@ class Sidebar extends Component
     {
         $this->activeMenu = $activeMenu;
 
-        try {
-            $this->menuGroups = Menu::with('children')
-                ->whereNull('parent_id')
-                ->orderBy('order')
-                ->get()
-                ->groupBy('group');
-        } catch (\Exception $e) {
-            $this->menuGroups = collect();
-        }
+        $this->menuGroups = Menu::with('children')
+            ->whereNull('parent_id')
+            ->orderBy('order')
+            ->get()
+            ->groupBy('group');
     }
 
-    public static function isUrlActive($url)
+    public static function isUrlActive($url, $strict = false)
     {
         if (!$url || $url === '#') return false;
 
@@ -39,12 +35,50 @@ class Sidebar extends Component
             return $currentPath === 'admin';
         }
 
-        // 2. Base path check: Current path must start with target path
-        if (!str_starts_with($currentPath, $targetPath)) {
+        // 2. Base path check
+        $indexPaths = ['admin/posts', 'admin/pages', 'admin/users', 'admin/settings', 'admin/roles', 'admin/categories', 'admin/tags', 'admin/comments', 'admin/profile'];
+        
+        // Special case: Your Profile belongs to Users group
+        if ($targetPath === 'admin/users' && ($currentPath === 'admin/profile' || str_starts_with($currentPath, 'admin/users/') && str_ends_with($currentPath, '/edit'))) {
+            // If we are editing the CURRENT user, then Your Profile should be active
+            $route = request()->route();
+            if ($route && $route->getName() === 'admin.users.edit') {
+                $userParam = $route->parameter('user');
+                $userId = ($userParam instanceof \App\Models\User) ? $userParam->id : $userParam;
+                if ((int)$userId === (int)auth()->id()) {
+                    return false; // Parent itself not active, but children loop will find it
+                }
+            }
+        }
+
+        // Special case for Your Profile child item
+        if ($targetPath === 'admin/profile') {
+            if ($currentPath === 'admin/profile') return true;
+            
+            $route = request()->route();
+            if ($route && $route->getName() === 'admin.users.edit') {
+                $userParam = $route->parameter('user');
+                $userId = ($userParam instanceof \App\Models\User) ? $userParam->id : $userParam;
+                return (int)$userId === (int)auth()->id();
+            }
+        }
+        
+        if (in_array($targetPath, $indexPaths)) {
+            // Index routes MUST be an exact match (ignoring query strings for now) 
+            // unless it's a specific type (handled in step 3) or an edit/create page
+            if ($currentPath !== $targetPath) {
+                // If it's something like admin/posts/create, the index 'admin/posts' should be active 
+                // ONLY if the types match (handled later) or if it's a generic index.
+                // For now, let's allow it if it starts with the target path followed by /
+                if ($strict || !str_starts_with($currentPath, $targetPath . '/')) {
+                    return false;
+                }
+            }
+        } elseif (!str_starts_with($currentPath, $targetPath)) {
             return false;
         }
 
-        // 3. Query Parameter Strict Check (Crucial for CPTs and Taxonomies)
+        // 3. Query Parameter & Type Strict Check
         parse_str($targetUrl['query'] ?? '', $targetQuery);
         
         $currentType = request()->query('type');
@@ -58,7 +92,9 @@ class Sidebar extends Component
                 if ($post instanceof \Acme\CmsDashboard\Models\Post) {
                     $currentType = $post->type;
                 } elseif (is_numeric($post)) {
-                    $currentType = \Acme\CmsDashboard\Models\Post::where('id', $post)->value('type');
+                    try {
+                        $currentType = \Acme\CmsDashboard\Models\Post::where('id', $post)->value('type');
+                    } catch (\Exception $e) {}
                 } else {
                     $currentType = $route->parameter('type');
                 }
@@ -69,20 +105,28 @@ class Sidebar extends Component
 
         // If target has a type/cpt_slug, current request MUST match it
         if ($targetType) {
-            return ($currentType === $targetType || $currentCpt === $targetType);
-        }
-
-        // If target has NO type, current request should also have NO type (for standard Posts/Pages)
-        // Except if we are on a standard sub-page like admin/categories
-        if (!$targetType && ($currentType || $currentCpt)) {
-            // If the current type is 'post' or 'page', it's still considered a "standard" type 
-            // if the targetPath matches admin/posts or admin/pages
-            if (($targetPath === 'admin/posts' && $currentType === 'post') || 
-                ($targetPath === 'admin/pages' && $currentType === 'page')) {
-                return true;
+            if ($currentType !== $targetType && $currentCpt !== $targetType) {
+                return false;
+            }
+            
+            // Even if types match, if target is an index path, current path MUST match exactly 
+            // OR be a child of it (like /create or /1/edit)
+            if (in_array($targetPath, $indexPaths) && $currentPath !== $targetPath) {
+                if ($strict || !str_starts_with($currentPath, $targetPath . '/')) {
+                    return false;
+                }
             }
 
-            if ($targetPath === 'admin/posts' || $targetPath === 'admin/pages') {
+            return true;
+        }
+
+        // IMPORTANT: If target belongs to standard Posts/Pages but HAS NO TYPE (it's a root or general menu),
+        // it should NOT be active if the CURRENT request has a custom type (CPT).
+        if (!$targetType && !empty($currentType) && !in_array($currentType, ['post', 'page'])) {
+            $isTargetPosts = str_starts_with($targetPath, 'admin/posts');
+            $isTargetPages = str_starts_with($targetPath, 'admin/pages');
+
+            if ($isTargetPosts || $isTargetPages) {
                 return false;
             }
         }
@@ -108,8 +152,13 @@ class Sidebar extends Component
         // Content / Posts / Pages
         if (str_contains($targetPath, 'admin/posts') || str_contains($targetPath, 'admin/pages')) {
             $pType = $type ?: (str_contains($targetPath, 'admin/pages') ? 'page' : 'post');
-            $permission = ($pType === 'page') ? 'manage_pages' : (($pType === 'post') ? 'manage_posts' : 'manage_' . $pType);
-            return $user->hasPermission($permission);
+            if ($pType === 'page') return $user->hasPermission('manage_pages');
+            if ($pType === 'post') return $user->hasPermission('manage_posts');
+            
+            // For CPTs, check multiple potential permission prefixes
+            return $user->hasPermission('manage_' . $pType) || 
+                   $user->hasPermission('access_' . $pType) ||
+                   $user->hasPermission('access_all_' . $pType);
         }
 
         // Users
@@ -123,39 +172,106 @@ class Sidebar extends Component
 
         // Media
         if (str_contains($targetPath, 'admin/media')) return $user->hasPermission('manage_media');
+        
+        // Comments
+        if (str_contains($targetPath, 'admin/comments')) return $user->hasPermission('manage_posts');
+
+        // Appearance (Themes, Menus, Widgets)
+        if (str_contains($targetPath, 'admin/themes')) return $user->hasPermission('access_themes') || $user->hasPermission('manage_settings');
+        if (str_contains($targetPath, 'admin/menus')) return $user->hasPermission('access_menus') || $user->hasPermission('manage_settings');
+        if (str_contains($targetPath, 'admin/widgets')) return $user->hasPermission('access_widgets') || $user->hasPermission('manage_settings');
+
+        // Shop / eCommerce
+        if (str_contains($targetPath, 'admin/shop')) return $user->hasPermission('manage_settings') || $user->hasPermission('manage_posts');
 
         // ACPT
         if (str_contains($targetPath, 'admin/acpt')) return $user->hasPermission('manage_settings');
 
-        return true;
+        return false;
     }
 
-    public function resolveRoute($routeStr, $title = '')
+    public function resolveRoute($menu)
     {
+        if (is_string($menu)) return '#';
+        if (is_array($menu)) $routeStr = $menu['route'] ?? '#';
+        else $routeStr = $menu->route ?? '#';
+
+        $title = is_array($menu) ? ($menu['title'] ?? '') : ($menu->title ?? '');
+        $params = is_array($menu) ? ($menu['params'] ?? []) : ($menu->params ?? []);
+        if (is_string($params)) $params = json_decode($params, true);
+        if (!is_array($params)) $params = [];
+
         if (!$routeStr || $routeStr === '#') {
-            if ($title === 'Categories') return route('admin.categories.index');
-            if ($title === 'Tags') return route('admin.tags.index');
-            if ($title === 'All Posts') return route('admin.posts.index');
-            if ($title === 'Add Post') return route('admin.posts.create');
-            if ($title === 'All Pages') return route('admin.pages.index');
-            if ($title === 'Add New' || $title === 'Add Page') return route('admin.pages.create');
+            if ($title === 'Categories') return route('admin.categories.index', $params);
+            if ($title === 'Tags') return route('admin.tags.index', $params);
+            if ($title === 'All Posts') return route('admin.posts.index', $params);
+            if ($title === 'Add Post') return route('admin.posts.create', $params);
+            if ($title === 'All Pages') return route('admin.pages.index', $params);
+            if ($title === 'Add New' || $title === 'Add Page') return route('admin.pages.create', $params);
+            if ($title === 'Comments') return route('admin.comments.index', $params);
 
             try {
                 $postType = \Acme\CmsDashboard\Models\PostType::where('name', $title)->first();
                 if ($postType) {
-                    return url('/admin/posts?type=' . $postType->slug);
+                    return route('admin.posts.index', ['type' => $postType->slug]);
                 }
             } catch (\Exception $e) {}
+
+            if ($title === 'Tools') {
+                if (auth()->user()->hasPermission('access_backup_restore') || auth()->user()->hasPermission('manage_settings')) {
+                    if (Route::has('admin.backup.index')) return route('admin.backup.index');
+                }
+                if (auth()->user()->hasPermission('access_languages')) {
+                    if (Route::has('admin.languages.index')) return route('admin.languages.index');
+                }
+            }
 
             return '#';
         }
 
         if (str_starts_with($routeStr, '/') || str_starts_with($routeStr, 'http')) return url($routeStr);
-        return Route::has($routeStr) ? route($routeStr) : $routeStr;
+        return Route::has($routeStr) ? route($routeStr, $params) : $routeStr;
+    }
+
+    public function getPermission($menu)
+    {
+        if (is_string($menu)) return 'access_dashboard';
+        if (is_array($menu)) {
+            if (!empty($menu['permission'])) return $menu['permission'];
+            $title = strtolower($menu['title'] ?? '');
+            $parentId = $menu['parent_id'] ?? null;
+        } else {
+            if (!empty($menu->permission)) return $menu->permission;
+            $title = strtolower($menu->title ?? '');
+            $parentId = $menu->parent_id ?? null;
+        }
+        
+        if ($title === 'dashboard') return 'access_dashboard';
+        if ($title === 'posts') return 'manage_posts';
+        if ($title === 'pages') return 'manage_pages';
+        if ($title === 'media') return 'manage_media';
+        if ($title === 'users') return 'manage_users';
+        if ($title === 'settings') return 'manage_settings';
+        
+        $titleStr = is_array($menu) ? ($menu['title'] ?? '') : ($menu->title ?? '');
+        $slug = \Illuminate\Support\Str::slug($titleStr, '_');
+
+        // Match RoleController unique slug logic for children
+        if ($parentId && in_array($title, ['add new', 'categories', 'tags', 'all posts', 'all pages'])) {
+            $parent = \Acme\CmsDashboard\Models\Menu::find($parentId);
+            if ($parent) {
+                $slug .= '_' . \Illuminate\Support\Str::slug($parent->title, '_');
+            }
+        }
+        
+        return 'access_' . $slug;
     }
 
     public function render()
     {
-        return view('cms-dashboard::components.admin.sidebar');
+        return view('cms-dashboard::components.admin.sidebar', [
+            'getPermission' => [$this, 'getPermission'],
+            'resolveRoute' => [$this, 'resolveRoute'],
+        ]);
     }
 }

@@ -1,4 +1,5 @@
 <x-cms-dashboard::layouts.admin title="Custom Post Types">
+    <x-cms-dashboard::admin.delete-modal />
     <div class="max-w-[1200px] mx-auto pb-12 mt-2">
         <div class="flex items-center mb-4">
             <h1 class="text-[22px] font-normal text-[#1d2327] mr-3">Custom Post Types</h1>
@@ -42,7 +43,7 @@
                         <option value="trash">Move to Trash</option>
                     @endif
                 </select>
-                <button type="submit" class="wp-btn-secondary h-[28px] leading-none border-[#8c8f94] text-[#2c3338]">Apply</button>
+                <button type="button" onclick="handleBulkAction('bulk-action-form')" class="wp-btn-secondary h-[28px] leading-none border-[#8c8f94] text-[#2c3338]">Apply</button>
             </div>
             <div class="text-[13px] text-[#646970]">
                 {{ $postTypes->count() }} items
@@ -79,11 +80,11 @@
                                             <input type="hidden" name="post_types[]" value="{{ $type->id }}">
                                             <button type="submit" class="text-[#2271b1] hover:underline bg-transparent border-0 cursor-pointer p-0 leading-none">Restore</button>
                                         </form> <span class="text-[#c3c4c7]">|</span> 
-                                        <form action="{{ route('admin.acpt.cpt.bulk') }}" method="POST" class="inline m-0 p-0 leading-none">
+                                        <form id="delete-form-{{ $type->id }}" action="{{ route('admin.acpt.cpt.bulk') }}" method="POST" class="inline m-0 p-0 leading-none">
                                             @csrf
                                             <input type="hidden" name="action" value="delete">
                                             <input type="hidden" name="post_types[]" value="{{ $type->id }}">
-                                            <button type="submit" class="text-[#d63638] hover:underline bg-transparent border-0 cursor-pointer p-0 leading-none" onclick="return confirm('Permanently delete this CPT?')">Delete Permanently</button>
+                                            <button type="button" onclick="confirmForceDelete({{ $type->id }})" class="text-[#d63638] hover:underline bg-transparent border-0 cursor-pointer p-0 leading-none">Delete Permanently</button>
                                         </form>
                                     @else
                                         @if($type->is_active)
@@ -107,11 +108,11 @@
                                             @csrf
                                             <button type="submit" class="text-[#2271b1] hover:underline bg-transparent border-0 cursor-pointer p-0 leading-none">Duplicate</button>
                                         </form> <span class="text-[#c3c4c7]">|</span> 
-                                        <form action="{{ route('admin.acpt.cpt.bulk') }}" method="POST" class="inline m-0 p-0 leading-none">
+                                        <form id="trash-form-{{ $type->id }}" action="{{ route('admin.acpt.cpt.bulk') }}" method="POST" class="inline m-0 p-0 leading-none">
                                             @csrf
                                             <input type="hidden" name="action" value="trash">
                                             <input type="hidden" name="post_types[]" value="{{ $type->id }}">
-                                            <button type="submit" class="text-[#d63638] hover:underline bg-transparent border-0 cursor-pointer p-0 leading-none">Trash</button>
+                                            <button type="button" onclick="moveToTrash({{ $type->id }})" class="text-[#d63638] hover:underline bg-transparent border-0 cursor-pointer p-0 leading-none">Trash</button>
                                         </form>
                                     @endif
                                 </div>
@@ -150,7 +151,7 @@
                     <option value="deactivate">Deactivate</option>
                     <option value="trash">Move to Trash</option>
                 </select>
-                <button type="submit" class="wp-btn-secondary h-[28px] leading-none border-[#8c8f94] text-[#2c3338]">Apply</button>
+                <button type="button" onclick="handleBulkAction('bulk-action-form', 'action2')" class="wp-btn-secondary h-[28px] leading-none border-[#8c8f94] text-[#2c3338]">Apply</button>
             </div>
             <div class="text-[13px] text-[#646970]">
                 {{ $postTypes->count() }} items
@@ -159,4 +160,49 @@
         </form>
 
     </div>
+    <script>
+        window.handleBulkAction = async function(formId, selectName = 'action') {
+            const form = document.getElementById(formId);
+            const action = form.querySelector(`select[name="${selectName}"]`).value;
+            const selected = form.querySelectorAll('.cb-select:checked');
+
+            if (action === 'none') return;
+            if (selected.length === 0) {
+                window.showToast('Please select at least one item.', 'warning');
+                return;
+            }
+
+            if (action === 'delete') {
+                const confirmed = await window.lazyConfirm({
+                    title: 'Delete Permanently',
+                    message: `Are you sure you want to permanently delete ${selected.length} custom post types? This action cannot be undone and will delete all associated data!`,
+                    confirmText: 'Delete Permanently',
+                    isDanger: true
+                });
+
+                if (!confirmed) return;
+            }
+
+            if (selectName === 'action2') {
+                form.querySelector('select[name="action"]').value = action;
+            }
+            form.submit();
+        };
+
+        window.moveToTrash = function(id) {
+            document.getElementById(`trash-form-${id}`).submit();
+        };
+
+        window.confirmForceDelete = async function(id) {
+            const confirmed = await window.lazyConfirm({
+                title: 'Delete Permanently',
+                message: 'Are you sure you want to permanently delete this custom post type? This action cannot be undone and all associated content will be lost!',
+                confirmText: 'Delete Permanently',
+                isDanger: true
+            });
+            if (confirmed) {
+                document.getElementById(`delete-form-${id}`).submit();
+            }
+        };
+    </script>
 </x-cms-dashboard::layouts.admin>

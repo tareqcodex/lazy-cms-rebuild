@@ -1,7 +1,14 @@
 @if(!empty($dynamicFields))
-    <div class="mt-8 pt-6 border-t border-[#c3c4c7]">
+    <div class="mt-8">
         <table class="w-full border-separate border-spacing-y-6">
             @foreach($dynamicFields as $name => $field)
+            @if(($field['type'] ?? '') === 'title')
+            <tr>
+                <td colspan="2" class="pb-2 border-b border-[#c3c4c7]">
+                    <h3 class="text-[16px] font-semibold text-[#1d2327]">{{ $field['label'] }}</h3>
+                </td>
+            </tr>
+            @else
             <tr>
                 <th scope="row" class="w-[200px] text-left align-top pt-2">
                     <label for="{{ $name }}" class="text-[14px] font-semibold text-[#1d2327]">{{ $field['label'] }}</label>
@@ -31,8 +38,7 @@
                         </select>
 
                     @elseif($field['type'] === 'checkbox')
-                        <label class="inline-flex items-center cursor-pointer mb-1">
-                        <label class="inline-flex items-center cursor-pointer mt-1">
+                        <label class="items-center cursor-pointer mt-1">
                             <input type="checkbox" name="{{ $name }}" id="{{ $name }}" value="1" 
                                 {{ ($settings[$name] ?? ($field['default'] ?? '0')) == '1' ? 'checked' : '' }}
                                 class="w-4 h-4 mr-2">
@@ -48,6 +54,33 @@
                             @endif
                             <input type="file" name="{{ $name }}" id="{{ $name }}" class="text-[13px]">
                         </div>
+                    @elseif($field['type'] === 'media')
+                        <div class="flex items-center gap-4">
+                            <div id="media-preview-{{ $name }}" class="w-16 h-16 border rounded bg-slate-50 flex items-center justify-center overflow-hidden {{ empty($settings[$name]) ? 'hidden' : '' }}">
+                                @if(!empty($settings[$name]))
+                                    <img src="{{ asset('storage/' . $settings[$name]) }}" class="max-w-full max-h-full object-contain">
+                                @endif
+                            </div>
+                            <div class="flex flex-col gap-2">
+                                <button type="button" class="wp-btn-secondary h-8 px-4 text-[12px] open-media-for-setting" data-target="{{ $name }}">Choose from Library</button>
+                                <input type="hidden" name="{{ $name }}" id="input-{{ $name }}" value="{{ $settings[$name] ?? '' }}">
+                            </div>
+                        </div>
+                    @elseif($field['type'] === 'switcher')
+                        <div class="flex items-center">
+                            <div class="inline-flex bg-[#f0f0f1] rounded-sm p-1 border border-[#c3c4c7]">
+                                @foreach($field['options'] ?? [] as $val => $label)
+                                    @php $isActive = ($settings[$name] ?? ($field['default'] ?? '')) == $val; @endphp
+                                    <label class="cursor-pointer">
+                                        <input type="radio" name="{{ $name }}" value="{{ $val }}" class="hidden peer" {{ $isActive ? 'checked' : '' }}>
+                                        <span class="px-6 py-1.5 text-[13px] font-semibold flex items-center justify-center rounded-sm transition-all
+                                            peer-checked:bg-[#2271b1] peer-checked:text-white text-[#646970] hover:text-[#2271b1]">
+                                            {{ $label }}
+                                        </span>
+                                    </label>
+                                @endforeach
+                            </div>
+                        </div>
                     @endif
 
                     @if(isset($field['desc']))
@@ -55,6 +88,7 @@
                     @endif
                 </td>
             </tr>
+            @endif
             @endforeach
         </table>
     </div>

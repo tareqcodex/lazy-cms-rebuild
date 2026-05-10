@@ -1,4 +1,5 @@
 <x-cms-dashboard::layouts.admin>
+    <x-cms-dashboard::admin.delete-modal />
     <div class="flex items-center justify-between mb-6">
         <div class="flex items-center gap-4">
             <h1 class="text-[23px] font-normal text-[#1d2327]">Field Groups</h1>
@@ -33,9 +34,9 @@
                         <div class="flex gap-2 text-[12px] opacity-0 group-hover:opacity-100 transition-opacity">
                             <a href="{{ route('admin.acpt.fields.edit', $group) }}" class="text-[#2271b1] hover:text-[#135e96]">Edit</a>
                             <span class="text-[#c3c4c7]">|</span>
-                            <form action="{{ route('admin.acpt.fields.destroy', $group) }}" method="POST" class="inline" onsubmit="return confirm('Delete this field group permanently?')">
+                            <form id="delete-group-{{ $group->id }}" action="{{ route('admin.acpt.fields.destroy', $group) }}" method="POST" class="inline">
                                 @csrf @method('DELETE')
-                                <button class="text-[#b32d2e] hover:text-[#d63638]">Delete</button>
+                                <button type="button" onclick="confirmDeleteGroup({{ $group->id }}, '{{ addslashes($group->title) }}')" class="text-[#b32d2e] hover:text-[#d63638]">Delete</button>
                             </form>
                         </div>
                     </td>
@@ -56,4 +57,20 @@
             </tbody>
         </table>
     </div>
+    </div>
+
+    <script>
+        window.confirmDeleteGroup = async function(id, title) {
+            const confirmed = await window.lazyConfirm({
+                title: 'Delete Field Group',
+                message: `Are you sure you want to permanently delete the field group "${title}"? This will also remove any data associated with these fields. This action cannot be undone.`,
+                confirmText: 'Delete Permanently',
+                isDanger: true
+            });
+
+            if (confirmed) {
+                document.getElementById(`delete-group-${id}`).submit();
+            }
+        };
+    </script>
 </x-cms-dashboard::layouts.admin>
