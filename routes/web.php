@@ -295,6 +295,7 @@ Route::middleware(['web', \Acme\CmsDashboard\Http\Middleware\PageCacheMiddleware
         Route::post('/update', [ShopFrontendController::class, 'updateCart'])->name('cart.update');
         Route::get('/remove/{key}', [ShopFrontendController::class, 'removeFromCart'])->name('cart.remove');
         Route::post('/apply-coupon', [ShopFrontendController::class, 'applyCoupon'])->name('cart.coupon');
+        Route::get('/remove-coupon', [ShopFrontendController::class, 'removeCoupon'])->name('cart.coupon.remove');
         Route::post('/review', [ShopFrontendController::class, 'storeReview'])->name('review.store');
     });
     Route::get('/checkout', [ShopFrontendController::class, 'checkout'])->name('shop.checkout');
