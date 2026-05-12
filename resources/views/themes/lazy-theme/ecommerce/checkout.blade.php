@@ -9,22 +9,23 @@
         <h1 class="text-[28px] font-bold text-[#2c3338] mb-8">Checkout</h1>
 
         @if(count($cart) > 0)
-        <!-- Coupon Bar -->
-        <div class="mb-8 bg-[#f7f6f7] border-t-[3px] border-[#1363df] p-4 text-[14px] text-[#515151]">
-            <p>
-                <i data-lucide="info" class="w-4 h-4 inline-block mr-1 text-[#1363df]"></i>
-                Have a coupon? <button onclick="const f = document.getElementById('coupon-form'); f.style.display = f.style.display === 'none' ? 'block' : 'none';" class="text-[#1363df] hover:underline">Click here to enter your code</button>
-            </p>
-        </div>
-
-        <div id="coupon-form" style="display: none;" class="mb-8 border border-[#d3ced2] p-6 rounded-[3px]">
-            <p class="text-[14px] text-[#515151] mb-4">If you have a coupon code, please apply it below.</p>
-            <div class="flex gap-2 max-w-md">
-                <input type="text" id="coupon_code_input" placeholder="Coupon code" class="flex-grow border border-[#d3ced2] px-4 py-2.5 text-[14px] outline-none focus:border-[#1363df]">
-                <button type="button" onclick="applyCoupon()" class="bg-[#ebe9eb] text-[#515151] px-6 py-2.5 rounded-[3px] font-bold text-[14px] hover:bg-[#dfdcde] transition-colors">Apply coupon</button>
+        @if(get_shop_option('shop_enable_coupons', '1') === '1')
+        <div class="mb-10 bg-[#f7f6f7] p-6 border-t-2 border-[#1363df] flex items-center gap-2 text-[14px] text-[#515151] relative" x-data="{ open: false }">
+            <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 text-[#1363df]" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 7h.01M7 3h5c.512 0 1.024.195 1.414.586l7 7a2 2 0 010 2.828l-7 7a2 2 0 01-2.828 0l-7-7A1.994 1.994 0 013 12V7a4 4 0 014-4z" />
+            </svg>
+            <span>Have a coupon? <a href="#" @click.prevent="open = !open" class="text-[#1363df] hover:underline">Click here to enter your code</a></span>
+            
+            <div x-show="open" x-transition x-cloak class="absolute left-0 top-full mt-2 bg-white border border-[#d3ced2] p-6 z-50 shadow-xl w-full max-w-md">
+                <p class="text-[14px] mb-4 text-[#515151]">If you have a coupon code, please apply it below.</p>
+                <div class="flex gap-2">
+                    <input type="text" id="coupon_code_input" placeholder="Coupon code" class="flex-grow border border-[#d3ced2] px-4 py-2.5 text-[14px] outline-none focus:border-[#1363df]">
+                    <button type="button" onclick="applyCoupon()" class="bg-[#1363df] text-white px-6 py-2.5 font-bold text-[14px] hover:bg-[#005ba6] transition-all uppercase">Apply</button>
+                </div>
+                <div id="coupon-message" class="mt-2 text-xs"></div>
             </div>
-            <div id="coupon-message" class="mt-2 text-xs"></div>
         </div>
+        @endif
 
         <form action="{{ route('shop.place-order') }}" method="POST">
             @csrf
@@ -187,17 +188,28 @@
                             </tr>
                             @endif
 
-                            @php $coupon = session()->get('lazy_coupon'); @endphp
-                            @if($coupon)
+                            @php 
+                                $appliedCoupons = session()->get('lazy_coupons', []); 
+                                $subtotal = get_lazy_cart_subtotal(); 
+                                $currentSubtotal = $subtotal;
+                                $isMultipleAllowed = (int)get_shop_option('shop_multi_coupon_policy', '1') === 1;
+                            @endphp
+                            @foreach($appliedCoupons as $coupon)
                                 @php 
-                                    $subtotal = get_lazy_cart_subtotal();
-                                    $discount = $coupon['type'] === 'percent' ? $subtotal * ((float)$coupon['amount'] / 100) : (float)$coupon['amount'];
+                                    $amount = (float)($coupon['amount'] ?? ($coupon['discount'] ?? 0));
+                                    $calcBase = $isMultipleAllowed ? $currentSubtotal : $subtotal;
+                                    $discount = ($coupon['type'] ?? 'percent') === 'percent' ? $calcBase * ($amount / 100) : $amount;
+                                    $currentSubtotal -= $discount;
                                 @endphp
-                                <tr class="coupon-row bg-emerald-50/30">
-                                    <th class="text-left p-4 font-bold text-emerald-700">Coupon: {{ $coupon['code'] }}</th>
+                                <tr class="coupon-row bg-emerald-50/10 border-b border-[#eee]">
+                                    <th class="text-left p-4 font-bold text-emerald-700 whitespace-nowrap">
+                                        <div class="flex items-center gap-2">
+                                            Coupon: {{ $coupon['code'] }}
+                                        </div>
+                                    </th>
                                     <td class="text-right p-4 font-bold text-emerald-700">-{{ lazy_price_format($discount) }}</td>
                                 </tr>
-                            @endif
+                            @endforeach
 
                             <tr class="bg-[#fcfcfc]">
                                 <th class="text-left p-4 font-bold text-[#2c3338]">Total</th>
@@ -262,13 +274,26 @@ function applyCoupon() {
         headers: {
             'Content-Type': 'application/json',
             'Accept': 'application/json',
+            'X-Requested-With': 'XMLHttpRequest',
             'X-CSRF-TOKEN': '{{ csrf_token() }}'
         },
         body: JSON.stringify({ coupon_code: code })
     })
-    .then(response => response.json())
+    .then(response => {
+        if (!response.ok) {
+            return response.text().then(text => {
+                try {
+                    return JSON.parse(text);
+                } catch(e) {
+                    throw new Error(text);
+                }
+            });
+        }
+        return response.json();
+    })
     .then(data => {
         if(data.success) {
+            document.getElementById('coupon_code_input').value = '';
             msgDiv.innerHTML = data.message;
             msgDiv.className = 'mt-2 text-xs text-emerald-600';
             
@@ -286,14 +311,17 @@ function applyCoupon() {
             existingRows.forEach(row => row.remove());
             
             totalRow.insertAdjacentHTML('beforebegin', data.discount_html);
-            lucide.createIcons();
+            if (typeof lucide !== 'undefined') {
+                lucide.createIcons();
+            }
         } else {
-            msgDiv.innerHTML = data.message;
+            msgDiv.innerHTML = data.message || 'Error applying coupon.';
             msgDiv.className = 'mt-2 text-xs text-rose-600';
         }
     })
     .catch(error => {
-        msgDiv.innerHTML = 'Error applying coupon.';
+        console.error('Coupon Error:', error);
+        msgDiv.innerHTML = error.message.substring(0, 100) || 'Error applying coupon.';
         msgDiv.className = 'mt-2 text-xs text-rose-600';
     });
 }

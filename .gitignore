@@ -1,11 +1,14 @@
-# Laravel app files - NOT part of the package
 /app
 /bootstrap
+/config/*
+!/config/lazy-options.php
+/public/*
+!/public/assets
+!/public/themes
 /storage
 /tests
 /vendor
 /.env
-/.env.example
 /artisan
 /composer.lock
 /package-lock.json
@@ -13,28 +16,6 @@
 /phpunit.xml
 /vite.config.js
 /.editorconfig
+/.gitattributes
 /.npmrc
 /package.json
-
-# Laravel default configs - NOT part of the package
-/config/app.php
-/config/auth.php
-/config/cache.php
-/config/database.php
-/config/filesystems.php
-/config/logging.php
-/config/mail.php
-/config/queue.php
-/config/services.php
-/config/session.php
-
-# Laravel public files - NOT part of the package
-/public/.htaccess
-/public/index.php
-/public/robots.txt
-/public/favicon.ico
-/public/storage
-/public/uploads
-
-# Laravel routes - NOT part of the package
-/routes/console.php

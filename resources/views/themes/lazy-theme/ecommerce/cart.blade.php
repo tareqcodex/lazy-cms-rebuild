@@ -66,6 +66,7 @@
                             <tr>
                                 <td colspan="6" class="p-4 border border-gray-100">
                                     <div class="flex flex-col md:flex-row justify-between gap-4">
+                                        @if(get_shop_option('shop_enable_coupons', '1') === '1')
                                         <div>
                                             <div class="flex gap-2">
                                                 <input type="text" id="coupon_code_input" placeholder="Coupon code" class="border border-gray-300 px-4 py-2 text-sm focus:border-primary outline-none min-w-[150px]">
@@ -73,7 +74,8 @@
                                             </div>
                                             <div id="coupon-message" class="mt-2 text-xs"></div>
                                         </div>
-                                        <button type="submit" class="bg-gray-100 text-gray-700 px-8 py-2 text-sm font-bold hover:bg-gray-200 transition-all uppercase">Update cart</button>
+                                        @endif
+                                        <button type="submit" class="bg-gray-100 text-gray-700 px-8 py-2 text-sm font-bold hover:bg-gray-200 transition-all uppercase {{ get_shop_option('shop_enable_coupons', '1') !== '1' ? 'w-full md:w-auto' : '' }}">Update cart</button>
                                     </div>
                                 </td>
                             </tr>
@@ -108,20 +110,29 @@
                             </tr>
                             @endif
                             
-                            @php $coupon = session()->get('lazy_coupon'); @endphp
-                            @if($coupon)
+                            @php 
+                                $appliedCoupons = session()->get('lazy_coupons', []); 
+                                $subtotal = get_lazy_cart_subtotal(); 
+                                $currentSubtotal = $subtotal;
+                                $isMultipleAllowed = (int)get_shop_option('shop_multi_coupon_policy', '1') === 1;
+                            @endphp
+                            @foreach($appliedCoupons as $coupon)
                                 @php 
-                                    $subtotal = get_lazy_cart_subtotal();
-                                    $discount = $coupon['type'] === 'percent' ? $subtotal * ((float)$coupon['amount'] / 100) : (float)$coupon['amount'];
+                                    $amount = (float)($coupon['amount'] ?? ($coupon['discount'] ?? 0));
+                                    $calcBase = $isMultipleAllowed ? $currentSubtotal : $subtotal;
+                                    $discount = ($coupon['type'] ?? 'percent') === 'percent' ? $calcBase * ($amount / 100) : $amount;
+                                    $currentSubtotal -= $discount;
                                 @endphp
-                                <tr class="coupon-row bg-emerald-50/30">
-                                    <th class="p-4 bg-gray-50/0 text-left font-bold text-emerald-700 flex items-center gap-2">
-                                        Coupon: {{ $coupon['code'] }}
-                                        <a href="{{ route('shop.cart.coupon.remove') }}" class="text-rose-500 hover:text-rose-700 text-xs font-normal">[Remove]</a>
+                                <tr class="coupon-row bg-emerald-50/10 border-b border-gray-100">
+                                    <th class="p-4 bg-gray-50 text-left font-bold text-emerald-700 w-1/3 whitespace-nowrap">
+                                        <div class="flex items-center gap-2">
+                                            Coupon: {{ $coupon['code'] }}
+                                            <a href="{{ route('shop.cart.coupon.remove') }}?code={{ urlencode($coupon['code']) }}" class="text-rose-500 hover:text-rose-700 text-[10px] font-normal">[Remove]</a>
+                                        </div>
                                     </th>
-                                    <td class="p-4 font-bold text-emerald-700">-{{ lazy_price_format($discount) }}</td>
+                                    <td class="p-4 font-bold text-emerald-700">{{ lazy_price_format($discount) }}</td>
                                 </tr>
-                            @endif
+                            @endforeach
 
                             <tr class="bg-gray-50">
                                 <th class="p-4 text-left font-extrabold text-gray-900">Total</th>
@@ -153,21 +164,34 @@ function applyCoupon() {
         headers: {
             'Content-Type': 'application/json',
             'Accept': 'application/json',
+            'X-Requested-With': 'XMLHttpRequest',
             'X-CSRF-TOKEN': '{{ csrf_token() }}'
         },
         body: JSON.stringify({ coupon_code: code })
     })
-    .then(response => response.json())
+    .then(response => {
+        if (!response.ok) {
+            return response.text().then(text => {
+                try {
+                    return JSON.parse(text);
+                } catch(e) {
+                    throw new Error(text);
+                }
+            });
+        }
+        return response.json();
+    })
     .then(data => {
         if(data.success) {
+            document.getElementById('coupon_code_input').value = '';
             msgDiv.innerHTML = data.message;
             msgDiv.className = 'mt-2 text-xs text-emerald-600';
             
             // Update Totals
-            document.getElementById('cart-subtotal').innerText = data.subtotal;
-            document.getElementById('cart-shipping').innerText = data.shipping;
-            if(document.getElementById('cart-tax')) document.getElementById('cart-tax').innerText = data.tax;
-            document.getElementById('cart-total').innerText = data.total;
+            document.getElementById('cart-subtotal').innerHTML = data.subtotal;
+            document.getElementById('cart-shipping').innerHTML = data.shipping;
+            if(document.getElementById('cart-tax')) document.getElementById('cart-tax').innerHTML = data.tax;
+            document.getElementById('cart-total').innerHTML = data.total;
             
             // Add or update coupon row
             const tbody = document.getElementById('cart-totals-body');
@@ -179,14 +203,17 @@ function applyCoupon() {
             
             // Insert new coupon row before total
             totalRow.insertAdjacentHTML('beforebegin', data.discount_html);
-            lucide.createIcons();
+            if (typeof lucide !== 'undefined') {
+                lucide.createIcons();
+            }
         } else {
-            msgDiv.innerHTML = data.message;
+            msgDiv.innerHTML = data.message || 'Error applying coupon.';
             msgDiv.className = 'mt-2 text-xs text-rose-600';
         }
     })
     .catch(error => {
-        msgDiv.innerHTML = 'Error applying coupon.';
+        console.error('Coupon Error:', error);
+        msgDiv.innerHTML = error.message.substring(0, 100) || 'Error applying coupon.';
         msgDiv.className = 'mt-2 text-xs text-rose-600';
     });
 }

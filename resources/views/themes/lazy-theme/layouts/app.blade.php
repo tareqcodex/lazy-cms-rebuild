@@ -2,7 +2,14 @@
 <html lang="{{ str_replace('_', '-', app()->getLocale()) }}">
 <head>
     <meta charset="utf-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1">
+    @php
+        $mobileZoom = get_cms_option('theme_mobile_zoom', '1') == '1' ? 'yes' : 'no';
+        $viewportContent = "width=device-width, initial-scale=1";
+        if ($mobileZoom === 'no') {
+            $viewportContent .= ", user-scalable=no";
+        }
+    @endphp
+    <meta name="viewport" content="{{ $viewportContent }}">
     <title>@yield('title', get_cms_option('site_title', 'Lazy CMS'))</title>
     
     @php
@@ -50,9 +57,6 @@
     <script src="https://cdn.tailwindcss.com"></script>
     <!-- SweetAlert2 -->
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
-    <!-- Alpine.js -->
-    <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js"></script>
-    <style>[x-cloak] { display: none !important; }</style>
     <script>
         tailwind.config = {
             theme: {
@@ -168,6 +172,43 @@
             top: 0;
             z-index: 1000;
         }
+        @endif
+
+        /* RESPONSIVE SETTINGS */
+        @php
+            $responsiveEnabled = get_cms_option('theme_responsive_design', '1') == '1';
+            $gridBP = get_cms_option('theme_grid_breakpoint', '1000');
+            $headerBP = get_cms_option('theme_header_breakpoint', '800');
+            $contentBP = get_cms_option('theme_content_breakpoint', '800');
+            $sidebarBP = get_cms_option('theme_sidebar_breakpoint', '800');
+            $smallBP = get_cms_option('theme_small_screen_breakpoint', '800');
+            $mediumBP = get_cms_option('theme_medium_screen_breakpoint', '1100');
+            
+            // Typography Sensitivity
+            $typoSensitivity = (float)get_cms_option('theme_typography_sensitivity', '0.6');
+            $minFontSizeFactor = (float)get_cms_option('theme_font_size_factor', '1.50');
+        @endphp
+
+        :root {
+            --grid-bp: {{ $gridBP }}px;
+            --header-bp: {{ $headerBP }}px;
+            --content-bp: {{ $contentBP }}px;
+            --sidebar-bp: {{ $sidebarBP }}px;
+            --small-bp: {{ $smallBP }}px;
+            --medium-bp: {{ $mediumBP }}px;
+        }
+
+        @if(!$responsiveEnabled)
+            body { min-width: var(--site-width); overflow-x: auto; }
+            .container-custom, .page-container { width: var(--site-width) !important; max-width: none !important; }
+        @endif
+
+        /* Responsive Typography Logic */
+        @if($typoSensitivity > 0)
+            @media (max-width: {{ $mediumBP }}px) {
+                html { font-size: calc(100% - {{ (1 - $typoSensitivity) * 2 }}px); }
+                h1, .h1-style { font-size: calc(var(--body-size) * {{ $minFontSizeFactor }} * 1.5) !important; }
+            }
         @endif
 
         /* PRIORITY CUSTOM CSS */

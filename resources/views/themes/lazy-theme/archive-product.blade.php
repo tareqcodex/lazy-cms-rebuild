@@ -1,12 +1,12 @@
 @extends('cms-dashboard::themes.lazy-theme.layouts.app')
 
-@section('title', $title ?? 'Archive')
+@section('title', $title ?? 'Shop')
 
 @section('content')
 <style>
-    /* WooCommerce-style Pagination Overrides */
+    /* WooCommerce-style Pagination Overrides for Laravel Default Tailwind Pagination */
     nav[role="navigation"] { display: flex; align-items: center; justify-content: flex-start; margin-top: 2rem; }
-    nav[role="navigation"] > div:first-child { display: none; }
+    nav[role="navigation"] > div:first-child { display: none; } /* Hide the 'Showing X to Y...' text from pagination block */
     nav[role="navigation"] > div:last-child { display: flex; width: auto; }
     nav[role="navigation"] .relative.inline-flex { 
         padding: 0; width: 36px; height: 36px; display: inline-flex; align-items: center; justify-content: center;
@@ -21,12 +21,7 @@
 
 <div class="bg-white py-12 min-h-screen font-sans">
     <div class="container-custom">
-        <!-- Breadcrumbs -->
-        <nav class="text-[14px] text-gray-400 mb-6" aria-label="Breadcrumb">
-            <a href="{{ url('/') }}" class="hover:text-gray-900">Home</a> / <span>{{ $title }}</span>
-        </nav>
-
-        <h1 class="text-[36px] md:text-[42px] font-normal text-[#2c3338] mb-8">{{ $title }}</h1>
+        <h1 class="text-[36px] md:text-[42px] font-normal text-[#2c3338] mb-8">{{ $title ?? 'Shop' }}</h1>
 
         <div class="flex flex-col md:flex-row justify-between items-center mb-8 text-[14px] text-[#777]">
             <div class="mb-4 md:mb-0">
@@ -38,7 +33,6 @@
             </div>
             <div>
                 <form action="" method="GET" id="sorting-form">
-                    @if(request('s')) <input type="hidden" name="s" value="{{ request('s') }}"> @endif
                     <select name="orderby" class="border-0 bg-transparent focus:ring-0 text-[#777] cursor-pointer text-[14px] font-normal p-0 pr-6" onchange="this.form.submit()">
                         <option value="latest" {{ request('orderby') == 'latest' ? 'selected' : '' }}>Default sorting</option>
                         <option value="popularity" {{ request('orderby') == 'popularity' ? 'selected' : '' }}>Sort by popularity</option>
@@ -67,10 +61,13 @@
                     </a>
                     <div class="flex flex-col flex-grow text-left px-1">
                         <div class="text-[12px] text-[#999] mb-0.5">
-                            @php 
-                                $cat = $product->taxonomyTerms()->whereIn('taxonomy_slug', ['product_category', 'product_cat'])->first(); 
-                            @endphp
-                            {{ $cat->name ?? 'Product' }}
+                            @if($product->taxonomyTerms && $product->taxonomyTerms->count() > 0)
+                                {{ $product->taxonomyTerms->first()->name }}
+                            @elseif($product->categories && $product->categories->count() > 0)
+                                {{ $product->categories->first()->name }}
+                            @else
+                                Uncategorized
+                            @endif
                         </div>
                         <h2 class="text-[15px] font-bold text-[#2c3338] hover:text-[#0070cd] transition-colors mb-1 leading-tight">
                             <a href="{{ get_lazy_permalink($product) }}">{{ $product->title }}</a>
@@ -101,7 +98,7 @@
         </div>
         @else
         <div class="bg-white p-10 text-center text-[#777]">
-            <p class="text-lg mb-4">No results found.</p>
+            <p class="text-lg mb-4">No products found.</p>
             <a href="{{ url('/') }}" class="inline-block bg-[#0070cd] text-white px-6 py-2 rounded hover:bg-[#005ba6] transition">Return to Home</a>
         </div>
         @endif
