@@ -1,7 +1,9 @@
 /app
 /bootstrap
-/config
-/public
+/config/*
+!/config/lazy-options.php
+/public/*
+!/public/assets
 /storage
 /tests
 /vendor
