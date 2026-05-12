@@ -118,7 +118,28 @@
                                                 $desc  = $field['desc']  ?? '';
                                                 $type  = $field['type']  ?? 'text';
                                             @endphp
-                                            <tr class="field-row border-b border-[#f0f0f1] hover:bg-[#f6f7f7]/60 transition-colors"
+                                                 @if($type === 'heading')
+                                                    <tr class="section-heading-row bg-[#f6f7f7] border-b border-[#c3c4c7]">
+                                                        <td colspan="2" class="px-5 py-2.5">
+                                                            <h3 class="text-[13px] font-bold text-[#1d2327] m-0 uppercase tracking-wider">{{ $field['label'] }}</h3>
+                                                        </td>
+                                                    </tr>
+                                                    @continue
+                                                 @endif
+
+                                                 @if($type === 'info')
+                                                    <tr class="section-info-row bg-blue-50/50 border-b border-[#f0f0f1]">
+                                                        <td colspan="2" class="px-5 py-3">
+                                                            <div class="flex items-start gap-3">
+                                                                <span class="material-symbols-outlined text-blue-600 mt-0.5" style="font-size:18px !important;">info</span>
+                                                                <p class="text-[12px] text-blue-800 leading-relaxed m-0">{!! $field['desc'] !!}</p>
+                                                            </div>
+                                                        </td>
+                                                    </tr>
+                                                    @continue
+                                                 @endif
+
+                                                 <tr class="field-row border-b border-[#f0f0f1] hover:bg-[#f6f7f7]/60 transition-colors"
                                                 data-label="{{ strtolower($label . ' ' . $desc . ' ' . $sectionKey . ' ' . $sections[$sectionKey]['title']) }}">
                                                 <th scope="row" class="w-[260px] text-left align-top px-5 py-3.5">
                                                     <label for="field_{{ $key }}" class="text-[13px] font-semibold text-[#2271b1] block mb-0.5 cursor-pointer">{{ $label }}</label>
@@ -405,6 +426,21 @@
                                                                     {!! $field['desc'] !!}
                                                                 </p>
                                                             @endif
+                                                        </div>
+
+                                                     @elseif($type === 'range')
+                                                        {{-- Range/Slider field --}}
+                                                        <div class="flex items-center gap-4 w-[340px]">
+                                                            <input type="range" name="{{ $key }}" id="range_{{ $key }}"
+                                                                   min="{{ $field['min'] ?? 0 }}"
+                                                                   max="{{ $field['max'] ?? 2000 }}"
+                                                                   step="{{ $field['step'] ?? 1 }}"
+                                                                   value="{{ $val }}"
+                                                                   class="flex-1 accent-[#2271b1] cursor-pointer h-1.5 bg-gray-200 rounded-lg appearance-none"
+                                                                   oninput="document.getElementById('range_val_{{ $key }}').value = this.value">
+                                                            <input type="number" id="range_val_{{ $key }}" value="{{ $val }}"
+                                                                   class="wp-input w-16 h-8 text-center text-[12px]"
+                                                                   oninput="document.getElementById('range_{{ $key }}').value = this.value">
                                                         </div>
 
                                                     @elseif($type === 'css' || $type === 'script')

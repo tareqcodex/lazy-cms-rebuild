@@ -13,15 +13,15 @@
         <div class="mb-8 bg-[#f7f6f7] border-t-[3px] border-[#1363df] p-4 text-[14px] text-[#515151]">
             <p>
                 <i data-lucide="info" class="w-4 h-4 inline-block mr-1 text-[#1363df]"></i>
-                Have a coupon? <button onclick="document.getElementById('coupon-form').classList.toggle('hidden')" class="text-[#1363df] hover:underline">Click here to enter your code</button>
+                Have a coupon? <button onclick="toggleCouponForm()" class="text-[#1363df] hover:underline">Click here to enter your code</button>
             </p>
         </div>
 
-        <div id="coupon-form" class="hidden mb-8 border border-[#d3ced2] p-6 rounded-[3px]">
+        <div id="coupon-form" style="display: none !important;" class="mb-8 border border-[#d3ced2] p-6 rounded-[3px]">
             <p class="text-[14px] text-[#515151] mb-4">If you have a coupon code, please apply it below.</p>
             <div class="flex gap-2 max-w-md">
-                <input type="text" placeholder="Coupon code" class="flex-grow border border-[#d3ced2] px-4 py-2.5 text-[14px] outline-none focus:border-[#1363df]">
-                <button class="bg-[#ebe9eb] text-[#515151] px-6 py-2.5 rounded-[3px] font-bold text-[14px] hover:bg-[#dfdcde] transition-colors">Apply coupon</button>
+                <input type="text" id="checkout-coupon-code" placeholder="Coupon code" class="flex-grow border border-[#d3ced2] px-4 py-2.5 text-[14px] outline-none focus:border-[#1363df]">
+                <button type="button" onclick="applyCheckoutCoupon()" class="bg-[#ebe9eb] text-[#515151] px-6 py-2.5 rounded-[3px] font-bold text-[14px] hover:bg-[#dfdcde] transition-colors">Apply coupon</button>
             </div>
         </div>
 
@@ -269,6 +269,78 @@ document.addEventListener('DOMContentLoaded', function() {
         shippingForm.classList.remove('hidden');
     }
 
+    function toggleCouponForm() {
+        const form = document.getElementById('coupon-form');
+        if (form.style.display === 'none' || form.style.display === 'none !important') {
+            form.style.setProperty('display', 'block', 'important');
+        } else {
+            form.style.setProperty('display', 'none', 'important');
+        }
+    }
+
+    window.applyCheckoutCoupon = function() {
+        const codeInput = document.getElementById('checkout-coupon-code');
+        const code = codeInput.value.trim();
+        
+        if (!code) {
+            Swal.fire({
+                title: 'Error!',
+                text: 'Please enter a coupon code.',
+                icon: 'error',
+                confirmButtonColor: '#1363df'
+            });
+            return;
+        }
+
+        const btn = event.target;
+        const originalText = btn.innerText;
+        btn.innerText = 'Applying...';
+        btn.disabled = true;
+
+        fetch("{{ route('shop.coupon.apply') }}", {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRF-TOKEN': '{{ csrf_token() }}',
+                'Accept': 'application/json'
+            },
+            body: JSON.stringify({ coupon_code: code })
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                Swal.fire({
+                    title: 'Success!',
+                    text: data.message,
+                    icon: 'success',
+                    confirmButtonColor: '#1363df'
+                }).then(() => {
+                    window.location.reload();
+                });
+            } else {
+                Swal.fire({
+                    title: 'Error!',
+                    text: data.message,
+                    icon: 'error',
+                    confirmButtonColor: '#1363df'
+                });
+            }
+        })
+        .catch(error => {
+            console.error('Error:', error);
+            Swal.fire({
+                title: 'Error!',
+                text: 'Something went wrong. Please try again.',
+                icon: 'error',
+                confirmButtonColor: '#1363df'
+            });
+        })
+        .finally(() => {
+            btn.innerText = originalText;
+            btn.disabled = false;
+        });
+    }
+
     if (checkoutForm) {
         checkoutForm.addEventListener('submit', function(e) {
             e.preventDefault();
@@ -310,6 +382,33 @@ document.addEventListener('DOMContentLoaded', function() {
                         icon: 'error',
                         confirmButtonText: 'Ok',
                         confirmButtonColor: '#1363df'
+                    });
+
+                    submitBtn.innerText = originalText;
+                    submitBtn.disabled = false;
+                } else if (data.redirect) {
+                    window.location.href = data.redirect;
+                } else {
+                    // Fallback redirect if success but no specific redirect URL
+                    window.location.href = "{{ url('/order-confirmation') }}/" + (data.order_id || '');
+                }
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                Swal.fire({
+                    title: 'Error!',
+                    text: 'Something went wrong while processing your order. Please try again.',
+                    icon: 'error',
+                    confirmButtonColor: '#1363df'
+                });
+                submitBtn.innerText = originalText;
+                submitBtn.disabled = false;
+            });
+        });
+    }
+});
+</script>
+@endpush
                     });
 
                     submitBtn.innerText = originalText;

@@ -765,6 +765,41 @@ if (!function_exists('lazy_translate')) {
     }
 }
 
+if (!function_exists('get_lazy_shop_url')) {
+    function get_lazy_shop_url() {
+        $pageId = get_cms_option('shop_page_id');
+        if ($pageId) {
+            $page = \Acme\CmsDashboard\Models\Post::find($pageId);
+            if ($page) return get_lazy_permalink($page);
+        }
+        return url('/product');
+    }
+}
+
+if (!function_exists('get_lazy_cart_url')) {
+    function get_lazy_cart_url() {
+        return route('shop.cart');
+    }
+}
+
+if (!function_exists('get_lazy_checkout_url')) {
+    function get_lazy_checkout_url() {
+        return route('shop.checkout');
+    }
+}
+
+if (!function_exists('lazy_price_format')) {
+    function lazy_price_format($price) {
+        $symbol = get_cms_option('shop_currency_symbol', '$');
+        $position = get_cms_option('shop_currency_position', 'left');
+        $decimals = (int) get_cms_option('shop_price_decimals', 2);
+        
+        $formatted = number_format((float)$price, $decimals);
+        
+        return $position === 'left' ? $symbol . $formatted : $formatted . $symbol;
+    }
+}
+
 if (!function_exists('get_lazy_cart_count')) {
     function get_lazy_cart_count() {
         $cart = session()->get('lazy_cart', []);
@@ -794,22 +829,43 @@ if (!function_exists('get_lazy_cart_shipping')) {
     }
 }
 
+if (!function_exists('get_lazy_cart_tax')) {
+    function get_lazy_cart_tax() {
+        if (get_cms_option('shop_enable_tax', 0) != 1) return 0;
+        $subtotal = get_lazy_cart_subtotal();
+        $taxRate = (float) get_cms_option('shop_tax_rate', 0);
+        return $subtotal * ($taxRate / 100);
+    }
+}
+
 if (!function_exists('get_lazy_cart_total')) {
     function get_lazy_cart_total() {
         $subtotal = get_lazy_cart_subtotal();
         $shipping = get_lazy_cart_shipping();
+        $tax = get_lazy_cart_tax();
         
-        $coupon = session()->get('lazy_coupon');
-        $discount = 0;
-        if ($coupon) {
-            if ($coupon['type'] === 'fixed') {
-                $discount = $coupon['discount'];
+        $coupons = session()->get('lazy_coupons', []);
+        $totalDiscount = 0;
+        $currentSubtotal = $subtotal;
+        $isSequential = (int)get_shop_option('shop_coupon_stacking_policy', '1') == 1;
+
+        foreach ($coupons as $coupon) {
+            $amount = (float) ($coupon['amount'] ?? ($coupon['discount'] ?? 0));
+            $calcBase = $isSequential ? $currentSubtotal : $subtotal;
+            
+            if (($coupon['type'] ?? 'percent') === 'fixed_cart' || ($coupon['type'] ?? 'percent') === 'fixed') {
+                $discount = $amount;
             } else {
-                $discount = $subtotal * ($coupon['discount'] / 100);
+                $discount = $calcBase * ($amount / 100);
+            }
+            
+            $totalDiscount += $discount;
+            if ($isSequential) {
+                $currentSubtotal -= $discount;
             }
         }
         
-        return max(0, $subtotal + $shipping - $discount);
+        return max(0, $subtotal + $shipping + $tax - $totalDiscount);
     }
 }
 

@@ -88,6 +88,7 @@ class CmsDashboardServiceProvider extends ServiceProvider
     public function register(): void
     {
         require_once __DIR__ . '/helpers.php';
+        require_once __DIR__ . '/ecommerce_helpers.php';
         $this->mergeConfigFrom(__DIR__ . '/../config/lazy-options.php', 'lazy-options');
 
         // 1. Get Active Theme

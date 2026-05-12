@@ -83,6 +83,12 @@
                                     <td class="px-3 py-2 text-right font-semibold">{{ get_cms_option('shop_currency_symbol', '$') }}{{ number_format($order->tax_total, 2) }}</td>
                                 </tr>
                             @endif
+                            @if($order->coupon_code)
+                                <tr>
+                                    <td class="px-3 py-2 text-right text-emerald-700 font-bold">Coupons ({{ $order->coupon_code }}):</td>
+                                    <td class="px-3 py-2 text-right font-bold text-emerald-700">-{{ get_cms_option('shop_currency_symbol', '$') }}{{ number_format($order->discount_total, 2) }}</td>
+                                </tr>
+                            @endif
                             <tr class="bg-[#f6f7f7]">
                                 <td class="px-3 py-3 text-right font-bold text-[15px]">Total:</td>
                                 <td class="px-3 py-3 text-right font-bold text-[18px] text-[#2271b1]">{{ get_cms_option('shop_currency_symbol', '$') }}{{ number_format($order->total, 2) }}</td>

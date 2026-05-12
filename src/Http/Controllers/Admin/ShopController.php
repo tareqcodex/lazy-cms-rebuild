@@ -68,17 +68,57 @@ class ShopController extends Controller
 
     public function settings()
     {
-        return view('cms-dashboard::admin.shop.settings');
+        $countries = \Acme\CmsDashboard\Services\EcommerceData::getCountriesWithStates();
+        $currencies = \Acme\CmsDashboard\Services\EcommerceData::getCurrencies();
+        $pages = \Illuminate\Support\Facades\DB::table('posts')
+            ->where('type', 'page')
+            ->where('status', 'published')
+            ->get(['id', 'title']);
+
+        $products = \Illuminate\Support\Facades\DB::table('posts')
+            ->where('type', 'product')
+            ->where('status', 'published')
+            ->get(['id', 'title']);
+
+        $categories = \Illuminate\Support\Facades\DB::table('taxonomy_terms')
+            ->where('taxonomy_slug', 'product_cat')
+            ->get(['id', 'name']);
+
+        return view('cms-dashboard::admin.shop.settings', compact('countries', 'currencies', 'pages', 'products', 'categories'));
     }
 
     public function saveSettings(Request $request)
     {
-        // Save shop settings to options table
-        $settings = $request->except('_token');
-        foreach ($settings as $key => $value) {
-            update_cms_option('shop_' . $key, $value);
+        // 1. Explicitly handle toggles (so they save 0 when unchecked)
+        $toggles = [
+            'enable_coupons'        => 'shop_enable_coupons',
+            'multi_coupon_policy'   => 'shop_coupon_stacking_policy',
+        ];
+
+        foreach ($toggles as $reqKey => $optKey) {
+            $val = $request->has($reqKey) ? '1' : '0';
+            \Illuminate\Support\Facades\DB::table('cms_settings')->updateOrInsert(
+                ['key' => $optKey],
+                ['value' => $val, 'updated_at' => now()]
+            );
+            
+            // Delete locale keys
+            \Illuminate\Support\Facades\DB::table('cms_settings')
+                ->where('key', 'like', $optKey . '_%')
+                ->delete();
         }
 
-        return redirect()->back()->with('success', 'Shop settings saved successfully.');
+        // 2. Save everything else
+        $skip = array_merge(['_token', 'active_tab'], array_keys($toggles));
+        foreach ($request->except($skip) as $key => $value) {
+            update_shop_option('shop_' . $key, $value);
+        }
+
+        if ($request->has('active_tab')) {
+            session(['active_shop_tab' => $request->active_tab]);
+            session()->save();
+        }
+
+        return redirect()->back()->with('success', 'Shop settings saved successfully!');
     }
 }

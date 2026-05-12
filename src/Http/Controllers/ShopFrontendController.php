@@ -26,6 +26,7 @@ class ShopFrontendController extends Controller
 
     public function cart()
     {
+        $this->revalidateCoupon();
         $cart = Session::get('lazy_cart', []);
         return view($this->resolveThemeView('cart'), compact('cart'));
     }
@@ -99,18 +100,19 @@ class ShopFrontendController extends Controller
                 if ($qty <= 0) {
                     unset($cart[$key]);
                 } else {
-                    $cart[$key]['quantity'] = $qty;
+                    $cart[$key]['quantity'] = (int)$qty;
                 }
             }
         }
 
         Session::put('lazy_cart', $cart);
+        $this->revalidateCoupon();
 
         if ($request->ajax()) {
             $item_subtotals = [];
             foreach ($cart as $key => $item) {
                 $price = $item['sale_price'] ?? $item['price'];
-                $item_subtotals[$key] = number_format($price * $item['quantity'], 2);
+                $item_subtotals[$key] = lazy_price_format($price * $item['quantity']);
             }
 
             return response()->json([
@@ -118,9 +120,11 @@ class ShopFrontendController extends Controller
                 'message' => 'Cart updated!',
                 'cart_count' => get_lazy_cart_count(),
                 'item_subtotals' => $item_subtotals,
-                'subtotal' => number_format(get_lazy_cart_subtotal(), 2),
-                'shipping' => number_format(get_lazy_cart_shipping(), 2),
-                'total' => number_format(get_lazy_cart_total(), 2)
+                'subtotal' => lazy_price_format(get_lazy_cart_subtotal()),
+                'shipping' => lazy_price_format(get_lazy_cart_shipping()),
+                'tax' => lazy_price_format(get_lazy_cart_tax()),
+                'total' => lazy_price_format(get_lazy_cart_total()),
+                'discount_html' => $this->getDiscountHtml()
             ]);
         }
 
@@ -129,32 +133,191 @@ class ShopFrontendController extends Controller
 
     public function applyCoupon(Request $request)
     {
-        $code = $request->input('coupon_code');
+        $this->revalidateCoupon(); // Prune first based on current settings
         
-        // Basic logic for demonstration, we can expand this with a real Coupon model later
-        if (strtoupper($code) === 'LAZY10') {
-            Session::put('lazy_coupon', ['code' => $code, 'discount' => 10, 'type' => 'fixed']);
-            
-            if ($request->ajax()) {
-                return response()->json([
-                    'success' => true,
-                    'message' => 'Coupon applied successfully!',
-                    'discount' => 10,
-                    'cart_count' => get_lazy_cart_count(),
-                    'shipping' => number_format(get_lazy_cart_shipping(), 2),
-                    'total' => number_format(get_lazy_cart_total(), 2)
-                ]);
-            }
-            return redirect()->back()->with('success', 'Coupon applied!');
+        // Check if coupons are enabled in settings
+        if (get_shop_option('shop_enable_coupons', '1') !== '1') {
+            return $this->couponResponse(false, 'Coupons are currently disabled.', $request);
         }
 
-        if ($request->ajax()) {
-            return response()->json([
-                'success' => false,
-                'message' => 'Invalid coupon code.'
-            ], 422);
+        try {
+            $code = strtoupper($request->input('coupon_code'));
+            if (empty($code)) {
+                return $this->couponResponse(false, 'Please enter a coupon code.', $request);
+            }
+
+            $coupons = json_decode(get_cms_option('shop_coupons', '[]'), true) ?: [];
+            
+            if (empty($coupons)) {
+                return $this->couponResponse(false, 'No coupons available.', $request);
+            }
+
+            $coupon = null;
+            foreach ($coupons as $c) {
+                if (strtoupper($c['code'] ?? '') === $code) {
+                    $coupon = $c;
+                    break;
+                }
+            }
+
+            if (!$coupon) {
+                return $this->couponResponse(false, 'Invalid coupon code.', $request);
+            }
+
+            // Check if multiple coupons are allowed
+            $isMultipleAllowed = (int)get_cms_option('shop_coupon_stacking_policy', '1') === 1;
+            $appliedCoupons = Session::get('lazy_coupons', []);
+            
+            if (!$isMultipleAllowed && count($appliedCoupons) > 0) {
+                return $this->couponResponse(false, 'Multiple coupons are not allowed for this order.', $request);
+            }
+
+            foreach ($appliedCoupons as $applied) {
+                if (strtoupper($applied['code']) === $code) {
+                    return $this->couponResponse(false, 'This coupon is already applied.', $request);
+                }
+            }
+
+            // 1. Expiry Check
+            if (!empty($coupon['expiry']) && strtotime($coupon['expiry']) < strtotime(date('Y-m-d'))) {
+                return $this->couponResponse(false, 'This coupon has expired.', $request);
+            }
+
+            // 2. Min Spend Check
+            $subtotal = round(get_lazy_cart_subtotal(), 2);
+            $minSpend = !empty($coupon['min_spend']) ? round((float)$coupon['min_spend'], 2) : 0;
+            
+            if ($minSpend > 0 && $subtotal < $minSpend) {
+                return $this->couponResponse(false, 'Minimum spend for this coupon is ' . lazy_price_format($minSpend), $request);
+            }
+
+            // 3. Usage Limit Check
+            $usedCoupons = Session::get('lazy_used_coupons', []);
+            $usageCount = $usedCoupons[$code] ?? 0;
+            if (!empty($coupon['usage_limit']) && $usageCount >= (int)$coupon['usage_limit']) {
+                return $this->couponResponse(false, 'Usage limit reached for this coupon.', $request);
+            }
+
+            // 4. Product/Category Restrictions
+            $cart = Session::get('lazy_cart', []);
+            $hasEligibleProduct = true;
+            
+            if (!empty($coupon['products']) || !empty($coupon['categories'])) {
+                $hasEligibleProduct = false;
+                foreach ($cart as $item) {
+                    $productId = $item['id'] ?? 0;
+                    if (!$productId) continue;
+
+                    $productCategories = \Illuminate\Support\Facades\DB::table('post_taxonomy_term')
+                        ->where('post_id', $productId)
+                        ->pluck('taxonomy_term_id')
+                        ->toArray();
+
+                    $isProductEligible = empty($coupon['products']) || in_array($productId, (array)$coupon['products']);
+                    $isCategoryEligible = empty($coupon['categories']) || !empty(array_intersect($productCategories, (array)$coupon['categories']));
+
+                    if ($isProductEligible && $isCategoryEligible) {
+                        $hasEligibleProduct = true;
+                        break;
+                    }
+                }
+            }
+
+            if (!$hasEligibleProduct) {
+                return $this->couponResponse(false, 'This coupon is not valid for the products in your cart.', $request);
+            }
+
+            // Success: Add to coupons array
+            $appliedCoupons[] = [
+                'code' => $coupon['code'],
+                'type' => $coupon['type'] ?? 'percent',
+                'amount' => $coupon['amount'] ?? ($coupon['discount'] ?? 0)
+            ];
+            
+            Session::put('lazy_coupons', $appliedCoupons);
+            Session::save();
+            Session::forget('lazy_coupon'); // Ensure old singular key is gone
+
+            return $this->couponResponse(true, 'Coupon applied successfully!', $request);
+
+        } catch (\Exception $e) {
+            if ($request->ajax()) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'System Error: ' . $e->getMessage()
+                ], 500);
+            }
+            return redirect()->back()->with('error', 'System Error: ' . $e->getMessage());
         }
-        return redirect()->back()->with('error', 'Invalid coupon code.');
+    }
+
+    private function couponResponse($success, $message, $request)
+    {
+        if ($request->ajax() || $request->wantsJson()) {
+            return response()->json([
+                'success' => $success,
+                'message' => $message,
+                'subtotal' => lazy_price_format(get_lazy_cart_subtotal()),
+                'shipping' => lazy_price_format(get_lazy_cart_shipping()),
+                'tax' => lazy_price_format(get_lazy_cart_tax()),
+                'total' => lazy_price_format(get_lazy_cart_total()),
+                'discount_html' => $success ? $this->getDiscountHtml() : ''
+            ], $success ? 200 : 422);
+        }
+
+        return redirect()->back()->with($success ? 'success' : 'error', $message);
+    }
+
+    private function getDiscountHtml()
+    {
+        $coupons = Session::get('lazy_coupons', []);
+        if (empty($coupons)) return '';
+        
+        $subtotal = get_lazy_cart_subtotal();
+        $currentSubtotal = $subtotal;
+        $isSequential = get_shop_option('shop_calc_coupons_sequentially', '0') === '1';
+        $html = '';
+
+        foreach ($coupons as $coupon) {
+            $amount = (float) ($coupon['amount'] ?? ($coupon['discount'] ?? 0));
+            $calcBase = $isSequential ? $currentSubtotal : $subtotal;
+            $discount = ($coupon['type'] ?? 'percent') === 'percent' ? $calcBase * ($amount / 100) : $amount;
+            
+            $html .= '
+                <tr class="coupon-row bg-emerald-50/5 border-b border-gray-100">
+                    <th class="p-4 bg-gray-50 text-left font-bold text-emerald-700 w-1/3 whitespace-nowrap">
+                        <div class="flex items-center gap-2">
+                            Coupon: ' . $coupon['code'] . '
+                            <a href="' . route('shop.cart.coupon.remove') . '?code=' . urlencode($coupon['code']) . '" class="text-rose-500 hover:text-rose-700 text-[10px] font-normal">[Remove]</a>
+                        </div>
+                    </th>
+                    <td class="p-4 font-bold text-emerald-700">-' . lazy_price_format($discount) . '</td>
+                </tr>';
+            
+            $currentSubtotal -= $discount;
+        }
+
+        return $html;
+    }
+
+    public function removeCoupon(Request $request)
+    {
+        $code = $request->get('code');
+        if ($code) {
+            $coupons = Session::get('lazy_coupons', []);
+            $newCoupons = [];
+            foreach ($coupons as $c) {
+                if (strtoupper($c['code']) !== strtoupper($code)) {
+                    $newCoupons[] = $c;
+                }
+            }
+            Session::put('lazy_coupons', $newCoupons);
+        } else {
+            Session::forget('lazy_coupons');
+        }
+        Session::forget('lazy_coupon');
+        
+        return redirect()->back()->with('success', 'Coupon removed successfully!');
     }
 
     public function removeFromCart(Request $request, $key)
@@ -163,6 +326,7 @@ class ShopFrontendController extends Controller
         if (isset($cart[$key])) {
             unset($cart[$key]);
             Session::put('lazy_cart', $cart);
+            $this->revalidateCoupon();
         }
 
         if ($request->ajax()) {
@@ -170,20 +334,108 @@ class ShopFrontendController extends Controller
                 'success' => true,
                 'message' => 'Item removed from cart!',
                 'cart_count' => get_lazy_cart_count(),
-                'subtotal' => number_format(get_lazy_cart_subtotal(), 2),
-                'shipping' => number_format(get_lazy_cart_shipping(), 2),
-                'total' => number_format(get_lazy_cart_total(), 2)
+                'subtotal' => lazy_price_format(get_lazy_cart_subtotal()),
+                'shipping' => lazy_price_format(get_lazy_cart_shipping()),
+                'tax' => lazy_price_format(get_lazy_cart_tax()),
+                'total' => lazy_price_format(get_lazy_cart_total()),
+                'discount_html' => $this->getDiscountHtml()
             ]);
         }
 
         return redirect()->back()->with('success', 'Item removed from cart!');
     }
 
+    /**
+     * Revalidates applied coupon when cart is modified
+     */
+    private function revalidateCoupon()
+    {
+        $coupons = Session::get('lazy_coupons', []);
+        if (empty($coupons)) {
+            Session::forget('lazy_coupon');
+            return;
+        }
+
+        $availableCoupons = json_decode(get_cms_option('shop_coupons', '[]'), true) ?: [];
+        $newCoupons = [];
+
+        foreach ($coupons as $applied) {
+            $couponData = null;
+            foreach ($availableCoupons as $c) {
+                if (strtoupper($c['code'] ?? '') === strtoupper($applied['code'])) {
+                    $couponData = $c;
+                    break;
+                }
+            }
+
+            if (!$couponData) continue;
+
+            // Check Min Spend
+            $subtotal = round(get_lazy_cart_subtotal(), 2);
+            $minSpend = !empty($couponData['min_spend']) ? round((float)$couponData['min_spend'], 2) : 0;
+            
+            if ($minSpend > 0 && $subtotal < $minSpend) continue;
+            
+            // Check Expiry
+            if (!empty($couponData['expiry']) && strtotime($couponData['expiry']) < strtotime(date('Y-m-d'))) {
+                continue;
+            }
+
+            // Check Product Restrictions
+            if (!empty($couponData['products']) || !empty($couponData['categories'])) {
+                $cart = Session::get('lazy_cart', []);
+                $hasEligibleProduct = false;
+                foreach ($cart as $item) {
+                    $productId = $item['id'] ?? 0;
+                    $productCategories = \Illuminate\Support\Facades\DB::table('post_taxonomy_term')
+                        ->where('post_id', $productId)
+                        ->pluck('taxonomy_term_id')
+                        ->toArray();
+
+                    $isProductEligible = empty($couponData['products']) || in_array($productId, (array)$couponData['products']);
+                    $isCategoryEligible = empty($couponData['categories']) || !empty(array_intersect($productCategories, (array)$couponData['categories']));
+
+                    if ($isProductEligible && $isCategoryEligible) {
+                        $hasEligibleProduct = true;
+                        break;
+                    }
+                }
+                if (!$hasEligibleProduct) continue;
+            }
+
+            $newCoupons[] = $applied;
+        }
+
+        // Wipe if coupons are disabled globally
+        if (get_shop_option('shop_enable_coupons', '1') !== '1') {
+            Session::forget('lazy_coupons');
+            Session::forget('lazy_coupon');
+            Session::save();
+            return;
+        }
+
+        Session::put('lazy_coupons', $newCoupons);
+        Session::forget('lazy_coupon');
+
+        // Prune if multiple not allowed anymore
+        $isMultipleAllowed = (int)get_cms_option('shop_coupon_stacking_policy', '1') === 1;
+
+        if (!$isMultipleAllowed) {
+            $currentCoupons = Session::get('lazy_coupons', []);
+            if (count($currentCoupons) > 1) {
+                $keptCoupon = array_shift($currentCoupons);
+                Session::put('lazy_coupons', [$keptCoupon]);
+            }
+        }
+        Session::save();
+    }
+
     public function checkout()
     {
+        $this->revalidateCoupon();
         $cart = Session::get('lazy_cart', []);
         if (empty($cart)) {
-            return redirect()->route('frontend.index')->with('error', 'Your cart is empty!');
+            return redirect()->route('shop.cart')->with('error', 'Your cart is empty!');
         }
         return view($this->resolveThemeView('checkout'), compact('cart'));
     }
@@ -237,26 +489,26 @@ class ShopFrontendController extends Controller
 
         $cart = Session::get('lazy_cart', []);
         if (empty($cart)) {
-            return redirect()->route('frontend.index')->with('error', 'Your cart is empty!');
+            return redirect()->route('shop.cart')->with('error', 'Your cart is empty!');
         }
 
-        $subtotal = 0;
-        foreach ($cart as $item) {
-            $price = $item['sale_price'] ?? $item['price'];
-            $subtotal += $price * $item['quantity'];
-        }
+        $subtotal = get_lazy_cart_subtotal();
+        $shipping = get_lazy_cart_shipping();
+        $tax = get_lazy_cart_tax();
+        $total = get_lazy_cart_total();
 
-        // Apply shipping and tax logic here (from shop settings)
-        $shipping = (float) get_cms_option('shop_flat_rate_cost', 0);
-        $taxRate = (float) get_cms_option('shop_tax_rate', 0);
-        
-        $freeShippingThreshold = (float) get_cms_option('shop_free_shipping_threshold', 0);
-        if ($freeShippingThreshold > 0 && $subtotal >= $freeShippingThreshold) {
-            $shipping = 0;
-        }
+        // Coupon Logic for Multiple Coupons
+        $coupons = Session::get('lazy_coupons', []);
+        $single = Session::get('lazy_coupon');
+        if ($single && empty($coupons)) $coupons[] = $single;
 
-        $tax = $subtotal * ($taxRate / 100);
-        $total = $subtotal + $shipping + $tax;
+        $couponCodes = [];
+        $discountTotal = 0;
+        foreach ($coupons as $coupon) {
+            $couponCodes[] = $coupon['code'];
+            $amount = (float) ($coupon['amount'] ?? ($coupon['discount'] ?? 0));
+            $discountTotal += ($coupon['type'] ?? 'percent') === 'percent' ? $subtotal * ($amount / 100) : $amount;
+        }
 
         $orderData = [
             'user_id' => auth()->id(),
@@ -265,6 +517,8 @@ class ShopFrontendController extends Controller
             'subtotal' => $subtotal,
             'shipping_total' => $shipping,
             'tax_total' => $tax,
+            'discount_total' => $discountTotal,
+            'coupon_code' => implode(', ', $couponCodes),
             'total' => $total,
             'first_name' => $request->billing_first_name,
             'last_name' => $request->billing_last_name,
@@ -299,12 +553,13 @@ class ShopFrontendController extends Controller
                 'product_id' => $item['id'],
                 'product_name' => $item['name'],
                 'quantity' => $item['quantity'],
-                'price' => $item['price'],
+                'price' => $item['sale_price'] ?? $item['price'],
                 'subtotal' => ($item['sale_price'] ?? $item['price']) * $item['quantity'],
             ]);
         }
 
         Session::forget('lazy_cart');
+        Session::forget('lazy_coupon');
 
         if ($request->ajax() || $request->wantsJson()) {
             return response()->json([
